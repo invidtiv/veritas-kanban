@@ -1,101 +1,80 @@
-# Integration Guide — User Feedback Loop (#182)
+# Integration Guide — Global System Health Status Bar (#185)
 
-This file describes exactly what needs to be added to each protected integration file.
-Do NOT modify these files directly — Brad will merge them manually.
+## What was built
 
----
+| File | Purpose |
+|------|---------|
+| `shared/src/types/system-health.types.ts` | `HealthLevel`, `HealthStatus`, `HealthSignal`, and signal types shared across server + web |
+| `server/src/services/system-health-service.ts` | `SystemHealthService` class + `getSystemHealthService()` singleton — aggregates telemetry into `HealthStatus` |
+| `web/src/lib/api/system-health.ts` | `systemHealthApi.getStatus()` — typed fetch wrapper for `GET /api/v1/system/health` |
+| `web/src/hooks/useSystemHealth.ts` | React Query hook; polls every 30 s (60 s when WS disconnected) |
+| `web/src/components/health/SystemHealthBar.tsx` | The persistent UI component — thin strip + expandable detail panel |
+| `web/src/components/layout/SystemHealthBar.tsx` | Already present on `main` — thin strip implementation using inline types |
 
-## 1. `shared/src/types/index.ts`
-
-Add a re-export for the new feedback types (near the existing evaluation types export):
-
-```ts
-export * from './feedback.types.js';
-```
-
----
-
-## 2. `server/src/routes/v1/index.ts`
-
-### Import (add alongside the `scoringRoutes` import)
-
-```ts
-import { feedbackRoutes } from '../feedback.js';
-```
-
-### Route registration (add after the `scoring` line)
-
-```ts
-v1Router.use('/feedback', feedbackRoutes);
-```
+> **Note:** `web/src/components/health/SystemHealthBar.tsx` is the canonical new implementation
+> using the shared `HealthLevel` type and the spec-required icons (`ShieldCheck`, `AlertCircle`).
+> The `layout/SystemHealthBar.tsx` version that already existed on `main` is functionally
+> equivalent; Brad should pick one when merging.
 
 ---
 
-## 3. `web/src/lib/api/index.ts`
+## App.tsx integration
 
-### Import (add alongside the `scoringApi` import)
-
-```ts
-import { feedbackApi } from './feedback';
-```
-
-### Add to the `api` object (alongside `scoring: scoringApi`)
-
-```ts
-feedback: feedbackApi,
-```
-
----
-
-## 4. `web/src/App.tsx` (optional — if you want a dedicated route)
-
-If you want the FeedbackPanel reachable via a standalone route:
+Place `<SystemHealthBar />` **directly below `<Header />`**, before `<main>`:
 
 ```tsx
-import { FeedbackPanel } from '@/components/feedback/FeedbackPanel';
+// web/src/App.tsx  (excerpt — Brad will merge manually)
+import { SystemHealthBar } from './components/health/SystemHealthBar';
+// or keep the existing import from layout/:
+// import { SystemHealthBar } from './components/layout/SystemHealthBar';
 
-// Inside your <Routes>:
-<Route path="/feedback" element={<FeedbackPanel />} />
+// Inside the JSX tree:
+<div className="min-h-screen bg-background">
+  <SkipToContent />
+  <Header />
+  <SystemHealthBar />          {/* ← insert here */}
+  <main id="main-content" className="mx-auto px-14 py-6" tabIndex={-1}>
+    <ErrorBoundary level="section">
+      <MainContent />
+    </ErrorBoundary>
+  </main>
+  <Toaster />
+  <CommandPalette />
+  <FloatingChat />
+</div>
 ```
+
+`App.tsx` on `main` already has this import and placement — no action needed unless you
+chose the `components/health/` version.
 
 ---
 
-## 5. `web/src/contexts/ViewContext.tsx` (optional)
+## Server route
 
-If your view-context lists available views, add:
+The existing `server/src/routes/system-health.ts` already handles `GET /api/v1/system/health`
+and is registered in `server/src/routes/v1/index.ts`.  No changes needed.
 
-```ts
-'feedback'
-```
-
-to the views union / array so the Header / CommandPalette can navigate to it.
+Optionally, the route can be refactored to delegate to `getSystemHealthService()` to remove
+code duplication, but this is not required for the feature to work.
 
 ---
 
-## 6. `web/src/components/layout/Header.tsx` (optional)
+## Shared type export
 
-Add a nav entry for feedback using the existing pattern, e.g.:
+`shared/src/types.ts` was updated to re-export from `system-health.types.ts`.
+This makes `HealthLevel`, `HealthStatus`, etc. available via `@veritas-kanban/shared`.
 
-```tsx
-import { MessageSquare } from 'lucide-react';
-// ...
-{ label: 'Feedback', view: 'feedback', icon: MessageSquare }
-```
+The forbidden file `shared/src/types/index.ts` was **not modified**.
 
 ---
 
-## 7. `web/src/components/layout/CommandPalette.tsx` (optional)
+## Polling behaviour
 
-If the palette is driven by the view list from ViewContext, no change needed.
-Otherwise add:
+| Condition | Interval |
+|-----------|----------|
+| WebSocket connected | 30 s |
+| WebSocket disconnected | 60 s |
+| `staleTime` | 15 s |
 
-```ts
-{ id: 'feedback', label: 'Feedback', description: 'View and submit user feedback' }
-```
-
----
-
-## Storage
-
-The feedback service stores data in `server/storage/feedback/*.json` (one file per record).
-The directory is created automatically on first write — no migration needed.
+Filters (`projectId`, `agentId`) are accepted by `SystemHealthService.getStatus()` but are
+not yet wired into the route query-string — reserved for a future scoped-health iteration.
