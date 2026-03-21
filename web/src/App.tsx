@@ -48,6 +48,12 @@ const WorkflowsPage = lazy(() =>
   }))
 );
 
+const DecisionExplorer = lazy(() =>
+  import('./components/decisions/DecisionExplorer').then((mod) => ({
+    default: mod.DecisionExplorer,
+  }))
+);
+
 /** Renders the current view (board, activity feed, or backlog). */
 function MainContent() {
   const { view, setView, navigateToTask } = useView();
@@ -121,6 +127,20 @@ function MainContent() {
         }
       >
         <WorkflowsPage onBack={() => setView('board')} />
+      </Suspense>
+    );
+  }
+
+  if (view === 'decisions') {
+    return (
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center py-16">
+            <span className="text-muted-foreground">Loading decisions…</span>
+          </div>
+        }
+      >
+        <DecisionExplorer onBack={() => setView('board')} />
       </Suspense>
     );
   }

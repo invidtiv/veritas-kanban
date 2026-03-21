@@ -12,6 +12,7 @@ import { diffApi, conflictsApi, githubApi } from './diff';
 import { templatesApi, taskTypesApi, sprintsApi, activityApi, attachmentsApi } from './entities';
 import { timeApi, statusHistoryApi } from './time';
 import { chatApi } from './chat';
+import { decisionsApi } from './decisions';
 
 // Assemble the full API object (matches original structure exactly)
 export const api = {
@@ -34,6 +35,7 @@ export const api = {
   time: timeApi,
   statusHistory: statusHistoryApi,
   chat: chatApi,
+  decisions: decisionsApi,
 };
 
 // Re-export managed list helper
@@ -84,3 +86,9 @@ export type {
   StatusPeriod,
   DailySummary,
 } from './time';
+
+export type {
+  DecisionRecord,
+  DecisionWithChain,
+  DecisionListFilters,
+} from '@veritas-kanban/shared';

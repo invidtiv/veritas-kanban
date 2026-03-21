@@ -58,6 +58,12 @@ export const createWriteStream = fs.createWriteStream;
 // Async helpers
 // ---------------------------------------------------------------------------
 
+export const readFile = fs.promises.readFile.bind(fs.promises);
+export const writeFile = fs.promises.writeFile.bind(fs.promises);
+export const mkdir = fs.promises.mkdir.bind(fs.promises);
+export const readdir = fs.promises.readdir.bind(fs.promises);
+export const unlink = fs.promises.unlink.bind(fs.promises);
+
 /**
  * Async file-existence check.
  *

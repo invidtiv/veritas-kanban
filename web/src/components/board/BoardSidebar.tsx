@@ -27,7 +27,9 @@ import {
   CheckCircle,
   Archive,
   ExternalLink,
+  GitBranch,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { BudgetCard } from '@/components/dashboard/BudgetCard';
 import { MultiAgentPanel } from './MultiAgentPanel';
 
@@ -446,6 +448,23 @@ export function BoardSidebar({ onTaskClick }: BoardSidebarProps) {
         onOpenActivityLog={() => setView('activity')}
         onTaskClick={onTaskClick}
       />
+
+      <div className="rounded-lg border bg-card p-3">
+        <h3 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Audit Trail
+        </h3>
+        <Button
+          variant="outline"
+          className="w-full justify-between"
+          onClick={() => setView('decisions')}
+        >
+          <span className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4" />
+            Decision Explorer
+          </span>
+          <ExternalLink className="h-4 w-4" />
+        </Button>
+      </div>
 
       {/* Monthly Budget */}
       <BudgetCard />
