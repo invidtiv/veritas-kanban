@@ -8,10 +8,20 @@ const mockFs: Record<string, string> = vi.hoisted(() => ({}));
 vi.mock('node:fs/promises', () => {
   const access = vi.fn().mockResolvedValue(undefined);
   const mkdir = vi.fn().mockResolvedValue(undefined);
+  const readFile = vi.fn().mockResolvedValue('');
+  const writeFile = vi.fn().mockResolvedValue(undefined);
+  const readdir = vi.fn().mockResolvedValue([]);
+  const unlink = vi.fn().mockResolvedValue(undefined);
+  const rm = vi.fn().mockResolvedValue(undefined);
   return {
     access,
     mkdir,
-    default: { access, mkdir },
+    readFile,
+    writeFile,
+    readdir,
+    unlink,
+    rm,
+    default: { access, mkdir, readFile, writeFile, readdir, unlink, rm },
   };
 });
 

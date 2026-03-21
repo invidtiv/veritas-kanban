@@ -16,7 +16,7 @@ export type AppView =
   | 'templates'
   | 'workflows'
   | 'policies'
-  | 'decisions';
+  | 'decisions'
   | 'scoring';
 
 const basePath = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
