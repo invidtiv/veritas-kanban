@@ -74,7 +74,7 @@ Codify what works (and what burns us) when running Veritas Kanban with humans + 
 
 ---
 
-## v3.3.0 Features — Best Practices
+## v3.3+ Features — Best Practices
 
 11. **Use task dependencies to enforce ordering**
     - Set `depends_on` / `blocks` relationships so agents don't start work before prerequisites are complete.
