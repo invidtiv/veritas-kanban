@@ -51,6 +51,10 @@ const SALT_ROUNDS = 12;
 const JWT_EXPIRY_DEFAULT = '24h';
 const JWT_EXPIRY_REMEMBER = '30d';
 
+// When ALLOW_HTTP_AUTH=true (e.g. Tailscale), don't require Secure cookies
+const COOKIE_SECURE =
+  process.env.ALLOW_HTTP_AUTH === 'true' ? false : process.env.NODE_ENV === 'production';
+
 // Rate limiting for login attempts (in-memory, resets on restart)
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
 const MAX_ATTEMPTS = 5;
@@ -374,8 +378,8 @@ router.post(
     const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
     res.cookie('veritas_session', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: COOKIE_SECURE,
+      sameSite: COOKIE_SECURE ? 'strict' : 'lax',
       maxAge,
       path: '/',
     });
@@ -402,8 +406,8 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     res.clearCookie('veritas_session', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: COOKIE_SECURE,
+      sameSite: COOKIE_SECURE ? 'strict' : 'lax',
       path: '/',
     });
 

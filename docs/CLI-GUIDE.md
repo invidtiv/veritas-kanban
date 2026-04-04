@@ -71,8 +71,11 @@ vk --help
 The complete task lifecycle in three commands:
 
 ```bash
-# 1. Create a task
-vk create "Implement OAuth login" --type code --project my-app
+# 1. Create a task with a real structured description
+vk create "Implement OAuth login" \
+  --type code \
+  --project my-app \
+  --description "Objective:\nImplement OAuth login.\n\nScope:\n- In scope: Google and GitHub providers\n- Out of scope: SAML\n\nConstraints:\n- Must preserve existing email login\n\nExpected outputs:\n- backend auth changes\n- frontend login buttons\n- tests/docs updated\n\nAcceptance criteria:\n- users can sign in with Google and GitHub\n- existing login still works\n\nDone criteria:\n- feature works end-to-end\n- tests pass\n- summary is ready for task closure"
 
 # 2. Start working — one command handles everything
 vk begin task_20260201_abc123
@@ -226,7 +229,7 @@ Create a new task.
 
 ```bash
 vk create "Implement OAuth login"
-vk create "Fix button alignment" --type code --priority high --project my-app
+vk create "Fix button alignment" --type code --priority high --project my-app --description "Objective:\nFix button alignment on settings page.\n\nScope:\n- In scope: settings page button layout\n- Out of scope: broader design refresh\n\nConstraints:\n- keep existing styling system\n\nExpected outputs:\n- corrected CSS/layout\n\nAcceptance criteria:\n- buttons align correctly across supported breakpoints\n\nDone criteria:\n- UI verified and task ready to close"
 ```
 
 **Flags:**
@@ -235,6 +238,7 @@ vk create "Fix button alignment" --type code --priority high --project my-app
 | `--type` | Task type (code, research, content, etc.) |
 | `--priority` | Priority level (low, medium, high) |
 | `--project` | Project name |
+| `--description` | Structured task description |
 | `--json` | Output as JSON |
 
 ---
@@ -691,7 +695,11 @@ Create a task and immediately start working on it:
 
 ```bash
 # Create and capture the ID
-TASK_ID=$(vk create "Fix login bug" --type code --project my-app --json | jq -r '.id')
+TASK_ID=$(vk create "Fix login bug" \
+  --type code \
+  --project my-app \
+  --description "Objective:\nFix the login bug.\n\nScope:\n- In scope: reproduce and resolve the identified bug\n- Out of scope: broader auth redesign\n\nConstraints:\n- preserve existing auth flows\n\nExpected outputs:\n- bug fix\n- validation notes\n\nAcceptance criteria:\n- bug no longer reproduces\n\nDone criteria:\n- fix verified and ready for closure" \
+  --json | jq -r '.id')
 
 # Start working
 vk begin "$TASK_ID"

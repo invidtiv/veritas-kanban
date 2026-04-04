@@ -7,3 +7,4 @@ export * from './format.js';
 export * from './constants.js';
 export * from './api-client.js';
 export * from './agent-helpers.js';
+export * from './config-store.js';

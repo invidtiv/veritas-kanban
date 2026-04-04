@@ -3,8 +3,7 @@
  */
 
 import type { Task } from '../types/task.types.js';
-
-const DEFAULT_BASE = 'http://localhost:3001';
+import { resolveServerUrl, resolveApiKey } from './config-store.js';
 
 /** Standard API response envelope */
 interface ApiEnvelope<T> {
@@ -18,12 +17,15 @@ interface ApiEnvelope<T> {
  * @param baseUrl - Base URL for the API (default: http://localhost:3001)
  * @returns API client function
  */
-export function createApiClient(baseUrl = DEFAULT_BASE) {
+export function createApiClient(baseUrl?: string) {
+  baseUrl = baseUrl ?? resolveServerUrl();
   return async function api<T>(path: string, options?: RequestInit): Promise<T> {
+    const apiKey = resolveApiKey();
     const res = await fetch(`${baseUrl}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...(apiKey ? { 'X-API-Key': apiKey } : {}),
         ...options?.headers,
       },
     });
@@ -51,10 +53,9 @@ export function createApiClient(baseUrl = DEFAULT_BASE) {
 }
 
 /**
- * Default API client using environment variable or localhost
- * Uses typeof check to avoid ReferenceError in browser environments
+ * Default API client — resolves URL from env vars → config file → localhost fallback.
  */
-export const API_BASE = (typeof process !== 'undefined' && process.env?.VK_API_URL) || DEFAULT_BASE;
+export const API_BASE = resolveServerUrl();
 export const api = createApiClient(API_BASE);
 
 /**
