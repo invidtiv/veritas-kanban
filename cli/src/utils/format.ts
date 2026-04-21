@@ -34,6 +34,10 @@ export function formatTask(task: Task, verbose = false): string {
     line += chalk.dim(` #${task.project}`);
   }
 
+  if (task.agent && task.agent !== 'auto') {
+    line += chalk.magenta(` @${task.agent}`);
+  }
+
   if (verbose) {
     line += '\n';
     if (task.description) {

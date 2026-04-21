@@ -587,12 +587,18 @@ export function useTasksByStatus(tasks: Task[] | undefined) {
     };
   }
 
+  const sortByUpdatedDescending = (tasks: Task[]): Task[] => {
+    return [...tasks].sort((a, b) => {
+      return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+    });
+  };
+
   return {
     todo: sortByPosition(tasks.filter((t) => t.status === 'todo')),
     'in-progress': sortByPosition(tasks.filter((t) => t.status === 'in-progress')),
     blocked: sortByPosition(tasks.filter((t) => t.status === 'blocked')),
-    done: sortByPosition(tasks.filter((t) => t.status === 'done')),
-    cancelled: sortByPosition(tasks.filter((t) => t.status === 'cancelled')),
+    done: sortByUpdatedDescending(tasks.filter((t) => t.status === 'done')),
+    cancelled: sortByUpdatedDescending(tasks.filter((t) => t.status === 'cancelled')),
   };
 }
 

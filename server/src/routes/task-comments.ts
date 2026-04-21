@@ -48,7 +48,15 @@ router.post(
     };
 
     const comments = [...(task.comments || []), comment];
-    const updatedTask = await taskService.updateTask(req.params.id as string, { comments });
+    const updates: Record<string, unknown> = { comments };
+
+    // Auto-set agent field from [ASSIGN→agent] or [FIX→agent] tags
+    const assignMatch = text.match(/\[(?:ASSIGN|FIX)[^→]*→([^\]\s]+)\]/);
+    if (assignMatch) {
+      updates.agent = assignMatch[1];
+    }
+
+    const updatedTask = await taskService.updateTask(req.params.id as string, updates);
 
     // Log activity
     await activityService.logActivity(

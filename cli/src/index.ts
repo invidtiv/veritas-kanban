@@ -16,6 +16,7 @@ import { registerSetupCommands } from './commands/setup.js';
 import { registerUsageCommands } from './commands/usage.js';
 import { registerSprintCommands } from './commands/sprints.js';
 import { registerConnectCommands } from './commands/connect.js';
+import { registerWorkloadCommands } from './commands/workload.js';
 
 const program = new Command();
 
@@ -41,5 +42,6 @@ registerSetupCommands(program);
 registerUsageCommands(program);
 registerSprintCommands(program);
 registerConnectCommands(program);
+registerWorkloadCommands(program);
 
 program.parse();

@@ -15,6 +15,7 @@ export function registerTaskCommands(program: Command): void {
     .option('-t, --type <type>', 'Filter by type (code, research, content, automation)')
     .option('-p, --project <project>', 'Filter by project')
     .option('-S, --sprint <sprint>', 'Filter by sprint')
+    .option('-a, --agent <agent>', 'Filter by assigned agent')
     .option('-v, --verbose', 'Show more details')
     .option('--json', 'Output as JSON')
     .action(async (options) => {
@@ -33,6 +34,9 @@ export function registerTaskCommands(program: Command): void {
         }
         if (options.sprint) {
           filtered = filtered.filter((t: Task) => t.sprint === options.sprint);
+        }
+        if (options.agent) {
+          filtered = filtered.filter((t: Task) => t.agent === options.agent);
         }
 
         if (options.json) {
@@ -93,19 +97,22 @@ export function registerTaskCommands(program: Command): void {
     .option('-S, --sprint <sprint>', 'Sprint name or ID')
     .option('-d, --description <desc>', 'Task description')
     .option('--priority <priority>', 'Priority (low, medium, high)', 'medium')
+    .option('-a, --agent <agent>', 'Assign to agent')
     .option('--json', 'Output as JSON')
     .action(async (title, options) => {
       try {
+        const body: Record<string, unknown> = {
+          title,
+          type: options.type,
+          project: options.project,
+          sprint: options.sprint,
+          description: options.description || '',
+          priority: options.priority,
+        };
+        if (options.agent) body.agent = options.agent;
         const task = await api<Task>('/api/tasks', {
           method: 'POST',
-          body: JSON.stringify({
-            title,
-            type: options.type,
-            project: options.project,
-            sprint: options.sprint,
-            description: options.description || '',
-            priority: options.priority,
-          }),
+          body: JSON.stringify(body),
         });
 
         if (options.json) {
@@ -129,6 +136,7 @@ export function registerTaskCommands(program: Command): void {
     .option('-p, --project <project>', 'New project')
     .option('-S, --sprint <sprint>', 'Sprint name or ID')
     .option('--priority <priority>', 'New priority')
+    .option('-a, --agent <agent>', 'Assign to agent')
     .option('--title <title>', 'New title')
     .option('--json', 'Output as JSON')
     .action(async (id, options) => {
@@ -147,6 +155,7 @@ export function registerTaskCommands(program: Command): void {
         if (options.sprint) updates.sprint = options.sprint;
         if (options.priority) updates.priority = options.priority;
         if (options.title) updates.title = options.title;
+        if (options.agent) updates.agent = options.agent;
 
         if (Object.keys(updates).length === 0) {
           console.error(chalk.yellow('No updates specified'));

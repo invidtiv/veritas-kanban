@@ -8,6 +8,8 @@ interface Project {
   color?: string;
   description?: string;
   taskCount?: number;
+  agents?: string[];
+  statusCounts?: Record<string, number>;
 }
 
 export function registerProjectCommands(program: Command): void {
@@ -17,10 +19,15 @@ export function registerProjectCommands(program: Command): void {
   project
     .command('list')
     .description('List all projects')
+    .option('-a, --agent <agent>', 'Filter to projects with this agent')
     .option('--json', 'Output as JSON')
     .action(async (options) => {
       try {
-        const projects = await api<Project[]>('/api/projects');
+        let projects = await api<Project[]>('/api/projects/enriched');
+
+        if (options.agent) {
+          projects = projects.filter((p) => p.agents?.includes(options.agent));
+        }
 
         if (options.json) {
           console.log(JSON.stringify(projects, null, 2));
@@ -35,11 +42,20 @@ export function registerProjectCommands(program: Command): void {
               line += chalk.dim(` [${p.color}]`);
             }
             if (p.taskCount !== undefined) {
-              line += chalk.dim(` (${p.taskCount} tasks)`);
+              let countStr = `${p.taskCount} tasks`;
+              if (p.statusCounts && Object.keys(p.statusCounts).length > 0) {
+                const parts = Object.entries(p.statusCounts).map(([s, n]) => `${n} ${s}`);
+                countStr += `: ${parts.join(', ')}`;
+              }
+              line += chalk.dim(` (${countStr})`);
             }
             console.log(line);
             if (p.description) {
               console.log(chalk.dim(`    ${p.description}`));
+            }
+            if (p.agents && p.agents.length > 0) {
+              const agentList = p.agents.map((a) => chalk.magenta(`@${a}`)).join(' ');
+              console.log(`    Agents: ${agentList}`);
             }
           });
           console.log(chalk.dim('─'.repeat(50)));
