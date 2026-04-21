@@ -1,7 +1,7 @@
 /**
  * Agent Registry Route Integration Tests
  *
- * @see https://github.com/BradGroux/veritas-kanban/issues/52
+ * @see https://github.com/invidtiv/veritas-kanban/issues/52
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';

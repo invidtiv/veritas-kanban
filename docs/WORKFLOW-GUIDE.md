@@ -1238,7 +1238,7 @@ If the server crashes mid-workflow, runs can be recovered:
 
 ### Getting Help
 
-- **GitHub Issues**: [github.com/BradGroux/veritas-kanban/issues](https://github.com/BradGroux/veritas-kanban/issues)
+- **GitHub Issues**: [github.com/invidtiv/veritas-kanban/issues](https://github.com/invidtiv/veritas-kanban/issues)
 - **Documentation**: Check other docs in `/docs/` directory
 - **Examples**: See `.veritas-kanban/workflows/` for working examples
 

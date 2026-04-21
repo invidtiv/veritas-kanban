@@ -54,7 +54,7 @@ If you prefer step-by-step control, follow the manual wizard below:
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/BradGroux/veritas-kanban.git
+git clone https://github.com/invidtiv/veritas-kanban.git
 cd veritas-kanban
 pnpm install
 ```

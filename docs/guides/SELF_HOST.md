@@ -2,7 +2,7 @@
 
 This guide walks you through every self-hosting scenario — from running locally for personal use to a production deployment behind a reverse proxy or on Tailscale.
 
-> **Credit:** This guide was originally contributed by [@xechehot](https://github.com/xechehot) in [PR #126](https://github.com/BradGroux/veritas-kanban/pull/126). It has been expanded here to cover additional deployment patterns.
+> **Credit:** This guide was originally contributed by [@xechehot](https://github.com/xechehot) in [PR #126](https://github.com/invidtiv/veritas-kanban/pull/126). It has been expanded here to cover additional deployment patterns.
 
 ---
 
@@ -25,11 +25,11 @@ This guide walks you through every self-hosting scenario — from running locall
 
 ## Prerequisites
 
-| Requirement | Version  | Install                                   |
-|-------------|----------|-------------------------------------------|
-| Node.js     | 22.0.0+  | https://nodejs.org or `nvm install 22`    |
-| pnpm        | 9.0.0+   | `corepack enable && corepack prepare pnpm@9.15.4 --activate` |
-| Git         | any      | https://git-scm.com                       |
+| Requirement | Version | Install                                                      |
+| ----------- | ------- | ------------------------------------------------------------ |
+| Node.js     | 22.0.0+ | https://nodejs.org or `nvm install 22`                       |
+| pnpm        | 9.0.0+  | `corepack enable && corepack prepare pnpm@9.15.4 --activate` |
+| Git         | any     | https://git-scm.com                                          |
 
 Verify:
 
@@ -44,7 +44,7 @@ pnpm --version   # 9.x.x
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/BradGroux/veritas-kanban.git
+git clone https://github.com/invidtiv/veritas-kanban.git
 cd veritas-kanban
 
 # 2. Install all workspace dependencies
@@ -60,11 +60,11 @@ cp server/.env.example server/.env
 
 The build produces:
 
-| Path              | Contents                              |
-|-------------------|---------------------------------------|
-| `shared/dist/`    | Shared TypeScript types and utilities |
-| `server/dist/`    | Compiled Express API server           |
-| `web/dist/`       | Static React frontend (served by Express in production) |
+| Path           | Contents                                                |
+| -------------- | ------------------------------------------------------- |
+| `shared/dist/` | Shared TypeScript types and utilities                   |
+| `server/dist/` | Compiled Express API server                             |
+| `web/dist/`    | Static React frontend (served by Express in production) |
 
 ---
 
@@ -157,7 +157,7 @@ Your LAN URL will be `http://<your-ip>:3001`.
 
 ## Tailscale Serve
 
-Tailscale Serve lets you expose Veritas Kanban securely to your tailnet (all your devices) without opening firewall ports. This was the primary use case from [@xechehot's original PR #126](https://github.com/BradGroux/veritas-kanban/pull/126).
+Tailscale Serve lets you expose Veritas Kanban securely to your tailnet (all your devices) without opening firewall ports. This was the primary use case from [@xechehot's original PR #126](https://github.com/invidtiv/veritas-kanban/pull/126).
 
 ### Option A: Root path (simplest)
 
@@ -356,7 +356,7 @@ Docker is the recommended approach for production deployments.
 
 ```bash
 # Clone and configure
-git clone https://github.com/BradGroux/veritas-kanban.git
+git clone https://github.com/invidtiv/veritas-kanban.git
 cd veritas-kanban
 cp server/.env.example server/.env
 # Edit server/.env — set VERITAS_ADMIN_KEY to a strong secret (≥ 32 chars)
@@ -386,8 +386,8 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - DATA_DIR=/app/data
-      - VERITAS_ADMIN_KEY=your-secure-admin-key-here  # ≥ 32 chars
-      - VERITAS_JWT_SECRET=your-jwt-secret-here       # prevents session resets on restart
+      - VERITAS_ADMIN_KEY=your-secure-admin-key-here # ≥ 32 chars
+      - VERITAS_JWT_SECRET=your-jwt-secret-here # prevents session resets on restart
       # - CORS_ORIGINS=https://kanban.example.com
       # - TRUST_PROXY=1                               # if behind nginx/Caddy/Traefik
       # - VERITAS_API_KEYS=agent1:key1:agent,readonly:key2:read-only
@@ -476,11 +476,11 @@ VERITAS_API_KEYS=my-agent:vk_abc123:agent,dashboard:vk_xyz456:read-only
 
 Role permissions:
 
-| Role        | Access                                             |
-|-------------|----------------------------------------------------|
-| `admin`     | Full access to all endpoints                       |
-| `agent`     | Read/write tasks, run agents, manage worktrees     |
-| `read-only` | GET endpoints only (view tasks, read config)       |
+| Role        | Access                                         |
+| ----------- | ---------------------------------------------- |
+| `admin`     | Full access to all endpoints                   |
+| `agent`     | Read/write tasks, run agents, manage worktrees |
+| `read-only` | GET endpoints only (view tasks, read config)   |
 
 ### Authentication methods
 
@@ -515,17 +515,17 @@ All variables live in `server/.env` (copy from `server/.env.example`).
 
 ### Server
 
-| Variable    | Default | Description                                              |
-|-------------|---------|----------------------------------------------------------|
-| `PORT`      | `3001`  | HTTP server port                                         |
-| `HOST`      | `127.0.0.1` | Bind address. Set `0.0.0.0` for LAN/container access |
-| `NODE_ENV`  | —       | `production` for production. **Never `development` in Docker** |
-| `LOG_LEVEL` | `info`  | `trace` / `debug` / `info` / `warn` / `error` / `fatal` |
+| Variable    | Default     | Description                                                    |
+| ----------- | ----------- | -------------------------------------------------------------- |
+| `PORT`      | `3001`      | HTTP server port                                               |
+| `HOST`      | `127.0.0.1` | Bind address. Set `0.0.0.0` for LAN/container access           |
+| `NODE_ENV`  | —           | `production` for production. **Never `development` in Docker** |
+| `LOG_LEVEL` | `info`      | `trace` / `debug` / `info` / `warn` / `error` / `fatal`        |
 
 ### Authentication
 
 | Variable                        | Default     | Description                                                            |
-|---------------------------------|-------------|------------------------------------------------------------------------|
+| ------------------------------- | ----------- | ---------------------------------------------------------------------- |
 | `VERITAS_AUTH_ENABLED`          | `true`      | Enable authentication. Set `false` only for trusted local use          |
 | `VERITAS_ADMIN_KEY`             | —           | Admin API key. **Must be ≥ 32 chars.** Required for production         |
 | `VERITAS_API_KEYS`              | —           | Additional keys. Format: `name:key:role,name2:key2:role2`              |
@@ -535,35 +535,35 @@ All variables live in `server/.env` (copy from `server/.env.example`).
 
 ### Networking
 
-| Variable         | Default                         | Description                                                                 |
-|------------------|---------------------------------|-----------------------------------------------------------------------------|
-| `CORS_ORIGINS`   | `http://localhost:3000,...`     | Comma-separated allowed CORS origins                                        |
-| `TRUST_PROXY`    | —                               | Express proxy trust. Use `1` for single-hop (nginx/Caddy). `true` is blocked |
-| `RATE_LIMIT_MAX` | `300`                           | Max API requests/minute/IP (localhost exempt)                               |
+| Variable         | Default                     | Description                                                                  |
+| ---------------- | --------------------------- | ---------------------------------------------------------------------------- |
+| `CORS_ORIGINS`   | `http://localhost:3000,...` | Comma-separated allowed CORS origins                                         |
+| `TRUST_PROXY`    | —                           | Express proxy trust. Use `1` for single-hop (nginx/Caddy). `true` is blocked |
+| `RATE_LIMIT_MAX` | `300`                       | Max API requests/minute/IP (localhost exempt)                                |
 
 ### Data & Storage
 
-| Variable                   | Default              | Description                                              |
-|----------------------------|----------------------|----------------------------------------------------------|
-| `VERITAS_DATA_DIR`         | `.veritas-kanban`    | Config, logs, internal state (relative to project root)  |
-| `DATA_DIR`                 | `/app/data` (Docker) | Mapped data dir inside Docker container                  |
-| `TELEMETRY_RETENTION_DAYS` | `30`                 | Days to keep telemetry event files                       |
-| `TELEMETRY_COMPRESS_DAYS`  | `7`                  | Days after which telemetry files are gzip-compressed     |
+| Variable                   | Default              | Description                                             |
+| -------------------------- | -------------------- | ------------------------------------------------------- |
+| `VERITAS_DATA_DIR`         | `.veritas-kanban`    | Config, logs, internal state (relative to project root) |
+| `DATA_DIR`                 | `/app/data` (Docker) | Mapped data dir inside Docker container                 |
+| `TELEMETRY_RETENTION_DAYS` | `30`                 | Days to keep telemetry event files                      |
+| `TELEMETRY_COMPRESS_DAYS`  | `7`                  | Days after which telemetry files are gzip-compressed    |
 
 ### Frontend (build-time)
 
-| Variable         | Default | Description                                                                          |
-|------------------|---------|--------------------------------------------------------------------------------------|
-| `VITE_BASE_PATH` | `/`     | Sub-path prefix for the frontend (e.g., `/kanban/`). Set at build time, not runtime |
-| `VITE_ALLOWED_HOSTS` | —   | Comma-separated hostnames allowed by Vite dev server (dev only). `*` allows all      |
+| Variable             | Default | Description                                                                         |
+| -------------------- | ------- | ----------------------------------------------------------------------------------- |
+| `VITE_BASE_PATH`     | `/`     | Sub-path prefix for the frontend (e.g., `/kanban/`). Set at build time, not runtime |
+| `VITE_ALLOWED_HOSTS` | —       | Comma-separated hostnames allowed by Vite dev server (dev only). `*` allows all     |
 
 ### Integration
 
-| Variable                 | Default                      | Description                                      |
-|--------------------------|------------------------------|--------------------------------------------------|
-| `CLAWDBOT_GATEWAY`       | `http://127.0.0.1:18789`     | OpenClaw gateway URL for AI agent orchestration  |
-| `VERITAS_WEBHOOK_URL`    | —                            | Push task/chat events to an external service     |
-| `VERITAS_WEBHOOK_SECRET` | —                            | HMAC-SHA256 secret for webhook payload signing   |
+| Variable                 | Default                  | Description                                     |
+| ------------------------ | ------------------------ | ----------------------------------------------- |
+| `CLAWDBOT_GATEWAY`       | `http://127.0.0.1:18789` | OpenClaw gateway URL for AI agent orchestration |
+| `VERITAS_WEBHOOK_URL`    | —                        | Push task/chat events to an external service    |
+| `VERITAS_WEBHOOK_SECRET` | —                        | HMAC-SHA256 secret for webhook payload signing  |
 
 ---
 
@@ -678,4 +678,4 @@ curl -H "X-API-Key: your-admin-key" http://localhost:3001/api/auth/diagnostics
 
 ---
 
-*For general deployment (Docker, bare metal, systemd, reverse proxy) see also [docs/DEPLOYMENT.md](../DEPLOYMENT.md).*
+_For general deployment (Docker, bare metal, systemd, reverse proxy) see also [docs/DEPLOYMENT.md](../DEPLOYMENT.md)._

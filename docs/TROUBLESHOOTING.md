@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Common issues and solutions for Veritas Kanban. Can't find your issue? [Open a Discussion](https://github.com/BradGroux/veritas-kanban/discussions) or [file an issue](https://github.com/BradGroux/veritas-kanban/issues).
+Common issues and solutions for Veritas Kanban. Can't find your issue? [Open a Discussion](https://github.com/invidtiv/veritas-kanban/discussions) or [file an issue](https://github.com/invidtiv/veritas-kanban/issues).
 
 ---
 
@@ -477,7 +477,7 @@ openclaw mcp describe veritas-kanban vk_list_tasks
 
 **3. Gather diagnostics bundle when reporting issues**
 
-If MCP connection fails after following steps 1-2, collect this full diagnostics bundle to share when [reporting an issue](https://github.com/BradGroux/veritas-kanban/issues):
+If MCP connection fails after following steps 1-2, collect this full diagnostics bundle to share when [reporting an issue](https://github.com/invidtiv/veritas-kanban/issues):
 
 ```bash
 # === System & Version Info ===
@@ -622,8 +622,8 @@ open http://localhost:3001/api-docs            # Swagger UI
 
 ## Still stuck?
 
-- 💬 [GitHub Discussions](https://github.com/BradGroux/veritas-kanban/discussions) — ask the community
-- 🐛 [GitHub Issues](https://github.com/BradGroux/veritas-kanban/issues) — report a bug
+- 💬 [GitHub Discussions](https://github.com/invidtiv/veritas-kanban/discussions) — ask the community
+- 🐛 [GitHub Issues](https://github.com/invidtiv/veritas-kanban/issues) — report a bug
 - 📖 [Deployment Guide](DEPLOYMENT.md) — production setup
 - 📖 [Features Guide](FEATURES.md) — full feature documentation
 - 🔒 [Security Guide](security.md) — auth, rate limiting, API keys

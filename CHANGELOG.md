@@ -1372,12 +1372,12 @@ Veritas Kanban is an AI-native project management board built for developers and
 
 _Built by [Digital Meld](https://digitalmeld.io) — AI-driven enterprise automation._
 
-[unreleased]: https://github.com/BradGroux/veritas-kanban/compare/v4.0.0...HEAD
-[4.0.0]: https://github.com/BradGroux/veritas-kanban/compare/v3.3.3...v4.0.0
-[3.3.3]: https://github.com/BradGroux/veritas-kanban/compare/v3.3.2...v3.3.3
-[1.4.1]: https://github.com/BradGroux/veritas-kanban/compare/v1.4.0...v1.4.1
-[1.4.0]: https://github.com/BradGroux/veritas-kanban/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/BradGroux/veritas-kanban/compare/v1.2.0...v1.3.0
-[1.2.0]: https://github.com/BradGroux/veritas-kanban/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/BradGroux/veritas-kanban/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/BradGroux/veritas-kanban/releases/tag/v1.0.0
+[unreleased]: https://github.com/invidtiv/veritas-kanban/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/invidtiv/veritas-kanban/compare/v3.3.3...v4.0.0
+[3.3.3]: https://github.com/invidtiv/veritas-kanban/compare/v3.3.2...v3.3.3
+[1.4.1]: https://github.com/invidtiv/veritas-kanban/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/invidtiv/veritas-kanban/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/invidtiv/veritas-kanban/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/invidtiv/veritas-kanban/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/invidtiv/veritas-kanban/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/invidtiv/veritas-kanban/releases/tag/v1.0.0

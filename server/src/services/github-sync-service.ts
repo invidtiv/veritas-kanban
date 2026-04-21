@@ -71,7 +71,7 @@ const SYNC_STATE_FILE = join(DATA_DIR, 'github-sync.json');
 const DEFAULT_CONFIG: IntegrationsConfig = {
   github: {
     enabled: true,
-    repo: 'BradGroux/veritas-kanban',
+    repo: 'invidtiv/veritas-kanban',
     syncMode: 'bidirectional',
     labelFilter: 'kanban',
     pollIntervalMs: 300_000, // 5 minutes

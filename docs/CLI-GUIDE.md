@@ -45,7 +45,7 @@ The CLI talks to the Veritas Kanban server over its REST API, so any command you
 
 ```bash
 # Clone the repository (if you haven't already)
-git clone https://github.com/BradGroux/veritas-kanban.git
+git clone https://github.com/invidtiv/veritas-kanban.git
 cd veritas-kanban
 
 # Install dependencies

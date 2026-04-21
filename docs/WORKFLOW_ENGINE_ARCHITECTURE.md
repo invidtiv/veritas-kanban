@@ -3,7 +3,7 @@
 **Author**: TARS (sub-agent)  
 **Created**: 2026-02-09  
 **Revised**: 2026-02-09 (Codex review revision)  
-**GitHub Issue**: [#107](https://github.com/BradGroux/veritas-kanban/issues/107)  
+**GitHub Issue**: [#107](https://github.com/invidtiv/veritas-kanban/issues/107)  
 **Status**: Architecture Specification
 
 ---

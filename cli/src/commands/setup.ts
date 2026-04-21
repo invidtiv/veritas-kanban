@@ -141,7 +141,7 @@ This is a sample task created by \`vk setup\`.
 
 - [Getting Started Guide](docs/GETTING-STARTED.md)
 - [API Documentation](http://localhost:3001/api-docs)
-- [GitHub Repository](https://github.com/BradGroux/veritas-kanban)
+- [GitHub Repository](https://github.com/invidtiv/veritas-kanban)
 
 ---
 *Created by vk setup on ${new Date().toISOString().slice(0, 10)}*`,

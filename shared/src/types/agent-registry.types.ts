@@ -4,7 +4,7 @@
  * Defines the self-reporting protocol for AI agents to register,
  * declare capabilities, send heartbeats, and link sessions to tasks.
  *
- * @see https://github.com/BradGroux/veritas-kanban/issues/52
+ * @see https://github.com/invidtiv/veritas-kanban/issues/52
  */
 
 // ─── Agent Capabilities ──────────────────────────────────────────

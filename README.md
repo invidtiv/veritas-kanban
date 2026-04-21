@@ -8,7 +8,7 @@ _Veritas in actis — Truth in action._
 
 Built for developers who want a visual Kanban board that works with autonomous coding agents.
 
-[![CI](https://github.com/BradGroux/veritas-kanban/actions/workflows/ci.yml/badge.svg)](https://github.com/BradGroux/veritas-kanban/actions/workflows/ci.yml)
+[![CI](https://github.com/invidtiv/veritas-kanban/actions/workflows/ci.yml/badge.svg)](https://github.com/invidtiv/veritas-kanban/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
@@ -41,7 +41,7 @@ Clone and set up veritas-kanban locally. Install dependencies with pnpm, copy th
 Want to do it yourself? Get up and running in under 5 minutes:
 
 ```bash
-git clone https://github.com/BradGroux/veritas-kanban.git
+git clone https://github.com/invidtiv/veritas-kanban.git
 cd veritas-kanban
 pnpm install
 cp server/.env.example server/.env   # Edit to change VERITAS_ADMIN_KEY
@@ -297,7 +297,7 @@ Veritas Kanban is neither. It's the **visual command center for agentic work** �
 | **YAML workflow pipelines**     |      ✅ Loops, gates, parallel      |     ⚠️ Code-defined only     |          ❌           |
 | **Real-time agent dashboard**   |    ✅ Status, model attribution     |              ❌              |          ❌           |
 | **Agent communication**         | ✅ Squad Chat with lifecycle events |       ⚠️ Internal only       |          ❌           |
-| **MCP server**                  |             ✅ 33+ tools            |              ❌              |          ❌           |
+| **MCP server**                  |            ✅ 33+ tools             |              ❌              |          ❌           |
 | **CLI**                         |          ✅ Full lifecycle          |              ❌              |      ⚠️ Limited       |
 | **Git worktrees + code review** |             ✅ Built-in             |              ❌              |          ❌           |
 | **Task persistence**            |          ✅ Markdown files          |         ❌ In-memory         |      ✅ Database      |
@@ -673,19 +673,19 @@ pnpm test:e2e   # E2E tests (Playwright)
 
 ## 📚 Documentation
 
-| Document                                   | Description                      |
-| ------------------------------------------ | -------------------------------- |
-| [Features](docs/FEATURES.md)               | Complete feature reference       |
-| [API Reference](docs/API-REFERENCE.md)     | Auth, endpoints, WebSocket docs  |
-| [CLI Guide](docs/CLI-GUIDE.md)             | Comprehensive CLI usage guide    |
+| Document                                       | Description                                  |
+| ---------------------------------------------- | -------------------------------------------- |
+| [Features](docs/FEATURES.md)                   | Complete feature reference                   |
+| [API Reference](docs/API-REFERENCE.md)         | Auth, endpoints, WebSocket docs              |
+| [CLI Guide](docs/CLI-GUIDE.md)                 | Comprehensive CLI usage guide                |
 | [Self-Hosting Guide](docs/guides/SELF_HOST.md) | Production deployment, reverse proxy, Docker |
-| [Deployment](docs/DEPLOYMENT.md)           | Docker, bare metal, env config   |
-| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues & solutions        |
-| [Contributing](CONTRIBUTING.md)            | How to contribute, PR guidelines |
-| [Security Policy](SECURITY.md)             | Vulnerability reporting          |
-| [Code of Conduct](CODE_OF_CONDUCT.md)      | Community guidelines             |
-| [Changelog](CHANGELOG.md)                  | Release history                  |
-| [Sprint Docs](docs/)                       | Sprint planning & audit reports  |
+| [Deployment](docs/DEPLOYMENT.md)               | Docker, bare metal, env config               |
+| [Troubleshooting](docs/TROUBLESHOOTING.md)     | Common issues & solutions                    |
+| [Contributing](CONTRIBUTING.md)                | How to contribute, PR guidelines             |
+| [Security Policy](SECURITY.md)                 | Vulnerability reporting                      |
+| [Code of Conduct](CODE_OF_CONDUCT.md)          | Community guidelines                         |
+| [Changelog](CHANGELOG.md)                      | Release history                              |
+| [Sprint Docs](docs/)                           | Sprint planning & audit reports              |
 
 ---
 
@@ -744,65 +744,65 @@ pnpm test:e2e   # E2E tests (Playwright)
 
 ## 🗺️ Roadmap
 
-See the [open issues](https://github.com/BradGroux/veritas-kanban/issues) for what's next. Community contributions welcome!
+See the [open issues](https://github.com/invidtiv/veritas-kanban/issues) for what's next. Community contributions welcome!
 
 ### Shipped in v4.0.0
 
-- ~~[#178](https://github.com/BradGroux/veritas-kanban/issues/178) — Agent Policy & Guard Engine~~ — Configurable tool/action policies with allow/deny/require-approval guard rules
-- ~~[#179](https://github.com/BradGroux/veritas-kanban/issues/179) — Decision Audit Trail with Assumption Tracking~~ — Log decisions with confidence scores, evidence, and outcome tracking
-- ~~[#180](https://github.com/BradGroux/veritas-kanban/issues/180) — Agent Output Evaluation & Scoring Framework~~ — Weighted criteria profiles with composite scoring
-- ~~[#181](https://github.com/BradGroux/veritas-kanban/issues/181) — Behavioral Drift Detection & Alerting~~ — Metric baselines with configurable alert thresholds
-- ~~[#182](https://github.com/BradGroux/veritas-kanban/issues/182) — User Feedback Loop with Sentiment Analytics~~ — Feedback collection with sentiment tagging and aggregate analytics
-- ~~[#183](https://github.com/BradGroux/veritas-kanban/issues/183) — Draggable & Resizable Dashboard Widget Grid~~ — Drag-and-drop layout with persistence
-- ~~[#184](https://github.com/BradGroux/veritas-kanban/issues/184) — Prompt Template Registry with Version Control~~ — Versioned templates with rollback and usage tracking
-- ~~[#185](https://github.com/BradGroux/veritas-kanban/issues/185) — Global System Health Status Bar~~ — Five health levels across system, agents, and operations signals
-- ~~[#186](https://github.com/BradGroux/veritas-kanban/issues/186) — Upgrade to shadcn/ui CLI v4.0~~ — All components updated with Tailwind v4 integration
+- ~~[#178](https://github.com/invidtiv/veritas-kanban/issues/178) — Agent Policy & Guard Engine~~ — Configurable tool/action policies with allow/deny/require-approval guard rules
+- ~~[#179](https://github.com/invidtiv/veritas-kanban/issues/179) — Decision Audit Trail with Assumption Tracking~~ — Log decisions with confidence scores, evidence, and outcome tracking
+- ~~[#180](https://github.com/invidtiv/veritas-kanban/issues/180) — Agent Output Evaluation & Scoring Framework~~ — Weighted criteria profiles with composite scoring
+- ~~[#181](https://github.com/invidtiv/veritas-kanban/issues/181) — Behavioral Drift Detection & Alerting~~ — Metric baselines with configurable alert thresholds
+- ~~[#182](https://github.com/invidtiv/veritas-kanban/issues/182) — User Feedback Loop with Sentiment Analytics~~ — Feedback collection with sentiment tagging and aggregate analytics
+- ~~[#183](https://github.com/invidtiv/veritas-kanban/issues/183) — Draggable & Resizable Dashboard Widget Grid~~ — Drag-and-drop layout with persistence
+- ~~[#184](https://github.com/invidtiv/veritas-kanban/issues/184) — Prompt Template Registry with Version Control~~ — Versioned templates with rollback and usage tracking
+- ~~[#185](https://github.com/invidtiv/veritas-kanban/issues/185) — Global System Health Status Bar~~ — Five health levels across system, agents, and operations signals
+- ~~[#186](https://github.com/invidtiv/veritas-kanban/issues/186) — Upgrade to shadcn/ui CLI v4.0~~ — All components updated with Tailwind v4 integration
 
 ### Backlog
 
-- [WCAG 2.1 AA accessibility](https://github.com/BradGroux/veritas-kanban/issues/1) — Full keyboard navigation, screen reader support, color contrast
-- [Example video](https://github.com/BradGroux/veritas-kanban/issues/68) — Hosted walkthrough video on YouTube or Vimeo
+- [WCAG 2.1 AA accessibility](https://github.com/invidtiv/veritas-kanban/issues/1) — Full keyboard navigation, screen reader support, color contrast
+- [Example video](https://github.com/invidtiv/veritas-kanban/issues/68) — Hosted walkthrough video on YouTube or Vimeo
 
 ### Shipped in v3.3.x
 
-- ~~[Task Dependencies Graph](https://github.com/BradGroux/veritas-kanban/issues/122)~~ — Bidirectional dependency model with cycle detection, recursive tree API, visual badges
-- ~~[Crash-Recovery Checkpointing](https://github.com/BradGroux/veritas-kanban/issues/123)~~ — Save/resume/clear agent state with auto-sanitization of secrets, 1MB limit, 24h expiry
-- ~~[Observational Memory](https://github.com/BradGroux/veritas-kanban/issues/124)~~ — Per-task observations with importance scoring (1-10), full-text search, timeline view
-- ~~[Agent Filter](https://github.com/BradGroux/veritas-kanban/issues/125)~~ — Query tasks by agent name with `?agent=name` parameter
-- ~~[Sprint Management CLI + MCP](https://github.com/BradGroux/veritas-kanban/issues/161)~~ — Full sprint CRUD from command line and MCP (list, create, update, delete, close, suggestions)
-- ~~[Task↔Agent State Sync](https://github.com/BradGroux/veritas-kanban/issues/155)~~ — Bi-directional sync engine keeping task state consistent with agent execution
+- ~~[Task Dependencies Graph](https://github.com/invidtiv/veritas-kanban/issues/122)~~ — Bidirectional dependency model with cycle detection, recursive tree API, visual badges
+- ~~[Crash-Recovery Checkpointing](https://github.com/invidtiv/veritas-kanban/issues/123)~~ — Save/resume/clear agent state with auto-sanitization of secrets, 1MB limit, 24h expiry
+- ~~[Observational Memory](https://github.com/invidtiv/veritas-kanban/issues/124)~~ — Per-task observations with importance scoring (1-10), full-text search, timeline view
+- ~~[Agent Filter](https://github.com/invidtiv/veritas-kanban/issues/125)~~ — Query tasks by agent name with `?agent=name` parameter
+- ~~[Sprint Management CLI + MCP](https://github.com/invidtiv/veritas-kanban/issues/161)~~ — Full sprint CRUD from command line and MCP (list, create, update, delete, close, suggestions)
+- ~~[Task↔Agent State Sync](https://github.com/invidtiv/veritas-kanban/issues/155)~~ — Bi-directional sync engine keeping task state consistent with agent execution
 - ~~Orchestrator Delegation Enforcement~~ — Full enforcement gate with delegation violation reporting
 - ~~Express 5 + Vite 7 + Tailwind 4 + Zod 4 migration~~ — Major dependency upgrades
-- ~~[SSRF Webhook Protection](https://github.com/BradGroux/veritas-kanban/issues/165)~~ — Server-side request forgery safeguards
-- ~~[WebSocket Broadcast Batching](https://github.com/BradGroux/veritas-kanban/issues/167)~~ — Prevents event loop blocking under high-frequency updates
+- ~~[SSRF Webhook Protection](https://github.com/invidtiv/veritas-kanban/issues/165)~~ — Server-side request forgery safeguards
+- ~~[WebSocket Broadcast Batching](https://github.com/invidtiv/veritas-kanban/issues/167)~~ — Prevents event loop blocking under high-frequency updates
 
 ### Shipped in v3.2.0
 
-- ~~[Markdown Editor](https://github.com/BradGroux/veritas-kanban/pull/118)~~ — Rich editing toolbar, live preview, keyboard shortcuts (Ctrl+B/I/K) for task descriptions and comments
-- ~~[Shared Resources Registry](https://github.com/BradGroux/veritas-kanban/pull/119)~~ — Reusable resources (prompts, guidelines, templates) mountable across projects
-- ~~[Documentation Freshness](https://github.com/BradGroux/veritas-kanban/pull/120)~~ — Staleness tracking with freshness scores, alerts, and auto-review task creation
-- ~~[Docker Auth Persistence](https://github.com/BradGroux/veritas-kanban/issues/116)~~ — Fixed auth state wiped on container rebuild; added automatic migration
+- ~~[Markdown Editor](https://github.com/invidtiv/veritas-kanban/pull/118)~~ — Rich editing toolbar, live preview, keyboard shortcuts (Ctrl+B/I/K) for task descriptions and comments
+- ~~[Shared Resources Registry](https://github.com/invidtiv/veritas-kanban/pull/119)~~ — Reusable resources (prompts, guidelines, templates) mountable across projects
+- ~~[Documentation Freshness](https://github.com/invidtiv/veritas-kanban/pull/120)~~ — Staleness tracking with freshness scores, alerts, and auto-review task creation
+- ~~[Docker Auth Persistence](https://github.com/invidtiv/veritas-kanban/issues/116)~~ — Fixed auth state wiped on container rebuild; added automatic migration
 
 ### Shipped in v2.1.2
 
-- ~~[Docker Path Resolution](https://github.com/BradGroux/veritas-kanban/issues/102)~~ — Fixed WORKDIR resolution for `.veritas-kanban` directory in containerized deployments
+- ~~[Docker Path Resolution](https://github.com/invidtiv/veritas-kanban/issues/102)~~ — Fixed WORKDIR resolution for `.veritas-kanban` directory in containerized deployments
 
 ### Shipped in v2.1.1
 
-- ~~[Reverse Proxy Support](https://github.com/BradGroux/veritas-kanban/issues/100)~~ — Added `TRUST_PROXY` environment variable for nginx, Caddy, Traefik, and other reverse proxies
-- ~~[Prompts Registry](https://github.com/BradGroux/veritas-kanban/issues/101)~~ — Centralized prompt templates with versioning and agent-specific customization
+- ~~[Reverse Proxy Support](https://github.com/invidtiv/veritas-kanban/issues/100)~~ — Added `TRUST_PROXY` environment variable for nginx, Caddy, Traefik, and other reverse proxies
+- ~~[Prompts Registry](https://github.com/invidtiv/veritas-kanban/issues/101)~~ — Centralized prompt templates with versioning and agent-specific customization
 
 ### Shipped in v2.0.0
 
-- ~~[Dashboard widget toggles](https://github.com/BradGroux/veritas-kanban/issues/92)~~ · ~~[Multi-agent dashboard](https://github.com/BradGroux/veritas-kanban/issues/28)~~ · ~~[Multi-agent task assignment](https://github.com/BradGroux/veritas-kanban/issues/29)~~ · ~~[@Mention notifications](https://github.com/BradGroux/veritas-kanban/issues/30)~~ · ~~[Agent permission levels](https://github.com/BradGroux/veritas-kanban/issues/31)~~ · ~~[Agent self-reporting](https://github.com/BradGroux/veritas-kanban/issues/52)~~ · ~~[CLI usage reporting](https://github.com/BradGroux/veritas-kanban/issues/50)~~ · ~~[Markdown rendering](https://github.com/BradGroux/veritas-kanban/issues/63)~~ · ~~[Cost prediction](https://github.com/BradGroux/veritas-kanban/issues/54)~~ · ~~[Error learning](https://github.com/BradGroux/veritas-kanban/issues/91)~~ · ~~[Task lifecycle hooks](https://github.com/BradGroux/veritas-kanban/issues/72)~~ · ~~[Documentation freshness](https://github.com/BradGroux/veritas-kanban/issues/74)~~ · ~~[Where Time Went](https://github.com/BradGroux/veritas-kanban/issues/57)~~ · ~~[Activity Clock](https://github.com/BradGroux/veritas-kanban/issues/58)~~ · ~~[Hourly Activity](https://github.com/BradGroux/veritas-kanban/issues/59)~~ · ~~[Wall Time Toggle](https://github.com/BradGroux/veritas-kanban/issues/60)~~ · ~~[Session Metrics](https://github.com/BradGroux/veritas-kanban/issues/61)~~ · ~~[Production binding](https://github.com/BradGroux/veritas-kanban/issues/55)~~
+- ~~[Dashboard widget toggles](https://github.com/invidtiv/veritas-kanban/issues/92)~~ · ~~[Multi-agent dashboard](https://github.com/invidtiv/veritas-kanban/issues/28)~~ · ~~[Multi-agent task assignment](https://github.com/invidtiv/veritas-kanban/issues/29)~~ · ~~[@Mention notifications](https://github.com/invidtiv/veritas-kanban/issues/30)~~ · ~~[Agent permission levels](https://github.com/invidtiv/veritas-kanban/issues/31)~~ · ~~[Agent self-reporting](https://github.com/invidtiv/veritas-kanban/issues/52)~~ · ~~[CLI usage reporting](https://github.com/invidtiv/veritas-kanban/issues/50)~~ · ~~[Markdown rendering](https://github.com/invidtiv/veritas-kanban/issues/63)~~ · ~~[Cost prediction](https://github.com/invidtiv/veritas-kanban/issues/54)~~ · ~~[Error learning](https://github.com/invidtiv/veritas-kanban/issues/91)~~ · ~~[Task lifecycle hooks](https://github.com/invidtiv/veritas-kanban/issues/72)~~ · ~~[Documentation freshness](https://github.com/invidtiv/veritas-kanban/issues/74)~~ · ~~[Where Time Went](https://github.com/invidtiv/veritas-kanban/issues/57)~~ · ~~[Activity Clock](https://github.com/invidtiv/veritas-kanban/issues/58)~~ · ~~[Hourly Activity](https://github.com/invidtiv/veritas-kanban/issues/59)~~ · ~~[Wall Time Toggle](https://github.com/invidtiv/veritas-kanban/issues/60)~~ · ~~[Session Metrics](https://github.com/invidtiv/veritas-kanban/issues/61)~~ · ~~[Production binding](https://github.com/invidtiv/veritas-kanban/issues/55)~~
 
 ### Shipped in v1.6.0
 
-- ~~[Model Usage schema & API](https://github.com/BradGroux/veritas-kanban/issues/47)~~ · ~~[Global usage aggregation](https://github.com/BradGroux/veritas-kanban/issues/48)~~ · ~~[Dashboard Model Usage](https://github.com/BradGroux/veritas-kanban/issues/49)~~ · ~~[Standup with cost](https://github.com/BradGroux/veritas-kanban/issues/51)~~ · ~~[Per-model cost tables](https://github.com/BradGroux/veritas-kanban/issues/53)~~ · ~~[Dashboard filter bar](https://github.com/BradGroux/veritas-kanban/issues/56)~~ · ~~[Health endpoints](https://github.com/BradGroux/veritas-kanban/issues/82)~~
+- ~~[Model Usage schema & API](https://github.com/invidtiv/veritas-kanban/issues/47)~~ · ~~[Global usage aggregation](https://github.com/invidtiv/veritas-kanban/issues/48)~~ · ~~[Dashboard Model Usage](https://github.com/invidtiv/veritas-kanban/issues/49)~~ · ~~[Standup with cost](https://github.com/invidtiv/veritas-kanban/issues/51)~~ · ~~[Per-model cost tables](https://github.com/invidtiv/veritas-kanban/issues/53)~~ · ~~[Dashboard filter bar](https://github.com/invidtiv/veritas-kanban/issues/56)~~ · ~~[Health endpoints](https://github.com/invidtiv/veritas-kanban/issues/82)~~
 
 ### Shipped in v1.1.0–v1.3.0
 
-- ~~[API response envelope](https://github.com/BradGroux/veritas-kanban/issues/2)~~ · ~~[Circuit breaker](https://github.com/BradGroux/veritas-kanban/issues/3)~~ · ~~[Load testing (k6)](https://github.com/BradGroux/veritas-kanban/issues/4)~~ · ~~[Prometheus/OTel](https://github.com/BradGroux/veritas-kanban/issues/5)~~ · ~~[Storage abstraction](https://github.com/BradGroux/veritas-kanban/issues/6)~~ · ~~[GitHub Issues sync](https://github.com/BradGroux/veritas-kanban/issues/21)~~ · ~~[Activity feed](https://github.com/BradGroux/veritas-kanban/issues/33)~~ · ~~[Daily standup](https://github.com/BradGroux/veritas-kanban/issues/34)~~
+- ~~[API response envelope](https://github.com/invidtiv/veritas-kanban/issues/2)~~ · ~~[Circuit breaker](https://github.com/invidtiv/veritas-kanban/issues/3)~~ · ~~[Load testing (k6)](https://github.com/invidtiv/veritas-kanban/issues/4)~~ · ~~[Prometheus/OTel](https://github.com/invidtiv/veritas-kanban/issues/5)~~ · ~~[Storage abstraction](https://github.com/invidtiv/veritas-kanban/issues/6)~~ · ~~[GitHub Issues sync](https://github.com/invidtiv/veritas-kanban/issues/21)~~ · ~~[Activity feed](https://github.com/invidtiv/veritas-kanban/issues/33)~~ · ~~[Daily standup](https://github.com/invidtiv/veritas-kanban/issues/34)~~
 
 ---
 
@@ -810,9 +810,9 @@ See the [open issues](https://github.com/BradGroux/veritas-kanban/issues) for wh
 
 All support and feature requests go through GitHub:
 
-- **🐛 Bug reports** — [Open an issue](https://github.com/BradGroux/veritas-kanban/issues/new?template=bug_report.md)
-- **💡 Feature requests** — [Open an issue](https://github.com/BradGroux/veritas-kanban/issues/new?template=feature_request.md)
-- **❓ Questions & discussion** — [GitHub Discussions](https://github.com/BradGroux/veritas-kanban/discussions)
+- **🐛 Bug reports** — [Open an issue](https://github.com/invidtiv/veritas-kanban/issues/new?template=bug_report.md)
+- **💡 Feature requests** — [Open an issue](https://github.com/invidtiv/veritas-kanban/issues/new?template=feature_request.md)
+- **❓ Questions & discussion** — [GitHub Discussions](https://github.com/invidtiv/veritas-kanban/discussions)
 
 > **Note:** Support is not provided via email or social media. GitHub is the single source of truth for all project communication.
 
