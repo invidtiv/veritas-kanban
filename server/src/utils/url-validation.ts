@@ -99,6 +99,17 @@ function isBlockedIPv6(host: string): { blocked: boolean; reason?: string } {
 }
 
 /**
+ * Detect Tailscale-scoped targets: *.ts.net hostnames or CGNAT 100.64.0.0/10 IPs.
+ * Used by the ALLOW_HTTP_WEBHOOKS escape hatch in validateWebhookUrl.
+ */
+function isTailscaleTarget(hostname: string): boolean {
+  if (hostname.toLowerCase().endsWith('.ts.net')) return true;
+  const ipInt = ipv4ToInt(hostname);
+  if (ipInt !== null && ipInt >= 0x64400000 && ipInt <= 0x647fffff) return true;
+  return false;
+}
+
+/**
  * Check if hostname resolves to localhost variants
  */
 function isLocalhostHostname(hostname: string): boolean {
@@ -167,6 +178,13 @@ export function validateWebhookUrl(
     parsed = new URL(url);
   } catch {
     return { valid: false, reason: 'Invalid URL format' };
+  }
+
+  // Tailscale escape hatch: when ALLOW_HTTP_WEBHOOKS=true, permit http and CGNAT
+  // for Tailscale-scoped targets only (*.ts.net hostnames or 100.64.0.0/10 IPs).
+  // Other private ranges, loopback, and metadata endpoints stay blocked.
+  if (process.env.ALLOW_HTTP_WEBHOOKS === 'true' && isTailscaleTarget(parsed.hostname)) {
+    return { valid: true, normalized: parsed.href };
   }
 
   // Protocol validation

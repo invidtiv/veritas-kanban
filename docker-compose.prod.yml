@@ -1,0 +1,68 @@
+# =============================================================================
+# Veritas Kanban — Production Docker Compose for babysharkstech.site
+# =============================================================================
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml logs -f
+#   docker compose -f docker-compose.prod.yml down
+# =============================================================================
+
+services:
+  veritas-kanban:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: veritas-kanban
+    working_dir: /app/server
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATA_DIR=/app/data
+      # Production admin key - set via .env file
+      - VERITAS_ADMIN_KEY=${VERITAS_ADMIN_KEY:-change-me-in-production}
+      # Additional named API keys (name:key:role,...)
+      - VERITAS_API_KEYS=${VERITAS_API_KEYS:-}
+      # API key authentication (required for NPM proxy requests)
+      - VERITAS_AUTH_LOCALHOST_BYPASS=true
+      - VERITAS_AUTH_LOCALHOST_ROLE=admin
+      # CSP report-only mode (nonces not injected into SPA HTML)
+      - CSP_REPORT_ONLY=true
+      # Optional: bshome integration
+      - BSHOME_AUTH_ME_URL=http://bshome:3001/api/auth/me
+      # CORS: Allow Tailscale IP for direct access (HTTP and HTTPS)
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Allow HTTP auth for Tailscale access (no HTTPS)
+      - ALLOW_HTTP_AUTH=true
+      # Allow http:// + CGNAT for *.ts.net / 100.64.0.0/10 webhook targets
+      - ALLOW_HTTP_WEBHOOKS=${ALLOW_HTTP_WEBHOOKS:-false}
+      - VERITAS_WEBHOOK_URL=${VERITAS_WEBHOOK_URL:-}
+      - VERITAS_WEBHOOK_SECRET=${VERITAS_WEBHOOK_SECRET:-}
+      # OpenClaw Gateway Configuration
+      - CLAWDBOT_GATEWAY=${CLAWDBOT_GATEWAY:-}
+      - CLAWDBOT_GATEWAY_TOKEN=${CLAWDBOT_GATEWAY_TOKEN:-}
+    ports:
+      - '3001:3001'
+    volumes:
+      # Persist data on host — share same dirs as dev server
+      - ./.veritas-kanban:/app/data/.veritas-kanban
+      # config-service reads from /app/.veritas-kanban (cwd()/..); mount the same host dir
+      - ./.veritas-kanban:/app/.veritas-kanban
+      - ./tasks:/app/data/tasks
+      # Mount Tailscale SSL certificates from home directory
+      - /home/bsdev/vmi2916953.tail652dda.ts.net.crt:/etc/tailscale/certs/vmi2916953.tail652dda.ts.net.crt:ro
+      - /home/bsdev/vmi2916953.tail652dda.ts.net.key:/etc/tailscale/certs/vmi2916953.tail652dda.ts.net.key:ro
+    # Required for OpenClaw Gateway access from container
+    # Using host network mode to access gateway on host's localhost
+    network_mode: host
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  npm-network:
+    external: true
+    name: nginx-proxy-manager_npm-network

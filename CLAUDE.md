@@ -1,3 +1,5 @@
+> This file extends ~/.claude/CLAUDE.md — global principles apply first.
+
 # CLAUDE.md — Agent Guidelines for Veritas Kanban
 
 This file defines project-specific rules, context, and lessons learned for AI agents working on Veritas Kanban. Update it after every mistake, discovery, or workflow change.
