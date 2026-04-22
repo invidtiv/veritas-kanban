@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- VK CLI collaboration workflow upgrades: `vk describe` / `vk inspect`, explicit `assign` / `unassign` / `claim` commands, and new `subtask`, `verify`, and `dependency` command groups for terminal-first task coordination
+
 ### Fixed
 
 - Tasks now always persist `createdBy`, even when no assignee is set, and creator identities are normalized to configured agent identifiers when possible
@@ -19,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Batch file reads use bounded concurrency for improved task loading performance (#255)
+- Task list API and CLI now support sprint, creator, assignee, and text-search filtering for active tasks, and `vk list` output surfaces both creator and assignee by default
 - Shared package exports governance, policy, and workflow types (#256)
 - Bumped pnpm/action-setup from v4 to v5 (#260)
 
@@ -33,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Docs
 
+- Added a concrete multi-agent CLI implementation roadmap and refreshed the CLI guide for ownership-aware task inspection and composition workflows
 - v4.0 governance security audit (#265)
 - Comprehensive unit tests for v4.0 governance services (#263)
 - Feedback, chat, and system-health route tests (#257)

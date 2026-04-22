@@ -118,6 +118,37 @@ describe('Tasks Routes (actual module)', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual([]);
     });
+
+    it('should filter tasks by sprint, creator, and search query', async () => {
+      mockTaskService.listTasks.mockResolvedValue([
+        {
+          id: 't1',
+          title: 'Fix OAuth callback',
+          description: 'Repair callback handling for GitHub OAuth',
+          sprint: 'Sprint 12',
+          createdBy: 'codex',
+          created: '2025-01-01',
+          updated: '2025-01-02',
+        },
+        {
+          id: 't2',
+          title: 'Document deployment',
+          description: 'Write rollout guide',
+          sprint: 'Sprint 11',
+          createdBy: 'veritas',
+          created: '2025-01-01',
+          updated: '2025-01-03',
+        },
+      ]);
+
+      const res = await request(app)
+        .get('/api/tasks')
+        .query({ sprint: 'Sprint 12', createdBy: 'codex', search: 'oauth' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].id).toBe('t1');
+    });
   });
 
   describe('POST /api/tasks/reorder', () => {

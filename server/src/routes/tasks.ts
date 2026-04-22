@@ -198,9 +198,21 @@ const appendProgressSchema = z.object({
  *         schema: { type: string }
  *         description: Filter by project name (exact match)
  *       - in: query
+ *         name: sprint
+ *         schema: { type: string }
+ *         description: Filter by sprint name or ID (exact match)
+ *       - in: query
  *         name: agent
  *         schema: { type: string }
  *         description: Filter by agent name (exact match)
+ *       - in: query
+ *         name: createdBy
+ *         schema: { type: string }
+ *         description: Filter by task creator (exact match)
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *         description: Case-insensitive search across task title and description
  *       - in: query
  *         name: view
  *         schema: { type: string, enum: [summary] }
@@ -231,6 +243,9 @@ router.get(
     const priorityFilter = req.query.priority as string | undefined;
     const typeFilter = req.query.type as string | undefined;
     const projectFilter = req.query.project as string | undefined;
+    const sprintFilter = (req.query.sprint as string | undefined)?.trim().slice(0, 100);
+    const createdByFilter = (req.query.createdBy as string | undefined)?.trim().slice(0, 100);
+    const searchFilter = (req.query.search as string | undefined)?.trim().slice(0, 200);
 
     if (statusFilter) {
       const statuses = statusFilter.split(',').map((s) => s.trim());
@@ -247,9 +262,22 @@ router.get(
     if (projectFilter) {
       tasks = tasks.filter((t) => t.project === projectFilter);
     }
+    if (sprintFilter) {
+      tasks = tasks.filter((t) => t.sprint === sprintFilter);
+    }
     const agentFilter = (req.query.agent as string | undefined)?.trim().slice(0, 100);
     if (agentFilter) {
       tasks = tasks.filter((t) => t.agent === agentFilter);
+    }
+    if (createdByFilter) {
+      tasks = tasks.filter((t) => t.createdBy === createdByFilter);
+    }
+    if (searchFilter) {
+      const needle = searchFilter.toLowerCase();
+      tasks = tasks.filter((t) => {
+        const haystack = `${t.title ?? ''}\n${t.description ?? ''}`.toLowerCase();
+        return haystack.includes(needle);
+      });
     }
 
     const total = tasks.length;

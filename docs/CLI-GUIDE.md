@@ -14,6 +14,8 @@ Comprehensive guide to the `vk` command-line tool for Veritas Kanban.
 - [Command Reference](#command-reference)
   - [Workflow Commands](#workflow-commands)
   - [Task Commands](#task-commands)
+  - [Subtasks & Checklists](#subtasks--checklists)
+  - [Dependencies](#dependencies)
   - [Time Tracking](#time-tracking)
   - [Comments](#comments)
   - [Agent Status](#agent-status)
@@ -38,6 +40,8 @@ Comprehensive guide to the `vk` command-line tool for Veritas Kanban.
 > This principle — championed by Boris Cherny, creator of Claude Code — is at the heart of the v1.4 CLI additions. If you're doing the same multi-step workflow every time you start or finish a task, that workflow should be a single command. That's exactly what `vk begin` and `vk done` deliver.
 
 The CLI talks to the Veritas Kanban server over its REST API, so any command you run in the terminal has the same effect as clicking through the web UI or calling the API directly with curl.
+
+The v4 collaboration-focused CLI updates make task ownership explicit by surfacing who created a task and who currently owns it, add richer task inspection for agents, and expose subtasks, verification checklists, and dependency management directly in the terminal.
 
 ---
 
@@ -190,9 +194,14 @@ vk list                           # All tasks
 vk list --status in-progress      # Filter by status
 vk list --type code               # Filter by type
 vk list --project my-app          # Filter by project
+vk list --assigned-to codex       # Filter by assignee
+vk list --created-by veritas      # Filter by creator
+vk list --search oauth            # Search title + description
 vk list --status in-progress --type code  # Combine filters
 vk list --json                    # JSON output
 ```
+
+Default output now includes both the assigned agent and the task creator so ownership is visible without extra flags.
 
 **Aliases:** `ls`
 
@@ -202,24 +211,50 @@ vk list --json                    # JSON output
 | `--status` | Filter by status (todo, in-progress, blocked, done) |
 | `--type` | Filter by task type |
 | `--project` | Filter by project name |
+| `--sprint` | Filter by sprint name or ID |
+| `--assigned-to` | Filter by assigned agent |
+| `--agent` | Legacy alias for `--assigned-to` |
+| `--created-by` | Filter by task creator |
+| `--search` | Search task title and description |
+| `--verbose` | Show additional task context |
 | `--json` | Output as JSON |
 
 ---
 
 #### `vk show <id>`
 
-Show detailed information for a task.
+Show a rich task view including metadata, attribution, subtasks, verification state, dependencies, comments, observations, and artifacts.
 
 ```bash
 vk show task_20260201_abc123
 vk show abc123                    # Partial ID matching supported
-vk show abc123 --json
+vk show abc123 --json             # Raw task JSON
 ```
 
 **Flags:**
 | Flag | Description |
 | -------- | ------------------------- |
-| `--json` | Output as JSON |
+| `--json` | Output raw task JSON (backward-compatible) |
+
+---
+
+#### `vk describe <id>`
+
+Show a full task dossier, including recent activity log entries.
+
+```bash
+vk describe abc123
+vk describe abc123 --activity-limit 50
+vk describe abc123 --json
+```
+
+**Aliases:** `inspect`
+
+**Flags:**
+| Flag | Description |
+| ------------------ | -------------------------------------------- |
+| `--activity-limit` | Limit the number of activity entries returned |
+| `--json` | Output aggregated inspection JSON |
 
 ---
 
@@ -229,8 +264,10 @@ Create a new task.
 
 ```bash
 vk create "Implement OAuth login"
-vk create "Fix button alignment" --type code --priority high --project my-app --description "Objective:\nFix button alignment on settings page.\n\nScope:\n- In scope: settings page button layout\n- Out of scope: broader design refresh\n\nConstraints:\n- keep existing styling system\n\nExpected outputs:\n- corrected CSS/layout\n\nAcceptance criteria:\n- buttons align correctly across supported breakpoints\n\nDone criteria:\n- UI verified and task ready to close"
+vk create "Fix button alignment" --type code --priority high --project my-app --assigned-to codex --description "Objective:\nFix button alignment on settings page.\n\nScope:\n- In scope: settings page button layout\n- Out of scope: broader design refresh\n\nConstraints:\n- keep existing styling system\n\nExpected outputs:\n- corrected CSS/layout\n\nAcceptance criteria:\n- buttons align correctly across supported breakpoints\n\nDone criteria:\n- UI verified and task ready to close"
 ```
+
+`createdBy` is signed automatically by the authenticated VK actor, so there is no CLI flag to spoof task creator identity.
 
 **Flags:**
 | Flag | Description |
@@ -238,7 +275,10 @@ vk create "Fix button alignment" --type code --priority high --project my-app --
 | `--type` | Task type (code, research, content, etc.) |
 | `--priority` | Priority level (low, medium, high) |
 | `--project` | Project name |
+| `--sprint` | Sprint name or ID |
 | `--description` | Structured task description |
+| `--assigned-to` | Assign the task to an agent at creation time |
+| `--agent` | Legacy alias for `--assigned-to` |
 | `--json` | Output as JSON |
 
 ---
@@ -248,8 +288,9 @@ vk create "Fix button alignment" --type code --priority high --project my-app --
 Update task fields.
 
 ```bash
-vk update abc123 --status review
-vk update abc123 --title "New title" --priority high
+vk update abc123 --status in-progress
+vk update abc123 --title "New title" --priority high --assigned-to gemini
+vk update abc123 --unassign
 ```
 
 **Flags:**
@@ -260,7 +301,153 @@ vk update abc123 --title "New title" --priority high
 | `--priority` | New priority |
 | `--type` | New type |
 | `--project` | New project |
+| `--sprint` | New sprint |
+| `--assigned-to` | Assign/reassign the task |
+| `--agent` | Legacy alias for `--assigned-to` |
+| `--unassign` | Return the task to auto routing |
 | `--json` | Output as JSON |
+
+---
+
+#### `vk assign <id> <agent>`
+
+Explicitly assign or reassign a task.
+
+```bash
+vk assign abc123 codex
+vk assign abc123 gemini --json
+```
+
+---
+
+#### `vk unassign <id>`
+
+Clear explicit ownership and return the task to automatic routing.
+
+```bash
+vk unassign abc123
+```
+
+---
+
+#### `vk claim <id>`
+
+Claim a task for the current CLI agent identity.
+
+```bash
+vk claim abc123 --agent codex
+VK_AGENT_NAME=codex vk claim abc123
+```
+
+If no explicit `--agent` is provided, the CLI falls back to `VK_AGENT_NAME`, `VERITAS_AGENT_NAME`, `OPENCLAW_AGENT_NAME`, then `$USER`.
+
+---
+
+### Subtasks & Checklists
+
+Break tasks down into executable pieces and explicit done-criteria from the terminal.
+
+#### `vk subtask list <task-id>`
+
+```bash
+vk subtask list abc123
+vk subtask list abc123 --json
+```
+
+#### `vk subtask add <task-id> <title>`
+
+```bash
+vk subtask add abc123 "Implement callback handler"
+vk subtask add abc123 "Harden token exchange" \
+  --criterion "Handles expired auth codes" \
+  --criterion "Preserves existing session cookies"
+```
+
+#### `vk subtask check|uncheck <task-id> <subtask-id>`
+
+```bash
+vk subtask check abc123 9af01c2e
+vk subtask uncheck abc123 9af01c2e
+```
+
+#### `vk subtask criterion <task-id> <subtask-id> <index>`
+
+Toggle a zero-based acceptance-criterion checkbox on a subtask.
+
+```bash
+vk subtask criterion abc123 9af01c2e 0
+```
+
+#### `vk subtask delete <task-id> <subtask-id>`
+
+```bash
+vk subtask delete abc123 9af01c2e
+```
+
+---
+
+#### `vk verify list <task-id>`
+
+```bash
+vk verify list abc123
+vk verify list abc123 --json
+```
+
+#### `vk verify add <task-id> <description>`
+
+```bash
+vk verify add abc123 "Integration tests pass"
+```
+
+#### `vk verify check|uncheck <task-id> <step-id>`
+
+```bash
+vk verify check abc123 4d23ef91
+vk verify uncheck abc123 4d23ef91
+```
+
+#### `vk verify delete <task-id> <step-id>`
+
+```bash
+vk verify delete abc123 4d23ef91
+```
+
+---
+
+### Dependencies
+
+Model prerequisite work and blocking relationships directly from the CLI.
+
+#### `vk dependency list <task-id>`
+
+```bash
+vk dependency list abc123
+vk dependency list abc123 --json
+```
+
+#### `vk dependency add <task-id> <target-id>`
+
+By default, this means the current task depends on the target task.
+
+```bash
+vk dependency add abc123 def456
+vk dependency add abc123 def456 --blocks
+```
+
+With `--blocks`, the current task is marked as blocking the target task.
+
+#### `vk dependency remove <task-id> <target-id>`
+
+```bash
+vk dependency remove abc123 def456
+```
+
+#### `vk dependency graph <task-id>`
+
+```bash
+vk dependency graph abc123
+vk dependency graph abc123 --json
+```
 
 ---
 

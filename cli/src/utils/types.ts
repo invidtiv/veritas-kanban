@@ -1,5 +1,59 @@
+import type {
+  Attachment,
+  Comment,
+  Deliverable,
+  Observation,
+  ReviewState,
+  Subtask,
+  Task,
+  TaskAttempt,
+  VerificationStep,
+} from '@veritas-kanban/shared';
+
 // Re-export shared types
-export type { Task } from '@veritas-kanban/shared';
+export type {
+  Attachment,
+  Comment,
+  Deliverable,
+  Observation,
+  ReviewState,
+  Subtask,
+  Task,
+  TaskAttempt,
+  VerificationStep,
+} from '@veritas-kanban/shared';
+
+export interface ActivityEntry {
+  id?: string;
+  type: string;
+  taskId: string;
+  taskTitle: string;
+  timestamp: string;
+  agent?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface ResolvedTaskDependencies {
+  depends_on: Task[];
+  blocks: Task[];
+}
+
+export interface DependencyGraphNode {
+  task: Task;
+  children: DependencyGraphNode[];
+}
+
+export interface TaskDependencyGraph {
+  task: Task;
+  upstream: DependencyGraphNode[];
+  downstream: DependencyGraphNode[];
+}
+
+export interface TaskInspection {
+  task: Task;
+  dependencies: ResolvedTaskDependencies;
+  activity: ActivityEntry[];
+}
 
 // Metrics types
 export interface TokenMetrics {

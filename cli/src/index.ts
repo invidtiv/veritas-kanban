@@ -17,13 +17,22 @@ import { registerUsageCommands } from './commands/usage.js';
 import { registerSprintCommands } from './commands/sprints.js';
 import { registerConnectCommands } from './commands/connect.js';
 import { registerWorkloadCommands } from './commands/workload.js';
+import { registerSubtaskCommands } from './commands/subtasks.js';
+import { registerVerificationCommands } from './commands/verification.js';
+import { registerDependencyCommands } from './commands/dependencies.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const { version } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
 
 const program = new Command();
 
 program
   .name('vk')
   .description('Veritas Kanban CLI - Task management for AI agents')
-  .version('0.1.0');
+  .version(version);
 
 // Register all command groups
 registerTaskCommands(program);
@@ -43,5 +52,8 @@ registerUsageCommands(program);
 registerSprintCommands(program);
 registerConnectCommands(program);
 registerWorkloadCommands(program);
+registerSubtaskCommands(program);
+registerVerificationCommands(program);
+registerDependencyCommands(program);
 
 program.parse();
