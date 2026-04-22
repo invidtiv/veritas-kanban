@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Tasks now always persist `createdBy`, even when no assignee is set, and creator identities are normalized to configured agent identifiers when possible
+- Manual task assignment now accepts the full configured agent catalog instead of only the enabled/live subset, and the task details drawer layout no longer crushes wide tab labels
 - Mass archive failure caused by missing `/api/tasks/bulk-archive-by-ids` endpoint
 - MIME validation test fixtures now use valid PNG IHDR chunks (#266)
 - Status history tests isolated from real state

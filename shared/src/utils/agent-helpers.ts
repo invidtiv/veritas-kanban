@@ -10,6 +10,59 @@
 
 import type { AgentType, Task } from '../types/task.types.js';
 
+export interface AgentReference {
+  type: string;
+  name: string;
+}
+
+function normalizeAgentReference(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+/**
+ * Resolve an agent reference against a catalog of known agents.
+ * Matches by canonical type first, then by display name.
+ */
+export function findAgentReference<T extends AgentReference>(
+  agents: T[],
+  ref: string | undefined
+): T | undefined {
+  if (!ref) {
+    return undefined;
+  }
+
+  const normalizedRef = normalizeAgentReference(ref);
+  if (!normalizedRef) {
+    return undefined;
+  }
+
+  return agents.find((agent) => {
+    const normalizedType = normalizeAgentReference(agent.type);
+    const normalizedName = normalizeAgentReference(agent.name);
+    return normalizedType === normalizedRef || normalizedName === normalizedRef;
+  });
+}
+
+/**
+ * Convert an agent reference to the canonical agent type when possible.
+ */
+export function canonicalizeAgentReference<T extends AgentReference>(
+  agents: T[],
+  ref: string | undefined
+): string | undefined {
+  return findAgentReference(agents, ref)?.type;
+}
+
+/**
+ * Format an agent reference using the catalog display name.
+ */
+export function formatAgentReference<T extends AgentReference>(
+  agents: T[],
+  ref: string | undefined
+): string | undefined {
+  return findAgentReference(agents, ref)?.name;
+}
+
 /**
  * Get all assigned agents for a task.
  * Returns agents array if present, falls back to wrapping single agent.
@@ -35,22 +88,17 @@ export function getPrimaryAgent(task: Pick<Task, 'agent' | 'agents'>): AgentType
 /**
  * Check if a specific agent is assigned to a task.
  */
-export function isAgentAssigned(
-  task: Pick<Task, 'agent' | 'agents'>,
-  agentId: string
-): boolean {
-  return getAssignedAgents(task).some(
-    (a) => a.toLowerCase() === agentId.toLowerCase()
-  );
+export function isAgentAssigned(task: Pick<Task, 'agent' | 'agents'>, agentId: string): boolean {
+  return getAssignedAgents(task).some((a) => a.toLowerCase() === agentId.toLowerCase());
 }
 
 /**
  * Normalize agent fields on a task input.
  * Ensures `agents` and `agent` are consistent.
  */
-export function normalizeAgentFields<T extends { agent?: AgentType | 'auto'; agents?: AgentType[] }>(
-  input: T
-): T {
+export function normalizeAgentFields<
+  T extends { agent?: AgentType | 'auto'; agents?: AgentType[] },
+>(input: T): T {
   const result = { ...input };
 
   if (result.agents && result.agents.length > 0) {

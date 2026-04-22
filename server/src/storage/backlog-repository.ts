@@ -54,6 +54,7 @@ export class BacklogRepository {
         sprint: frontmatter.sprint,
         created: frontmatter.created || new Date().toISOString(),
         updated: frontmatter.updated || new Date().toISOString(),
+        createdBy: frontmatter.createdBy,
         agent: frontmatter.agent,
         git: frontmatter.git,
         github: frontmatter.github,

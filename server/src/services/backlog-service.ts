@@ -12,7 +12,8 @@ import { activityService } from './activity-service.js';
 import { getTelemetryService } from './telemetry-service.js';
 import type { TaskTelemetryEvent } from '@veritas-kanban/shared';
 import { createLogger } from '../lib/logger.js';
-import { NotFoundError } from '../middleware/error-handler.js';
+import { NotFoundError, ValidationError } from '../middleware/error-handler.js';
+import { validateAssignableAgentRef } from '../utils/agent-reference.js';
 
 const log = createLogger('backlog-service');
 
@@ -96,6 +97,16 @@ export class BacklogService {
    */
   async createBacklogTask(input: CreateTaskInput): Promise<Task> {
     const now = new Date().toISOString();
+    const agentValidation = await validateAssignableAgentRef(input.agent);
+    if (!agentValidation.valid) {
+      throw new ValidationError(agentValidation.reason || 'Invalid agent ref', [
+        {
+          code: 'INVALID_AGENT_REF',
+          message: agentValidation.reason || 'Invalid agent ref',
+          path: ['agent'],
+        },
+      ]);
+    }
 
     const task: Task = {
       id: this.generateTaskId(),
@@ -108,7 +119,8 @@ export class BacklogService {
       sprint: input.sprint,
       created: now,
       updated: now,
-      agent: input.agent,
+      createdBy: input.createdBy || 'unknown',
+      agent: agentValidation.canonicalRef || input.agent,
       subtasks: input.subtasks,
       blockedBy: input.blockedBy,
       timeTracking: {
@@ -151,6 +163,21 @@ export class BacklogService {
     const task = await this.backlogRepo.findById(id);
     if (!task) {
       throw new NotFoundError('Backlog task not found');
+    }
+
+    if (updates.agent !== undefined && updates.agent !== task.agent) {
+      const validation = await validateAssignableAgentRef(updates.agent);
+      if (!validation.valid) {
+        throw new ValidationError(validation.reason || 'Invalid agent ref', [
+          {
+            code: 'INVALID_AGENT_REF',
+            message: validation.reason || 'Invalid agent ref',
+            path: ['agent'],
+          },
+        ]);
+      }
+
+      updates.agent = validation.canonicalRef || updates.agent;
     }
 
     const updated = await this.backlogRepo.update(id, updates);

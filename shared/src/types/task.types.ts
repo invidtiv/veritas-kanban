@@ -175,6 +175,7 @@ export interface Task {
   sprint?: string;
   created: string;
   updated: string;
+  createdBy?: string;
 
   // Agent assignment — "auto" uses routing engine, or a specific agent slug
   agent?: AgentType | 'auto';
@@ -307,6 +308,7 @@ export interface CreateTaskInput {
   priority?: TaskPriority;
   project?: string;
   sprint?: string;
+  createdBy?: string;
   agent?: AgentType | 'auto'; // Pre-assign an agent (or "auto" for routing engine)
   agents?: AgentType[]; // Multi-agent assignment
   subtasks?: Subtask[]; // Can be provided when creating from a template

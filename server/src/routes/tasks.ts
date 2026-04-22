@@ -12,6 +12,7 @@ import { broadcastTaskChange } from '../services/broadcast-service.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { NotFoundError, ValidationError } from '../middleware/error-handler.js';
 import { sendPaginated } from '../middleware/response-envelope.js';
+import { resolveCanonicalActorRef } from '../utils/agent-reference.js';
 import { setLastModified } from '../middleware/cache-control.js';
 import { sanitizeTaskFields } from '../utils/sanitize.js';
 import { auditLog } from '../services/audit-service.js';
@@ -550,6 +551,8 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const actor = (await resolveCanonicalActorRef(authReq.auth?.keyName)) || 'unknown';
     try {
       var input = createTaskSchema.parse(req.body) as CreateTaskInput;
     } catch (error) {
@@ -560,7 +563,7 @@ router.post(
     }
     // Sanitize user-provided text fields to prevent stored XSS
     sanitizeTaskFields(input);
-    const task = await taskService.createTask(input);
+    const task = await taskService.createTask({ ...input, createdBy: actor });
     broadcastTaskChange('created', task.id);
 
     // Log activity
@@ -577,10 +580,9 @@ router.post(
     );
 
     // Audit log
-    const authReq = req as AuthenticatedRequest;
     await auditLog({
       action: 'task.create',
-      actor: authReq.auth?.keyName || 'unknown',
+      actor,
       resource: task.id,
       details: { title: task.title, type: task.type, priority: task.priority },
     });

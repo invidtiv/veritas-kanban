@@ -36,6 +36,56 @@ const priorityLabels: Record<TaskPriority, string> = {
   critical: 'Critical',
 };
 
+function formatAssignedAgent(
+  agent: Task['agent'],
+  enabledAgents: Array<{ type: string; name: string }>
+): string {
+  if (agent === 'auto' || !agent) {
+    return 'Auto (routing)';
+  }
+
+  return resolveAgentLabel(enabledAgents, agent) || agent;
+}
+
+function formatActorLabel(
+  actor: string | undefined,
+  enabledAgents: Array<{ type: string; name: string }>
+): string {
+  if (!actor) {
+    return 'Unknown';
+  }
+
+  if (actor === 'session') {
+    return 'Human (session)';
+  }
+
+  if (actor === 'localhost-bypass') {
+    return 'Localhost';
+  }
+
+  return resolveAgentLabel(enabledAgents, actor) || actor;
+}
+
+function resolveAgentLabel(
+  agents: Array<{ type: string; name: string }>,
+  ref: string | undefined
+): string | undefined {
+  if (!ref) {
+    return undefined;
+  }
+
+  const normalizedRef = ref.trim().toLowerCase();
+  if (!normalizedRef) {
+    return undefined;
+  }
+
+  return agents.find((agent) => {
+    const normalizedType = agent.type.trim().toLowerCase();
+    const normalizedName = agent.name.trim().toLowerCase();
+    return normalizedType === normalizedRef || normalizedName === normalizedRef;
+  })?.name;
+}
+
 export function TaskMetadataSection({
   task,
   onUpdate,
@@ -45,9 +95,11 @@ export function TaskMetadataSection({
   const { data: projects = [] } = useProjects();
   const { data: sprints = [] } = useSprints();
   const { data: config } = useConfig();
-  const enabledAgents = config?.agents.filter((a) => a.enabled) || [];
+  const assignableAgents = config?.agents || [];
   const [showNewProject, setShowNewProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const assignedAgentLabel = formatAssignedAgent(task.agent, assignableAgents);
+  const createdByLabel = formatActorLabel(task.createdBy, assignableAgents);
 
   // Get current type info
   const currentType = taskTypes.find((t) => t.id === task.type);
@@ -56,7 +108,7 @@ export function TaskMetadataSection({
   return (
     <div className="space-y-4">
       {/* Status, Type, Priority */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label className="text-muted-foreground">Status</Label>
           {readOnly ? (
@@ -213,8 +265,8 @@ export function TaskMetadataSection({
         )}
       </div>
 
-      {/* Sprint & Agent */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Sprint, assignment, and ownership */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-2">
           <Label className="text-muted-foreground">Sprint</Label>
           {readOnly ? (
@@ -244,12 +296,10 @@ export function TaskMetadataSection({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-muted-foreground">Agent</Label>
+          <Label className="text-muted-foreground">Assigned Agent</Label>
           {readOnly ? (
             <div className="text-sm font-medium px-3 py-2 bg-muted/30 rounded-md">
-              {task.agent === 'auto' || !task.agent
-                ? 'Auto (routing)'
-                : enabledAgents.find((a) => a.type === task.agent)?.name || task.agent}
+              {assignedAgentLabel}
             </div>
           ) : (
             <Select
@@ -263,7 +313,7 @@ export function TaskMetadataSection({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="auto">Auto (routing)</SelectItem>
-                {enabledAgents.map((a) => (
+                {assignableAgents.map((a) => (
                   <SelectItem key={a.type} value={a.type}>
                     {a.name}
                   </SelectItem>
@@ -271,6 +321,13 @@ export function TaskMetadataSection({
               </SelectContent>
             </Select>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-muted-foreground">Created By</Label>
+          <div className="text-sm font-medium px-3 py-2 bg-muted/30 rounded-md">
+            {createdByLabel}
+          </div>
         </div>
       </div>
     </div>

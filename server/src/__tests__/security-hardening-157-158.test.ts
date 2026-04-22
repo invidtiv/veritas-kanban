@@ -28,7 +28,25 @@ describe('Security Hardening (#157 #158)', () => {
     await fs.mkdir(tasksDir, { recursive: true });
     await fs.mkdir(archiveDir, { recursive: true });
 
-    service = new TaskService({ tasksDir, archiveDir });
+    service = new TaskService({
+      tasksDir,
+      archiveDir,
+      configService: {
+        getConfig: async () => ({
+          repos: [],
+          agents: [
+            {
+              type: 'configured-agent',
+              name: 'Configured Agent',
+              command: 'agent',
+              args: [],
+              enabled: false,
+            },
+          ],
+          defaultAgent: 'configured-agent',
+        }),
+      },
+    });
 
     // Register a valid agent for testing
     const registry = getAgentRegistryService();
@@ -49,7 +67,7 @@ describe('Security Hardening (#157 #158)', () => {
     await fs.rm(testRoot, { recursive: true, force: true }).catch(() => {});
   });
 
-  // ─── #157: Validate task.agent against registry ───
+  // ─── #157: Validate task.agent against configured agents or registry ───
 
   describe('#157 - agent ref validation on create/update', () => {
     it('should accept a valid registered agent ref on create', async () => {
@@ -66,7 +84,7 @@ describe('Security Hardening (#157 #158)', () => {
           title: 'Bad agent task',
           agent: 'nonexistent-agent',
         } as any)
-      ).rejects.toThrow(/not found in registry/);
+      ).rejects.toThrow(/not found in configured agents or registry/);
     });
 
     it('should reject a malformed agent ref on create', async () => {
@@ -81,12 +99,22 @@ describe('Security Hardening (#157 #158)', () => {
     it('should allow task creation with no agent', async () => {
       const task = await service.createTask({ title: 'No agent task' });
       expect(task.id).toBeTruthy();
+      expect(task.createdBy).toBe('unknown');
+    });
+
+    it('should accept a valid configured agent ref on create', async () => {
+      const task = await service.createTask({
+        title: 'Configured agent task',
+        agent: 'configured-agent',
+      } as any);
+
+      expect(task.agent).toBe('configured-agent');
     });
 
     it('should reject unknown agent ref on update', async () => {
       const task = await service.createTask({ title: 'Update test' });
       await expect(service.updateTask(task.id, { agent: 'fake-agent' } as any)).rejects.toThrow(
-        /not found in registry/
+        /not found in configured agents or registry/
       );
     });
 

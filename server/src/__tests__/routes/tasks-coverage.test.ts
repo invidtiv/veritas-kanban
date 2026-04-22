@@ -83,6 +83,18 @@ describe('Tasks Routes (actual module)', () => {
     vi.clearAllMocks();
     app = express();
     app.use(express.json());
+    app.use((req, _res, next) => {
+      (
+        req as typeof req & {
+          auth?: { role: 'agent'; keyName: string; isLocalhost: boolean };
+        }
+      ).auth = {
+        role: 'agent',
+        keyName: 'frontend-agent',
+        isLocalhost: false,
+      };
+      next();
+    });
     app.use('/api/tasks', taskRoutes);
     app.use(errorHandler);
   });
@@ -172,12 +184,20 @@ describe('Tasks Routes (actual module)', () => {
         type: 'code',
         priority: 'medium',
         created: '2025-01-01',
+        createdBy: 'frontend-agent',
       };
       mockTaskService.createTask.mockResolvedValue(newTask);
 
       const res = await request(app).post('/api/tasks').send({ title: 'New Task' });
       expect(res.status).toBe(201);
       expect(res.body.id).toBe('t1');
+      expect(mockTaskService.createTask).toHaveBeenCalledWith({
+        title: 'New Task',
+        description: '',
+        type: 'code',
+        priority: 'medium',
+        createdBy: 'frontend-agent',
+      });
     });
 
     it('should reject missing title', async () => {

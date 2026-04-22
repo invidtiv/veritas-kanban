@@ -19,6 +19,7 @@ import { NotFoundError, ValidationError } from '../middleware/error-handler.js';
 import { auditLog } from '../services/audit-service.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { sendPaginated } from '../middleware/response-envelope.js';
+import { resolveCanonicalActorRef } from '../utils/agent-reference.js';
 
 const router: RouterType = Router();
 const backlogService = getBacklogService();
@@ -106,6 +107,8 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const actor = (await resolveCanonicalActorRef(authReq.auth?.keyName)) || 'unknown';
     let input;
     try {
       input = createBacklogTaskSchema.parse(req.body);
@@ -116,13 +119,12 @@ router.post(
       throw error;
     }
 
-    const task = await backlogService.createBacklogTask(input);
+    const task = await backlogService.createBacklogTask({ ...input, createdBy: actor });
 
     // Audit log
-    const authReq = req as AuthenticatedRequest;
     await auditLog({
       action: 'backlog.create',
-      actor: authReq.auth?.keyName || 'unknown',
+      actor,
       resource: task.id,
       details: { title: task.title },
     });

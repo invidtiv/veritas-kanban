@@ -31,6 +31,7 @@ import {
   type TaskSyncContext,
 } from './agent-registry-service.js';
 import { getTasksActiveDir, getTasksArchiveDir } from '../utils/paths.js';
+import { validateAssignableAgentRef } from '../utils/agent-reference.js';
 
 const log = createLogger('task-cache');
 const TASK_SYNC_CONTEXT: TaskSyncContext = createTaskSyncToken('task-service');
@@ -71,6 +72,7 @@ export interface TaskServiceOptions {
   tasksDir?: string;
   archiveDir?: string;
   telemetryService?: TelemetryService;
+  configService?: Pick<ConfigService, 'getConfig'>;
 }
 
 /** Ignore file-watcher events within this window after our own writes */
@@ -80,6 +82,7 @@ export class TaskService {
   private tasksDir: string;
   private archiveDir: string;
   private telemetry: TelemetryService;
+  private configService: Pick<ConfigService, 'getConfig'>;
 
   // ============ In-Memory Cache ============
   private cache: Map<string, Task> = new Map();
@@ -95,6 +98,7 @@ export class TaskService {
     this.tasksDir = options.tasksDir || DEFAULT_TASKS_DIR;
     this.archiveDir = options.archiveDir || DEFAULT_ARCHIVE_DIR;
     this.telemetry = options.telemetryService || getTelemetryService();
+    this.configService = options.configService || new ConfigService();
     this.ensureDirectories();
     this.startTaskSyncReconciler();
   }
@@ -435,6 +439,7 @@ export class TaskService {
         priority: data.priority || 'medium',
         project: data.project,
         sprint: data.sprint,
+        createdBy: data.createdBy,
         agent: data.agent,
         created: data.created || new Date().toISOString(),
         updated: data.updated || new Date().toISOString(),
@@ -567,6 +572,7 @@ export class TaskService {
       priority: input.priority || 'medium',
       project: input.project,
       sprint: input.sprint,
+      createdBy: input.createdBy || 'unknown',
       agent: input.agent, // Pre-assigned agent (or "auto" for routing)
       subtasks: input.subtasks, // Include subtasks from template
       blockedBy: input.blockedBy, // Include dependencies from blueprint
@@ -574,10 +580,9 @@ export class TaskService {
       updated: now,
     };
 
-    // Validate agent ref against registry (#157)
+    // Validate agent ref against the configured agent catalog or live registry.
     if (task.agent) {
-      const registry = getAgentRegistryService();
-      const validation = registry.validateAgentRef(task.agent);
+      const validation = await validateAssignableAgentRef(task.agent, this.configService);
       if (!validation.valid) {
         throw new ValidationError(validation.reason || 'Invalid agent ref', [
           {
@@ -587,6 +592,8 @@ export class TaskService {
           },
         ]);
       }
+
+      task.agent = (validation.canonicalRef || task.agent) as Task['agent'];
     }
 
     const filename = this.taskToFilename(task);
@@ -776,10 +783,9 @@ export class TaskService {
         checkpointUpdate = undefined;
       }
 
-      // Validate agent ref against registry if being changed (#157)
+      // Validate agent ref against the configured agent catalog or live registry.
       if (restInput.agent !== undefined && restInput.agent !== freshTask.agent) {
-        const registry = getAgentRegistryService();
-        const validation = registry.validateAgentRef(restInput.agent);
+        const validation = await validateAssignableAgentRef(restInput.agent, this.configService);
         if (!validation.valid) {
           throw new ValidationError(validation.reason || 'Invalid agent ref', [
             {
@@ -789,6 +795,8 @@ export class TaskService {
             },
           ]);
         }
+
+        restInput.agent = (validation.canonicalRef || restInput.agent) as Task['agent'];
       }
 
       updatedTask = {

@@ -74,7 +74,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
   const { data: projects = [] } = useProjects();
   const { data: sprints = [] } = useSprints();
   const { data: config } = useConfig();
-  const enabledAgents = config?.agents.filter((a) => a.enabled) || [];
+  const assignableAgents = config?.agents || [];
 
   const {
     selectedTemplate,
@@ -403,7 +403,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
                           <span className="text-muted-foreground">Auto</span>
                           <span className="text-xs text-muted-foreground ml-1">(routing)</span>
                         </SelectItem>
-                        {enabledAgents.map((a) => (
+                        {assignableAgents.map((a) => (
                           <SelectItem key={a.type} value={a.type}>
                             {a.name}
                           </SelectItem>

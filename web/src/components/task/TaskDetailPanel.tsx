@@ -90,7 +90,7 @@ export function TaskDetailPanel({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        className="w-[700px] sm:max-w-[700px] overflow-hidden flex flex-col"
+        className="flex flex-col overflow-hidden data-[side=right]:w-[96vw] data-[side=right]:max-w-[96vw] data-[side=right]:sm:w-[920px] data-[side=right]:sm:max-w-[920px] data-[side=right]:lg:w-[1040px] data-[side=right]:lg:max-w-[1040px] data-[side=right]:xl:w-[1160px] data-[side=right]:xl:max-w-[1160px] data-[side=right]:2xl:w-[1280px] data-[side=right]:2xl:max-w-[1280px]"
         aria-label={`Task details: ${localTask.title}`}
       >
         <SheetHeader className="space-y-1 flex-shrink-0">
@@ -178,53 +178,57 @@ export function TaskDetailPanel({
           onValueChange={setActiveTab}
           className="flex-1 flex flex-col overflow-hidden mt-3"
         >
-          <TabsList
-            className={`grid w-full flex-shrink-0 ${isCodeTask ? (taskSettings.enableAttachments ? 'grid-cols-9' : 'grid-cols-8') : taskSettings.enableAttachments ? 'grid-cols-5' : 'grid-cols-4'}`}
-          >
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="progress" className="flex items-center gap-1">
-              <NotebookPen className="h-3 w-3" />
-              Progress
-            </TabsTrigger>
-            <TabsTrigger value="observations" className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              Observations
-            </TabsTrigger>
-            {taskSettings.enableAttachments && (
-              <TabsTrigger value="attachments" className="flex items-center gap-1">
-                <Paperclip className="h-3 w-3" />
-                Attachments
+          <div className="-mx-1 overflow-x-auto px-1 pb-1">
+            <TabsList
+              className={`grid min-w-max flex-shrink-0 gap-1 ${isCodeTask ? (taskSettings.enableAttachments ? 'grid-cols-9' : 'grid-cols-8') : taskSettings.enableAttachments ? 'grid-cols-5' : 'grid-cols-4'}`}
+            >
+              <TabsTrigger value="details" className="px-3">
+                Details
               </TabsTrigger>
-            )}
-            {isCodeTask && (
-              <>
-                <TabsTrigger value="git" className="flex items-center gap-1">
-                  <GitBranch className="h-3 w-3" />
-                  Git
+              <TabsTrigger value="progress" className="flex items-center gap-1 px-3">
+                <NotebookPen className="h-3 w-3" />
+                Progress
+              </TabsTrigger>
+              <TabsTrigger value="observations" className="flex items-center gap-1 px-3">
+                <Eye className="h-3 w-3" />
+                Observations
+              </TabsTrigger>
+              {taskSettings.enableAttachments && (
+                <TabsTrigger value="attachments" className="flex items-center gap-1 px-3">
+                  <Paperclip className="h-3 w-3" />
+                  Attachments
                 </TabsTrigger>
-                <TabsTrigger value="agent" className="flex items-center gap-1">
-                  <Bot className="h-3 w-3" />
-                  Agent
-                </TabsTrigger>
-                <TabsTrigger
-                  value="changes"
-                  disabled={!hasWorktree}
-                  className="flex items-center gap-1"
-                >
-                  <FileDiff className="h-3 w-3" />
-                  Changes
-                </TabsTrigger>
-                <TabsTrigger value="review" className="flex items-center gap-1">
-                  <ClipboardCheck className="h-3 w-3" />
-                  Review
-                </TabsTrigger>
-              </>
-            )}
-            <TabsTrigger value="metrics" className="flex items-center gap-1">
-              <BarChart3 className="h-3 w-3" />
-              Metrics
-            </TabsTrigger>
-          </TabsList>
+              )}
+              {isCodeTask && (
+                <>
+                  <TabsTrigger value="git" className="flex items-center gap-1 px-3">
+                    <GitBranch className="h-3 w-3" />
+                    Git
+                  </TabsTrigger>
+                  <TabsTrigger value="agent" className="flex items-center gap-1 px-3">
+                    <Bot className="h-3 w-3" />
+                    Agent
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="changes"
+                    disabled={!hasWorktree}
+                    className="flex items-center gap-1 px-3"
+                  >
+                    <FileDiff className="h-3 w-3" />
+                    Changes
+                  </TabsTrigger>
+                  <TabsTrigger value="review" className="flex items-center gap-1 px-3">
+                    <ClipboardCheck className="h-3 w-3" />
+                    Review
+                  </TabsTrigger>
+                </>
+              )}
+              <TabsTrigger value="metrics" className="flex items-center gap-1 px-3">
+                <BarChart3 className="h-3 w-3" />
+                Metrics
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <div className="flex-1 overflow-y-auto mt-4">
             {/* Details Tab */}
