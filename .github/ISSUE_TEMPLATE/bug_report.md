@@ -32,9 +32,9 @@ If applicable, add screenshots to help explain your problem.
 ## Environment
 
 - **OS:** [e.g., macOS 14.1, Windows 11, Ubuntu 22.04]
-- **Node.js version:** [e.g., 18.17.0]
+- **Node.js version:** [e.g., 22.13.0]
 - **Browser:** [e.g., Chrome 120, Safari 17]
-- **Veritas Kanban version:** [e.g., 1.0.0]
+- **Veritas Kanban version:** [e.g., 4.0.1]
 
 ## Additional Context
 

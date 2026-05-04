@@ -11,7 +11,7 @@ Built for developers who want a visual Kanban board that works with autonomous c
 [![CI](https://github.com/BradGroux/veritas-kanban/actions/workflows/ci.yml/badge.svg)](https://github.com/BradGroux/veritas-kanban/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-4.0.1-blue.svg)](CHANGELOG.md)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue.svg)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 ![Veritas Kanban — Board Overview](assets/demo-overview.gif)
@@ -81,7 +81,7 @@ Open [http://localhost:3000](http://localhost:3000) — that's it. The board aut
 
 ### Best Practices for Agentic AI
 
-1. **Run locally first.** Keep your board and agents on your own machine until you fully understand the behavior. Never expose an unauthenticated instance to the internet. **Veritas Kanban does not include rate limiting** — if you deploy publicly, add a reverse proxy (nginx, Caddy, Cloudflare) with rate limiting in front of it.
+1. **Run locally first.** Keep your board and agents on your own machine until you fully understand the behavior. Never expose an unauthenticated instance to the internet. Veritas Kanban includes built-in API rate limiting, but if you deploy publicly, still add a reverse proxy (nginx, Caddy, Cloudflare) with edge-level rate limiting in front of it.
 
 2. **Never trigger agents from uncontrolled inputs.** Don't let inbound emails, webhooks from third parties, or public form submissions automatically spawn agent work. An attacker who can craft an input can control your agent.
 
@@ -137,7 +137,7 @@ Isolated worktrees per task — no branch switching, no conflicts. Built-in code
 
 ### 📁 Zero Infrastructure
 
-Tasks are markdown files. Settings are JSON. Workflows are YAML. No database, no Docker, no Redis. Clone, `pnpm install`, `pnpm dev` — done. Everything is `grep`-friendly, version-controllable, and human-readable. Back up your entire board with `git push`.
+Tasks are markdown files. Settings are JSON. Workflows are YAML. No database, no Redis, and no Docker required for local use. Clone, `pnpm install`, `pnpm dev` — done. Everything is `grep`-friendly, version-controllable, and human-readable. Back up your entire board with `git push`.
 
 ### 🔌 Three Integration Surfaces
 
@@ -273,7 +273,7 @@ Tasks are markdown files. Settings are JSON. Workflows are YAML. No database, no
 | ------------------- | ------------------------------------ | -------------------------------- |
 | **Frontend**        | React, Vite, Tailwind CSS, Shadcn UI | React 19, Vite 7.3, Tailwind 4.2 |
 | **Backend**         | Express, WebSocket                   | Express 5.2                      |
-| **Language**        | TypeScript (strict mode)             | 5.7                              |
+| **Language**        | TypeScript (strict mode)             | 6.0                              |
 | **Storage**         | Markdown files with YAML frontmatter | gray-matter                      |
 | **Git**             | simple-git, worktree management      | —                                |
 | **Testing**         | Playwright (E2E), Vitest (unit)      | Playwright 1.58, Vitest 4        |
