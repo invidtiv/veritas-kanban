@@ -1,10 +1,10 @@
-# QMD Search Foundation
+# QMD Retrieval
 
-Veritas Kanban v4.1 adds the first slice of QMD-backed retrieval: a server-side search abstraction and `POST /api/search` endpoint. QMD is optional; if it is unavailable, VK falls back to built-in keyword search across markdown files.
+Veritas Kanban v4.1 adds QMD-backed retrieval for task/docs search, duplicate detection, and VERITAS chat context. QMD is optional; if it is unavailable, VK falls back to built-in keyword search across markdown files.
 
 ## Collections
 
-The foundation searches these collections:
+Retrieval searches these collections:
 
 - `tasks-active` — `tasks/active/**/*.md`
 - `tasks-archive` — `tasks/archive/**/*.md`
@@ -84,6 +84,6 @@ Clients can opt out per chat send by passing `includeContext: false`.
 
 The authenticated API exposes `POST /api/search/index/refresh` for operators and automation. Send `{ "embed": false }` to update collections without recomputing embeddings.
 
-## Next v4.1 PRs
+## Scheduling
 
-- Add deployment-specific schedules as needed with `pnpm qmd:refresh` or `POST /api/search/index/refresh`.
+Add deployment-specific schedules as needed with `pnpm qmd:refresh` or `POST /api/search/index/refresh`.

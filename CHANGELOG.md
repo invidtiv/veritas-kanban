@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-05-04
+
+### Added
+
+- QMD-backed search foundation with keyword fallback across active tasks, archived tasks, and docs (#290)
+- In-app search dialog with backend and collection controls, fallback status, and task-result navigation (#291)
+- Duplicate detection hints in the create-task dialog using active and archived task retrieval (#292)
+- VERITAS chat context injection with compact, cited `<veritas_context>` blocks and per-message opt-out (#293)
+- QMD index maintenance commands and API refresh endpoint:
+  - `pnpm qmd:setup`
+  - `pnpm qmd:refresh`
+  - `POST /api/search/index/refresh` (#294)
+
+### Changed
+
+- Documented the v4.1 QMD setup, search UI, duplicate detection, VERITAS context injection, and index maintenance workflows
+- Updated package versions from `4.0.1` to `4.1.0`
+
 ## [4.0.1] - 2026-05-04
 
 ### Fixed
@@ -1379,7 +1397,8 @@ Veritas Kanban is an AI-native project management board built for developers and
 
 _Built by [Digital Meld](https://digitalmeld.io) — AI-driven enterprise automation._
 
-[unreleased]: https://github.com/BradGroux/veritas-kanban/compare/v4.0.1...HEAD
+[unreleased]: https://github.com/BradGroux/veritas-kanban/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/BradGroux/veritas-kanban/compare/v4.0.1...v4.1.0
 [4.0.1]: https://github.com/BradGroux/veritas-kanban/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/BradGroux/veritas-kanban/compare/v3.3.3...v4.0.0
 [3.3.3]: https://github.com/BradGroux/veritas-kanban/compare/v3.3.2...v3.3.3
