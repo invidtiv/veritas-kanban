@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { api, type SearchBackend, type SearchCollection, type SearchResponse } from '@/lib/api';
+import { extractTaskId } from '@/lib/search-utils';
 import { cn } from '@/lib/utils';
 
 const COLLECTIONS: { id: SearchCollection; label: string }[] = [
@@ -38,12 +39,6 @@ interface SearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTaskOpen?: (taskId: string) => void;
-}
-
-function extractTaskId(path: string): string | null {
-  const fileName = path.split('/').pop() ?? '';
-  const match = fileName.match(/^(task_[^./]+?)(?:-[^/]*)?\.md$/);
-  return match?.[1] ?? null;
 }
 
 function collectionIcon(collection: string) {
