@@ -760,6 +760,7 @@ See the [open issues](https://github.com/BradGroux/veritas-kanban/issues) for wh
 
 ### Backlog
 
+- [QMD Retrieval for Veritas Kanban](https://github.com/BradGroux/veritas-kanban/issues/171) — v4.1 staged track for task/docs search, duplicate detection, context injection, and index maintenance
 - [WCAG 2.1 AA accessibility](https://github.com/BradGroux/veritas-kanban/issues/1) — Full keyboard navigation, screen reader support, color contrast
 - [Example video](https://github.com/BradGroux/veritas-kanban/issues/68) — Hosted walkthrough video on YouTube or Vimeo
 
