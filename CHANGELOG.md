@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-05-04
+
 ### Fixed
 
+- Restored task detail side-popout spacing after the shadcn/ui v4 sheet padding change
+- Prevented task detail tabs from being squeezed in code-task popouts by allowing horizontal tab overflow
 - Mass archive failure caused by missing `/api/tasks/bulk-archive-by-ids` endpoint
 - MIME validation test fixtures now use valid PNG IHDR chunks (#266)
 - Status history tests isolated from real state
@@ -22,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Required `N8N_WEBHOOK_SECRET` for unauthenticated n8n webhook requests
+- Hardened n8n webhook secret comparison, attachment type checks, filename sanitization, and path containment
+- Patched high and moderate dependency advisories for `@xmldom/xmldom`, `hono`, `postcss`, and `sanitize-html`
 - Hardened localhost bypass and broadcast frontmatter parsing (#242)
 - Startup init failures now fatal with shutdown timeouts (#241)
 - Config cache stampede prevention and corrupted activity file logging (#240)
@@ -1372,7 +1379,8 @@ Veritas Kanban is an AI-native project management board built for developers and
 
 _Built by [Digital Meld](https://digitalmeld.io) — AI-driven enterprise automation._
 
-[unreleased]: https://github.com/BradGroux/veritas-kanban/compare/v4.0.0...HEAD
+[unreleased]: https://github.com/BradGroux/veritas-kanban/compare/v4.0.1...HEAD
+[4.0.1]: https://github.com/BradGroux/veritas-kanban/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/BradGroux/veritas-kanban/compare/v3.3.3...v4.0.0
 [3.3.3]: https://github.com/BradGroux/veritas-kanban/compare/v3.3.2...v3.3.3
 [1.4.1]: https://github.com/BradGroux/veritas-kanban/compare/v1.4.0...v1.4.1

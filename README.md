@@ -10,7 +10,7 @@ Built for developers who want a visual Kanban board that works with autonomous c
 
 [![CI](https://github.com/BradGroux/veritas-kanban/actions/workflows/ci.yml/badge.svg)](https://github.com/BradGroux/veritas-kanban/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-4.0.1-blue.svg)](CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -297,7 +297,7 @@ Veritas Kanban is neither. It's the **visual command center for agentic work** �
 | **YAML workflow pipelines**     |      ✅ Loops, gates, parallel      |     ⚠️ Code-defined only     |          ❌           |
 | **Real-time agent dashboard**   |    ✅ Status, model attribution     |              ❌              |          ❌           |
 | **Agent communication**         | ✅ Squad Chat with lifecycle events |       ⚠️ Internal only       |          ❌           |
-| **MCP server**                  |             ✅ 33+ tools            |              ❌              |          ❌           |
+| **MCP server**                  |            ✅ 33+ tools             |              ❌              |          ❌           |
 | **CLI**                         |          ✅ Full lifecycle          |              ❌              |      ⚠️ Limited       |
 | **Git worktrees + code review** |             ✅ Built-in             |              ❌              |          ❌           |
 | **Task persistence**            |          ✅ Markdown files          |         ❌ In-memory         |      ✅ Database      |
@@ -673,19 +673,19 @@ pnpm test:e2e   # E2E tests (Playwright)
 
 ## 📚 Documentation
 
-| Document                                   | Description                      |
-| ------------------------------------------ | -------------------------------- |
-| [Features](docs/FEATURES.md)               | Complete feature reference       |
-| [API Reference](docs/API-REFERENCE.md)     | Auth, endpoints, WebSocket docs  |
-| [CLI Guide](docs/CLI-GUIDE.md)             | Comprehensive CLI usage guide    |
+| Document                                       | Description                                  |
+| ---------------------------------------------- | -------------------------------------------- |
+| [Features](docs/FEATURES.md)                   | Complete feature reference                   |
+| [API Reference](docs/API-REFERENCE.md)         | Auth, endpoints, WebSocket docs              |
+| [CLI Guide](docs/CLI-GUIDE.md)                 | Comprehensive CLI usage guide                |
 | [Self-Hosting Guide](docs/guides/SELF_HOST.md) | Production deployment, reverse proxy, Docker |
-| [Deployment](docs/DEPLOYMENT.md)           | Docker, bare metal, env config   |
-| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues & solutions        |
-| [Contributing](CONTRIBUTING.md)            | How to contribute, PR guidelines |
-| [Security Policy](SECURITY.md)             | Vulnerability reporting          |
-| [Code of Conduct](CODE_OF_CONDUCT.md)      | Community guidelines             |
-| [Changelog](CHANGELOG.md)                  | Release history                  |
-| [Sprint Docs](docs/)                       | Sprint planning & audit reports  |
+| [Deployment](docs/DEPLOYMENT.md)               | Docker, bare metal, env config               |
+| [Troubleshooting](docs/TROUBLESHOOTING.md)     | Common issues & solutions                    |
+| [Contributing](CONTRIBUTING.md)                | How to contribute, PR guidelines             |
+| [Security Policy](SECURITY.md)                 | Vulnerability reporting                      |
+| [Code of Conduct](CODE_OF_CONDUCT.md)          | Community guidelines                         |
+| [Changelog](CHANGELOG.md)                      | Release history                              |
+| [Sprint Docs](docs/)                           | Sprint planning & audit reports              |
 
 ---
 
