@@ -47,6 +47,7 @@ tasks/archive-attachments/
 
 # Historical broken config data (should never have been tracked)
 .veritas-kanban.broken/
+.safety/
 
 # Test
 coverage/
@@ -98,6 +99,9 @@ backups/
 
 # Internal data directories - NEVER commit
 tasks/
+!tasks/
+!tasks/examples/
+!tasks/examples/*.md
 .veritas-kanban/
 
 # Local security middleware (not shared)
