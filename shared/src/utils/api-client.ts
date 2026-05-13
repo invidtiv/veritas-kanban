@@ -13,19 +13,59 @@ interface ApiEnvelope<T> {
   meta?: Record<string, unknown>;
 }
 
+function getEnv(name: string): string | undefined {
+  return typeof process !== 'undefined' ? process.env?.[name] : undefined;
+}
+
+function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
+  const normalized: Record<string, string> = {};
+
+  if (!headers) {
+    return normalized;
+  }
+
+  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+    headers.forEach((value, key) => {
+      normalized[key.toLowerCase()] = value;
+    });
+    return normalized;
+  }
+
+  if (Array.isArray(headers)) {
+    for (const [key, value] of headers) {
+      normalized[key.toLowerCase()] = value;
+    }
+    return normalized;
+  }
+
+  for (const [key, value] of Object.entries(headers as Record<string, string>)) {
+    normalized[key.toLowerCase()] = value;
+  }
+
+  return normalized;
+}
+
+export function buildApiHeaders(headers?: HeadersInit, apiKey = getEnv('VK_API_KEY')) {
+  const normalized = normalizeHeaders(headers);
+  const hasAuthHeader = 'authorization' in normalized || 'x-api-key' in normalized;
+
+  return {
+    'content-type': 'application/json',
+    ...normalized,
+    ...(apiKey && !hasAuthHeader ? { 'x-api-key': apiKey } : {}),
+  };
+}
+
 /**
  * Create an API client instance
  * @param baseUrl - Base URL for the API (default: http://localhost:3001)
  * @returns API client function
  */
-export function createApiClient(baseUrl = DEFAULT_BASE) {
+export function createApiClient(baseUrl = DEFAULT_BASE, apiKey = getEnv('VK_API_KEY')) {
   return async function api<T>(path: string, options?: RequestInit): Promise<T> {
     const res = await fetch(`${baseUrl}${path}`, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers: buildApiHeaders(options?.headers, apiKey),
     });
 
     if (!res.ok) {
