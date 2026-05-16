@@ -232,6 +232,21 @@ updated: '2026-01-26T10:00:00.000Z'
       expect(result).toBeNull();
     });
 
+    it('should clear checkpoint when task is marked done', async () => {
+      const task = await service.createTask({ title: 'Checkpointed Task' });
+      await service.updateTask(task.id, {
+        checkpoint: {
+          step: 2,
+          state: { step: 'mid-run' },
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+      const completed = await service.updateTask(task.id, { status: 'done' });
+
+      expect(completed?.checkpoint).toBeUndefined();
+    });
+
     it('should rename file when title changes', async () => {
       const task = await service.createTask({ title: 'Original Name' });
       const originalFiles = await fs.readdir(tasksDir);

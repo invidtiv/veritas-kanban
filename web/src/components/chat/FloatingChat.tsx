@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
-import { ChatPanel } from './ChatPanel';
 import { chatEventTarget } from '@/hooks/useTaskSync';
 import { cn } from '@/lib/utils';
+
+const ChatPanel = lazy(() =>
+  import('./ChatPanel').then((mod) => ({
+    default: mod.ChatPanel,
+  }))
+);
 
 /**
  * Floating chat bubble — bottom-right corner.
@@ -12,6 +17,7 @@ import { cn } from '@/lib/utils';
  */
 export function FloatingChat() {
   const [open, setOpen] = useState(false);
+  const [panelMounted, setPanelMounted] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
 
   // Listen for incoming chat messages when panel is closed
@@ -35,6 +41,7 @@ export function FloatingChat() {
 
   // Clear unread when opening
   const handleOpen = () => {
+    setPanelMounted(true);
     setOpen(true);
     setHasUnread(false);
   };
@@ -63,7 +70,11 @@ export function FloatingChat() {
       </Button>
 
       {/* Chat panel — board-level (no taskId) */}
-      <ChatPanel open={open} onOpenChange={setOpen} />
+      {panelMounted && (
+        <Suspense fallback={null}>
+          <ChatPanel open={open} onOpenChange={setOpen} />
+        </Suspense>
+      )}
     </>
   );
 }

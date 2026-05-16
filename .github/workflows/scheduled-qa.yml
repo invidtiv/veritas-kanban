@@ -1,0 +1,148 @@
+name: Scheduled QA
+
+on:
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      load_profile:
+        description: k6 load profile to run
+        required: true
+        default: smoke
+        type: choice
+        options:
+          - smoke
+          - full
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+  LOG_LEVEL: warn
+  VERITAS_ADMIN_KEY: scheduled-qa-admin-key-000000000000
+  VERITAS_AUTH_LOCALHOST_BYPASS: 'true'
+  VERITAS_AUTH_LOCALHOST_ROLE: admin
+  VERITAS_JWT_SECRET: scheduled-qa-jwt-secret-00000000000000000000000000000000
+
+jobs:
+  playwright:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      VERITAS_DATA_DIR: ${{ runner.temp }}/veritas-playwright-data
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  k6:
+    name: k6 Load Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      K6_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.load_profile || 'smoke' }}
+      VERITAS_DATA_DIR: ${{ runner.temp }}/veritas-k6-data
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build runtime packages
+        run: pnpm build
+
+      - name: Start API server
+        run: |
+          mkdir -p "$VERITAS_DATA_DIR"
+          pnpm --filter @veritas-kanban/server start > "$RUNNER_TEMP/veritas-server.log" 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/veritas-server.pid"
+
+      - name: Wait for API health
+        run: |
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3001/api/health > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          cat "$RUNNER_TEMP/veritas-server.log"
+          exit 1
+
+      - name: Run k6 profile
+        run: |
+          mkdir -p k6-results
+
+          if [ "$K6_PROFILE" = "full" ]; then
+            scripts="smoke read-load write-load mixed-load ws-stress"
+          else
+            scripts="smoke"
+          fi
+
+          for script in $scripts; do
+            docker run --rm --network host \
+              -e BASE_URL=http://127.0.0.1:3001 \
+              -e WS_URL=ws://127.0.0.1:3001/ws \
+              -e API_KEY="$VERITAS_ADMIN_KEY" \
+              -v "$PWD:/work" \
+              -w /work \
+              grafana/k6:latest run \
+              --summary-export "k6-results/${script}.json" \
+              "load-tests/k6/${script}.js"
+          done
+
+      - name: Stop API server
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/veritas-server.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/veritas-server.pid")" || true
+          fi
+
+      - name: Upload k6 artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-artifacts
+          path: |
+            k6-results/
+            ${{ runner.temp }}/veritas-server.log
+          if-no-files-found: ignore
+          retention-days: 7

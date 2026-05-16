@@ -11,7 +11,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { createLogger } from '../lib/logger.js';
-import { validateWebhookUrl } from '../utils/url-validation.js';
+import { safeFetch } from '../utils/url-validation.js';
 import type { Task, TaskStatus } from '@veritas-kanban/shared';
 import type {
   TransitionHooksConfig,
@@ -376,13 +376,6 @@ async function sendWebhook(
   fromStatus: TaskStatus | undefined,
   toStatus: TaskStatus
 ): Promise<void> {
-  // Validate URL to prevent SSRF attacks
-  const validation = validateWebhookUrl(url);
-  if (!validation.valid) {
-    log.warn({ url, reason: validation.reason }, 'Webhook URL blocked (SSRF prevention)');
-    return;
-  }
-
   const payload = {
     event: 'status_transition',
     taskId: task.id,
@@ -394,7 +387,7 @@ async function sendWebhook(
     timestamp: new Date().toISOString(),
   };
 
-  const response = await fetch(url, {
+  const response = await safeFetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -403,6 +396,11 @@ async function sendWebhook(
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(10_000),
   });
+
+  if (!response) {
+    log.warn({ url }, 'Transition webhook URL blocked (SSRF prevention)');
+    return;
+  }
 
   if (!response.ok) {
     throw new Error(`Webhook failed: ${response.status} ${response.statusText}`);

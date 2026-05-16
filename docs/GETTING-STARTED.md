@@ -251,13 +251,13 @@ prompt-registry/
 
 Stale docs = hallucinating AI. Keep these files current:
 
-| File                     | Purpose                                                            |
-| ------------------------ | ------------------------------------------------------------------ |
-| `CLAUDE.md`              | Agent rules, architecture, lessons learned. **Template included.** |
-| `AGENTS.md`              | Personality, escalation rules, cross-model review requirement.     |
-| `SOUL.md`                | "Who are we?" - tone/voice used by agents.                         |
-| `GPT.md` / `CODEX.md`    | Model-specific guardrails (optional).                              |
-| `docs/BEST-PRACTICES.md` | Patterns and anti-patterns all agents follow.                      |
+| File                     | Purpose                                                              |
+| ------------------------ | -------------------------------------------------------------------- |
+| `CLAUDE.md`              | Agent rules, architecture, lessons learned. **Current repo source.** |
+| `AGENTS.md`              | Optional local agent instructions if your deployment uses that file. |
+| `SOUL.md`                | Optional tone/voice guide if your team keeps one.                    |
+| `GPT.md` / `CODEX.md`    | Optional model-specific guardrails.                                  |
+| `docs/BEST-PRACTICES.md` | Patterns and anti-patterns all agents follow.                        |
 
 **Cadence:**
 

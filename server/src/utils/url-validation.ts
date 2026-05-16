@@ -11,6 +11,8 @@
  * @see docs/SECURITY_AUDIT_2026-01-28.md — SSRF prevention
  */
 
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { createLogger } from '../lib/logger.js';
 
 const log = createLogger('url-validation');
@@ -93,6 +95,27 @@ function isBlockedIPv6(host: string): { blocked: boolean; reason?: string } {
     normalized.startsWith('[fd')
   ) {
     return { blocked: true, reason: 'IPv6 unique-local' };
+  }
+
+  return { blocked: false };
+}
+
+function isBlockedIpAddress(
+  address: string,
+  opts: UrlValidationOptions
+): { blocked: boolean; reason?: string } {
+  if (isIP(address) === 4) {
+    const check = isBlockedIPv4(address);
+    if (check.blocked && !opts.allowPrivateIp && !opts.allowLocalhost) {
+      return check;
+    }
+  }
+
+  if (isIP(address) === 6) {
+    const check = isBlockedIPv6(address);
+    if (check.blocked && !opts.allowPrivateIp && !opts.allowLocalhost) {
+      return check;
+    }
   }
 
   return { blocked: false };
@@ -225,6 +248,42 @@ export function validateWebhookUrl(
   return { valid: true, normalized: parsed.href };
 }
 
+async function validateResolvedHostname(
+  parsed: URL,
+  opts: UrlValidationOptions
+): Promise<UrlValidationResult> {
+  const hostname = parsed.hostname;
+
+  if (isIP(hostname) !== 0 || isLocalhostHostname(hostname)) {
+    return { valid: true, normalized: parsed.href };
+  }
+
+  try {
+    const records = await lookup(hostname, { all: true, verbatim: true });
+    for (const record of records) {
+      const check = isBlockedIpAddress(record.address, opts);
+      if (check.blocked) {
+        const result = {
+          valid: false,
+          reason: `Hostname resolves to blocked address: ${check.reason}`,
+        };
+        if (opts.logFailures) {
+          log.warn({ url: parsed.origin, reason: result.reason }, 'Webhook URL blocked');
+        }
+        return result;
+      }
+    }
+  } catch {
+    const result = { valid: false, reason: 'Hostname could not be resolved' };
+    if (opts.logFailures) {
+      log.warn({ url: parsed.origin, reason: result.reason }, 'Webhook URL blocked');
+    }
+    return result;
+  }
+
+  return { valid: true, normalized: parsed.href };
+}
+
 /**
  * Safely fetch a URL after validation
  *
@@ -238,10 +297,20 @@ export async function safeFetch(
   init?: RequestInit,
   validationOptions?: UrlValidationOptions
 ): Promise<Response | null> {
-  const validation = validateWebhookUrl(url, validationOptions);
+  const opts = { ...DEFAULT_OPTIONS, ...validationOptions };
+  const validation = validateWebhookUrl(url, opts);
   if (!validation.valid) {
     return null;
   }
 
-  return fetch(url, init);
+  const parsed = new URL(validation.normalized ?? url);
+  const resolved = await validateResolvedHostname(parsed, opts);
+  if (!resolved.valid) {
+    return null;
+  }
+
+  return fetch(validation.normalized ?? url, {
+    ...init,
+    redirect: 'manual',
+  });
 }

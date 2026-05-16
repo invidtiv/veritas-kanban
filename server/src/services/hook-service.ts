@@ -17,7 +17,7 @@
  */
 
 import { createLogger } from '../lib/logger.js';
-import { validateWebhookUrl } from '../utils/url-validation.js';
+import { safeFetch } from '../utils/url-validation.js';
 import type { Task, EnforcementSettings } from '@veritas-kanban/shared';
 import { getChatService } from './chat-service.js';
 import { getNotificationService } from './notification-service.js';
@@ -216,17 +216,10 @@ async function fireSquadChat(
  * Single retry after 2 seconds on failure.
  */
 async function fireWebhook(url: string, payload: HookPayload): Promise<void> {
-  // Validate URL to prevent SSRF attacks
-  const validation = validateWebhookUrl(url);
-  if (!validation.valid) {
-    log.warn({ url, reason: validation.reason }, 'Webhook URL blocked (SSRF prevention)');
-    return;
-  }
-
   const body = JSON.stringify(payload);
 
-  const doFetch = async (): Promise<void> => {
-    const response = await fetch(url, {
+  const doFetch = async (): Promise<boolean> => {
+    const response = await safeFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -236,13 +229,21 @@ async function fireWebhook(url: string, payload: HookPayload): Promise<void> {
       signal: AbortSignal.timeout(10_000),
     });
 
+    if (!response) {
+      log.warn({ url }, 'Webhook URL blocked (SSRF prevention)');
+      return false;
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+
+    return true;
   };
 
   try {
-    await doFetch();
+    const delivered = await doFetch();
+    if (!delivered) return;
     log.debug({ event: payload.event, url }, 'Webhook delivered');
   } catch (err) {
     log.warn(
@@ -253,7 +254,8 @@ async function fireWebhook(url: string, payload: HookPayload): Promise<void> {
     // Single retry after 2 seconds
     setTimeout(async () => {
       try {
-        await doFetch();
+        const delivered = await doFetch();
+        if (!delivered) return;
         log.debug({ event: payload.event, url }, 'Webhook retry succeeded');
       } catch (retryErr) {
         log.error(

@@ -1869,7 +1869,9 @@ Production-ready deployment and development tooling.
 
 - **GitHub Actions** — CI pipeline on push to `main` and pull requests
 - **Concurrency control** — In-progress runs cancelled when new commits push
-- **Pipeline jobs** — Lint & type check, workspace unit tests, production build, and security audit
+- **Pipeline jobs** — Lint and warning budget, type check, workspace unit tests, production build, and security audit
+- **Scheduled QA** — Weekly and manually triggered Playwright and k6 gates run outside the fast PR path
+- **Release validation** — `pnpm validate:release` checks versions, release docs, built artifacts, and optional GitHub tag/release state
 - **pnpm caching** — Dependency cache for faster CI runs
 
 ### Development
@@ -1878,7 +1880,7 @@ Production-ready deployment and development tooling.
 - **lint-staged** — Runs ESLint on staged files
 - **Gitleaks** — Pre-commit secret scanning via [gitleaks](https://gitleaks.io/) (`.pre-commit-config.yaml`)
 - **Concurrent dev servers** — `pnpm dev` starts both web and API servers simultaneously
-- **ESLint** — Linting across all packages
+- **ESLint** — Linting across all packages with a ratchetable warning budget
 - **TypeScript strict mode** — Full strict checking across the monorepo
 
 ### Observability
@@ -1897,8 +1899,8 @@ Multi-layer testing strategy.
 
 ### Unit Tests (Vitest)
 
-- **61 test files** · **1,143 tests passing** across server and frontend
-- **Server (51 files, 1,033 tests):**
+- **119 test files** · **1,699 tests passing** across server and frontend
+- **Server (105 files, 1,570 tests):**
   - All middleware (auth, rate limiting, request ID, API versioning, cache control, validation, response envelope, request timeout)
   - Core services (task, template, telemetry, notification, activity, sprint, diff, conflict, summary, status history, digest, attachment, text extraction, migration, managed list, broadcast, automation, blocking, failure alert, metrics, settings, JWT rotation, MIME validation, preview, trace, circuit breaker)
   - Route handlers (tasks, task archive, task comments, task subtasks, task time, auth, agent status, automation, config, notifications, templates, health, misc routes)
@@ -1907,7 +1909,7 @@ Multi-layer testing strategy.
   - Prometheus metrics (counters, gauges, histograms, registry, collector middleware)
   - Environment variable validation
   - Circuit breaker transitions (18 tests covering open/half-open/closed states — added in v3.3.2)
-- **Frontend (10 files, 110 tests):**
+- **Frontend (14 files, 129 tests):**
   - API client helpers and task operations
   - Custom hooks: useWebSocket, useKeyboard (keyboard shortcuts)
   - Components: KanbanBoard, TaskCard, ErrorBoundary, AgentStatusIndicator, WebSocketIndicator

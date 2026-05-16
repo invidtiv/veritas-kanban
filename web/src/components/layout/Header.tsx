@@ -2,7 +2,6 @@ import {
   Plus,
   Settings,
   Search,
-  ListOrdered,
   Archive,
   Inbox,
   Sun,
@@ -12,25 +11,69 @@ import {
   Workflow,
   Activity,
   GitBranch,
+  LayoutDashboard,
+  ListOrdered,
   Scale,
   ShieldAlert,
+  type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CreateTaskDialog } from '@/components/task/CreateTaskDialog';
-import { SettingsDialog } from '@/components/settings/SettingsDialog';
 // ActivitySidebar removed — merged into ActivityFeed (GH-66)
 // ArchiveSidebar removed — replaced with full-page ArchivePage
-import { ChatPanel } from '@/components/chat/ChatPanel';
-import { SquadChatPanel } from '@/components/chat/SquadChatPanel';
-import { SearchDialog } from '@/components/search';
 import { UserMenu } from './UserMenu';
 import { WebSocketIndicator } from '@/components/shared/WebSocketIndicator';
-import { useState, useCallback } from 'react';
+import { lazy, Suspense, useState, useCallback } from 'react';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useView } from '@/contexts/ViewContext';
 import { useBacklogCount } from '@/hooks/useBacklog';
 import { useTheme } from '@/hooks/useTheme';
 import { Badge } from '@/components/ui/badge';
+import { NAVIGATION_VIEWS, type ViewIcon } from '@/lib/views';
+
+const CreateTaskDialog = lazy(() =>
+  import('@/components/task/CreateTaskDialog').then((mod) => ({
+    default: mod.CreateTaskDialog,
+  }))
+);
+
+const SettingsDialog = lazy(() =>
+  import('@/components/settings/SettingsDialog').then((mod) => ({
+    default: mod.SettingsDialog,
+  }))
+);
+
+const ChatPanel = lazy(() =>
+  import('@/components/chat/ChatPanel').then((mod) => ({
+    default: mod.ChatPanel,
+  }))
+);
+
+const SquadChatPanel = lazy(() =>
+  import('@/components/chat/SquadChatPanel').then((mod) => ({
+    default: mod.SquadChatPanel,
+  }))
+);
+
+const SearchDialog = lazy(() =>
+  import('@/components/search').then((mod) => ({
+    default: mod.SearchDialog,
+  }))
+);
+
+type LazyPanel = 'chat' | 'create' | 'search' | 'settings' | 'squadChat';
+
+const VIEW_ICONS: Record<ViewIcon, LucideIcon> = {
+  Activity,
+  Archive,
+  FileText,
+  GitBranch,
+  Inbox,
+  LayoutDashboard,
+  ListOrdered,
+  Scale,
+  ShieldAlert,
+  Workflow,
+};
 
 export function Header() {
   const [createOpen, setCreateOpen] = useState(false);
@@ -41,19 +84,56 @@ export function Header() {
   // archiveOpen removed — archive is now a full page view
   const [chatOpen, setChatOpen] = useState(false);
   const [squadChatOpen, setSquadChatOpen] = useState(false);
+  const [loadedPanels, setLoadedPanels] = useState<Set<LazyPanel>>(() => new Set());
   const { setOpenCreateDialog, setOpenChatPanel } = useKeyboard();
   const { view, setView, navigateToTask } = useView();
   const { data: backlogCount = 0 } = useBacklogCount();
   const { theme, setTheme } = useTheme();
 
-  const openSecuritySettings = useCallback(() => {
-    setSettingsTab('security');
-    setSettingsOpen(true);
+  const markPanelLoaded = useCallback((panel: LazyPanel) => {
+    setLoadedPanels((current) => {
+      if (current.has(panel)) return current;
+
+      const next = new Set(current);
+      next.add(panel);
+      return next;
+    });
   }, []);
 
+  const openCreateDialog = useCallback(() => {
+    markPanelLoaded('create');
+    setCreateOpen(true);
+  }, [markPanelLoaded]);
+
+  const openChatPanel = useCallback(() => {
+    markPanelLoaded('chat');
+    setChatOpen(true);
+  }, [markPanelLoaded]);
+
+  const openSearchDialog = useCallback(() => {
+    markPanelLoaded('search');
+    setSearchOpen(true);
+  }, [markPanelLoaded]);
+
+  const openSquadChatPanel = useCallback(() => {
+    markPanelLoaded('squadChat');
+    setSquadChatOpen(true);
+  }, [markPanelLoaded]);
+
+  const openSettingsDialog = useCallback(() => {
+    markPanelLoaded('settings');
+    setSettingsOpen(true);
+  }, [markPanelLoaded]);
+
+  const openSecuritySettings = useCallback(() => {
+    markPanelLoaded('settings');
+    setSettingsTab('security');
+    setSettingsOpen(true);
+  }, [markPanelLoaded]);
+
   // Register the create dialog and chat panel openers with keyboard context (refs, no useEffect needed)
-  setOpenCreateDialog(() => setCreateOpen(true));
-  setOpenChatPanel(() => setChatOpen(true));
+  setOpenCreateDialog(openCreateDialog);
+  setOpenChatPanel(openChatPanel);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card" role="banner">
@@ -76,104 +156,40 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2" role="toolbar" aria-label="Board actions">
-            <Button variant="default" size="sm" onClick={() => setCreateOpen(true)}>
+            <Button variant="default" size="sm" onClick={openCreateDialog}>
               <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
               New Task
             </Button>
-            <Button
-              variant={view === 'activity' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'activity' ? 'board' : 'activity')}
-              aria-label="Activity"
-              title="Activity"
-            >
-              <ListOrdered className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant={view === 'backlog' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'backlog' ? 'board' : 'backlog')}
-              aria-label="Backlog"
-              title="Backlog"
-              className="relative"
-            >
-              <Inbox className="h-4 w-4" aria-hidden="true" />
-              {backlogCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+            {NAVIGATION_VIEWS.map((item) => {
+              const Icon = VIEW_ICONS[item.icon];
+              const isBacklog = item.view === 'backlog';
+
+              return (
+                <Button
+                  key={item.view}
+                  variant={view === item.view ? 'secondary' : 'ghost'}
+                  size="icon"
+                  onClick={() => setView(view === item.view ? 'board' : item.view)}
+                  aria-label={item.label}
+                  title={item.title ?? item.label}
+                  className={isBacklog ? 'relative' : undefined}
                 >
-                  {backlogCount > 99 ? '99+' : backlogCount}
-                </Badge>
-              )}
-            </Button>
-            <Button
-              variant={view === 'archive' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'archive' ? 'board' : 'archive')}
-              aria-label="Archive"
-              title="Archive"
-            >
-              <Archive className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant={view === 'templates' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'templates' ? 'board' : 'templates')}
-              aria-label="Templates"
-              title="Templates"
-            >
-              <FileText className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant={view === 'workflows' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'workflows' ? 'board' : 'workflows')}
-              aria-label="Workflows"
-              title="Workflows"
-            >
-              <Workflow className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant={view === 'drift' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'drift' ? 'board' : 'drift')}
-              aria-label="Drift Monitor"
-              title="Drift Monitor"
-            >
-              <Activity className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant={view === 'decisions' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'decisions' ? 'board' : 'decisions')}
-              aria-label="Decisions"
-              title="Decision Audit Trail"
-            >
-              <GitBranch className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant={view === 'scoring' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'scoring' ? 'board' : 'scoring')}
-              aria-label="Scoring"
-              title="Scoring"
-            >
-              <Scale className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant={view === 'policies' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setView(view === 'policies' ? 'board' : 'policies')}
-              aria-label="Policies"
-              title="Policies"
-            >
-              <ShieldAlert className="h-4 w-4" aria-hidden="true" />
-            </Button>
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  {isBacklog && backlogCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+                    >
+                      {backlogCount > 99 ? '99+' : backlogCount}
+                    </Badge>
+                  )}
+                </Button>
+              );
+            })}
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSearchOpen(true)}
+              onClick={openSearchDialog}
               aria-label="Search"
               title="Search"
             >
@@ -182,7 +198,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSquadChatOpen(true)}
+              onClick={openSquadChatPanel}
               aria-label="Squad Chat"
               title="Squad Chat — Agent communication"
             >
@@ -191,7 +207,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSettingsOpen(true)}
+              onClick={openSettingsDialog}
               aria-label="Settings"
               title="Settings"
             >
@@ -230,18 +246,32 @@ export function Header() {
         </div>
       </nav>
 
-      <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <SettingsDialog
-        open={settingsOpen}
-        onOpenChange={(open) => {
-          setSettingsOpen(open);
-          if (!open) setSettingsTab(undefined);
-        }}
-        defaultTab={settingsTab}
-      />
-      <ChatPanel open={chatOpen} onOpenChange={setChatOpen} />
-      <SquadChatPanel open={squadChatOpen} onOpenChange={setSquadChatOpen} />
-      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} onTaskOpen={navigateToTask} />
+      <Suspense fallback={null}>
+        {loadedPanels.has('create') && (
+          <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
+        )}
+        {loadedPanels.has('settings') && (
+          <SettingsDialog
+            open={settingsOpen}
+            onOpenChange={(open) => {
+              setSettingsOpen(open);
+              if (!open) setSettingsTab(undefined);
+            }}
+            defaultTab={settingsTab}
+          />
+        )}
+        {loadedPanels.has('chat') && <ChatPanel open={chatOpen} onOpenChange={setChatOpen} />}
+        {loadedPanels.has('squadChat') && (
+          <SquadChatPanel open={squadChatOpen} onOpenChange={setSquadChatOpen} />
+        )}
+        {loadedPanels.has('search') && (
+          <SearchDialog
+            open={searchOpen}
+            onOpenChange={setSearchOpen}
+            onTaskOpen={navigateToTask}
+          />
+        )}
+      </Suspense>
     </header>
   );
 }

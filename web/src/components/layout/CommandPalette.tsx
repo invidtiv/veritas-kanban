@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useView } from '@/contexts/ViewContext';
 import {
@@ -8,6 +8,7 @@ import {
   ListOrdered,
   Inbox,
   Archive,
+  FileText,
   Search,
   ArrowRight,
   Moon,
@@ -16,10 +17,38 @@ import {
   Activity,
   GitBranch,
   Sparkles,
+  Workflow,
+  Scale,
+  ShieldAlert,
+  type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
-import { SearchDialog } from '@/components/search';
+import { VIEW_DEFINITIONS, type ViewIcon } from '@/lib/views';
+
+const SearchDialog = lazy(() =>
+  import('@/components/search').then((mod) => ({
+    default: mod.SearchDialog,
+  }))
+);
+
+const VIEW_ICONS: Record<ViewIcon, LucideIcon> = {
+  Activity,
+  Archive,
+  FileText,
+  GitBranch,
+  Inbox,
+  LayoutDashboard,
+  ListOrdered,
+  Scale,
+  ShieldAlert,
+  Workflow,
+};
+
+function renderViewIcon(icon: ViewIcon) {
+  const Icon = VIEW_ICONS[icon];
+  return <Icon className="h-4 w-4" />;
+}
 
 interface CommandItem {
   id: string;
@@ -28,12 +57,13 @@ interface CommandItem {
   icon: React.ReactNode;
   category: string;
   action: () => void;
-  keywords?: string[];
+  keywords?: readonly string[];
 }
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchMounted, setSearchMounted] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +72,11 @@ export function CommandPalette() {
   const { openCreateDialog, isHelpOpen } = useKeyboard();
   const { setView, navigateToTask } = useView();
   const { theme, setTheme } = useTheme();
+
+  const openSearchDialog = useCallback(() => {
+    setSearchMounted(true);
+    setSearchOpen(true);
+  }, []);
 
   const commands: CommandItem[] = useMemo(
     () => [
@@ -68,60 +103,19 @@ export function CommandPalette() {
         label: 'Search Tasks and Docs',
         icon: <Sparkles className="h-4 w-4" />,
         category: 'Actions',
-        action: () => setSearchOpen(true),
+        action: openSearchDialog,
         keywords: ['qmd', 'semantic', 'retrieval', 'docs', 'archive'],
       },
 
-      // Navigation
-      {
-        id: 'go-board',
-        label: 'Go to Board',
-        shortcut: 'B',
-        icon: <LayoutDashboard className="h-4 w-4" />,
+      ...VIEW_DEFINITIONS.map((definition) => ({
+        id: `go-${definition.view}`,
+        label: definition.commandLabel,
+        shortcut: definition.view === 'board' ? 'B' : undefined,
+        icon: renderViewIcon(definition.icon),
         category: 'Navigation',
-        action: () => setView('board'),
-        keywords: ['kanban', 'home', 'main'],
-      },
-      {
-        id: 'go-activity',
-        label: 'Go to Activity',
-        icon: <ListOrdered className="h-4 w-4" />,
-        category: 'Navigation',
-        action: () => setView('activity'),
-        keywords: ['feed', 'log', 'history'],
-      },
-      {
-        id: 'go-backlog',
-        label: 'Go to Backlog',
-        icon: <Inbox className="h-4 w-4" />,
-        category: 'Navigation',
-        action: () => setView('backlog'),
-        keywords: ['someday', 'maybe', 'later'],
-      },
-      {
-        id: 'go-drift',
-        label: 'Go to Drift Monitor',
-        icon: <Activity className="h-4 w-4" />,
-        category: 'Navigation',
-        action: () => setView('drift'),
-        keywords: ['behavior', 'anomaly', 'z-score', 'alerts'],
-      },
-      {
-        id: 'go-archive',
-        label: 'Go to Archive',
-        icon: <Archive className="h-4 w-4" />,
-        category: 'Navigation',
-        action: () => setView('archive'),
-        keywords: ['done', 'completed', 'old'],
-      },
-      {
-        id: 'go-decisions',
-        label: 'Go to Decisions',
-        icon: <GitBranch className="h-4 w-4" />,
-        category: 'Navigation',
-        action: () => setView('decisions'),
-        keywords: ['audit', 'reasoning', 'assumptions'],
-      },
+        action: () => setView(definition.view),
+        keywords: definition.keywords,
+      })),
 
       // Board shortcuts
       {
@@ -188,7 +182,7 @@ export function CommandPalette() {
         keywords: ['view', 'detail'],
       },
     ],
-    [openCreateDialog, setView, theme, setTheme]
+    [openCreateDialog, openSearchDialog, setView, theme, setTheme]
   );
 
   // Filter commands by query
@@ -285,6 +279,11 @@ export function CommandPalette() {
           className="max-w-[520px] p-0 gap-0 overflow-hidden"
           onKeyDown={handleKeyDown}
         >
+          <DialogTitle className="sr-only">Command palette</DialogTitle>
+          <DialogDescription className="sr-only">
+            Search and run board actions, navigation commands, and shortcuts.
+          </DialogDescription>
+
           {/* Search input */}
           <div className="flex items-center gap-3 px-4 border-b">
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -355,7 +354,15 @@ export function CommandPalette() {
           </div>
         </DialogContent>
       </Dialog>
-      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} onTaskOpen={navigateToTask} />
+      {searchMounted && (
+        <Suspense fallback={null}>
+          <SearchDialog
+            open={searchOpen}
+            onOpenChange={setSearchOpen}
+            onTaskOpen={navigateToTask}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

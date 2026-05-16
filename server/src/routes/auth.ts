@@ -47,7 +47,7 @@ const rotateSecretSchema = z
   .default({});
 
 // Constants
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = process.env.NODE_ENV === 'test' ? 4 : 12;
 const JWT_EXPIRY_DEFAULT = '24h';
 const JWT_EXPIRY_REMEMBER = '30d';
 

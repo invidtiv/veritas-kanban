@@ -7,33 +7,9 @@ import {
   useEffect,
   type ReactNode,
 } from 'react';
-
-export type AppView =
-  | 'board'
-  | 'activity'
-  | 'backlog'
-  | 'archive'
-  | 'templates'
-  | 'workflows'
-  | 'policies'
-  | 'drift'
-  | 'decisions'
-  | 'scoring';
+import { VIEW_PATHS, type AppView } from '@/lib/views';
 
 const basePath = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
-
-const VIEW_PATHS: Record<AppView, string> = {
-  board: '/',
-  activity: '/activity',
-  backlog: '/backlog',
-  archive: '/archive',
-  templates: '/templates',
-  workflows: '/workflows',
-  policies: '/policies',
-  drift: '/drift',
-  decisions: '/decisions',
-  scoring: '/scoring',
-};
 
 function normalizeAppPath(pathname: string): string {
   const normalized = pathname.startsWith(basePath)

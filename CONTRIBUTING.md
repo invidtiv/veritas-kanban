@@ -162,7 +162,7 @@ Before merging any branch, verify:
 
 - [ ] **Type exports:** All new types added to `shared/` are exported in `shared/src/types/index.ts`
 - [ ] **Type checks pass:** `pnpm typecheck` succeeds for all workspace packages (shared, server, web, CLI, MCP)
-- [ ] **Builds pass:** `pnpm build` succeeds for all packages (shared, server, web)
+- [ ] **Builds pass:** `pnpm build` succeeds for all packages (shared, server, web, CLI, MCP)
 - [ ] **No hardcoded values:** No hardcoded ports, URLs, or timeouts in application code
 - [ ] **CSP/CORS configs:** Security policies work in both `NODE_ENV=development` AND `NODE_ENV=production`
 - [ ] **Frontend hooks:** All HTTP calls use shared helpers (`apiFetch`) and all WebSocket/URL logic uses `window.location.host` (not hardcoded ports)
@@ -172,7 +172,7 @@ Before merging any branch, verify:
 
 **Never change these without team agreement:**
 
-- **PORT in `.env`:** Default is 3000. Changing this breaks developer workflows and bookmarks.
+- **PORT in `.env`:** Server default is 3001. Changing this breaks CLI/API workflows and bookmarks.
 - **CORS_ORIGINS:** Must include the production serving origin (e.g., `http://localhost:3000` when Express serves the built frontend in production mode).
 - **CSP `connect-src`:** Must allow WebSocket connections in all modes (dev, production, test). Don't hide WebSocket support behind `isDev` checks.
 - **Configurable values:** Use environment variables with sensible defaults. No magic numbers in code.
@@ -256,6 +256,7 @@ docs: update README with deployment instructions
 
 - **Language:** TypeScript (strict mode)
 - **Linting:** ESLint — `pnpm lint`
+- **Lint budget:** `pnpm lint:budget` enforces the current warning ceiling so lint debt cannot grow.
 - **Formatting:** Prettier — `pnpm format`
 - **Editor:** VS Code recommended with ESLint + Prettier extensions
 
@@ -273,6 +274,19 @@ Follow the existing conventions in `.eslintrc.*`, `.prettierrc`, and `tsconfig.j
 
   ```bash
   pnpm test:e2e
+  ```
+
+- **Load smoke tests** use [k6](https://k6.io/):
+
+  ```bash
+  pnpm test:load:smoke
+  ```
+
+- **Release readiness** checks workspace versions, changelog, README badge, build outputs, and optional GitHub tag/release state:
+
+  ```bash
+  pnpm validate:release
+  pnpm validate:release -- --github
   ```
 
 - Write tests for new features and bug fixes.

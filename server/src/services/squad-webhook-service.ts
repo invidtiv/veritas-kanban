@@ -8,7 +8,7 @@
 import crypto from 'crypto';
 import type { SquadMessage, SquadWebhookSettings } from '@veritas-kanban/shared';
 import { createLogger } from '../lib/logger.js';
-import { validateWebhookUrl } from '../utils/url-validation.js';
+import { safeFetch } from '../utils/url-validation.js';
 
 const log = createLogger('squad-webhook');
 
@@ -86,18 +86,11 @@ async function fireOpenClawWake(
 
   const url = `${settings.openclawGatewayUrl}/tools/invoke`;
 
-  // Validate URL to prevent SSRF attacks
-  const validation = validateWebhookUrl(url);
-  if (!validation.valid) {
-    log.warn({ url, reason: validation.reason }, 'Webhook URL blocked (SSRF prevention)');
-    return;
-  }
-
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-    const response = await fetch(url, {
+    const response = await safeFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -108,6 +101,11 @@ async function fireOpenClawWake(
     });
 
     clearTimeout(timeout);
+
+    if (!response) {
+      log.warn({ url }, 'OpenClaw wake call URL blocked (SSRF prevention)');
+      return;
+    }
 
     if (!response.ok) {
       log.warn(
@@ -184,7 +182,7 @@ async function fireWebhookAsync(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-    const response = await fetch(url, {
+    const response = await safeFetch(url, {
       method: 'POST',
       headers,
       body,
@@ -192,6 +190,11 @@ async function fireWebhookAsync(
     });
 
     clearTimeout(timeout);
+
+    if (!response) {
+      log.warn({ url }, 'Squad webhook URL blocked (SSRF prevention)');
+      return;
+    }
 
     if (!response.ok) {
       log.warn(

@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 
-vi.mock('node:fs/promises', () => {
+const createFsPromisesMock = vi.hoisted(() => () => {
   const mod = {
     access: vi.fn().mockResolvedValue(undefined),
+    appendFile: vi.fn().mockResolvedValue(undefined),
+    copyFile: vi.fn().mockResolvedValue(undefined),
     mkdir: vi.fn().mockResolvedValue(undefined),
     readFile: vi.fn().mockResolvedValue(''),
     writeFile: vi.fn().mockResolvedValue(undefined),
@@ -13,6 +15,9 @@ vi.mock('node:fs/promises', () => {
   };
   return { ...mod, default: mod };
 });
+
+vi.mock('fs/promises', createFsPromisesMock);
+vi.mock('node:fs/promises', createFsPromisesMock);
 
 // Mock node:fs to prevent filesystem reads
 vi.mock('node:fs', () => {

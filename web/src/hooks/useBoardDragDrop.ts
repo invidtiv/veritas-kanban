@@ -129,14 +129,27 @@ export function useBoardDragDrop({
         const isOverColumn = columnIds.includes(overId as TaskStatus);
         const overColumn = isOverColumn ? (overId as TaskStatus) : findColumn(overId, prev);
 
-        if (!overColumn || activeColumn === overColumn) return prev;
+        if (!overColumn) return prev;
 
-        // Move the task from source to destination
+        // Reorder within the same column when hovering over another task.
         const sourceTasks = prev[activeColumn];
-        const destTasks = prev[overColumn];
         const activeIndex = sourceTasks.findIndex((t) => t.id === activeId);
         if (activeIndex === -1) return prev;
 
+        if (activeColumn === overColumn) {
+          if (isOverColumn) return prev;
+
+          const overIndex = sourceTasks.findIndex((t) => t.id === overId);
+          if (overIndex === -1 || activeIndex === overIndex) return prev;
+
+          return {
+            ...prev,
+            [activeColumn]: arrayMove(sourceTasks, activeIndex, overIndex),
+          };
+        }
+
+        // Move the task from source to destination.
+        const destTasks = prev[overColumn];
         const movedTask = sourceTasks[activeIndex];
         const newSource = [...sourceTasks];
         newSource.splice(activeIndex, 1);

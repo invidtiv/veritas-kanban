@@ -13,7 +13,7 @@
 
 import crypto from 'crypto';
 import { createLogger } from '../lib/logger.js';
-import { validateWebhookUrl } from '../utils/url-validation.js';
+import { safeFetch } from '../utils/url-validation.js';
 import type { TaskChangeType } from './broadcast-service.js';
 
 const log = createLogger('webhook');
@@ -101,9 +101,10 @@ export function signPayload(body: string, secret: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * POST a JSON payload to `url`.  Returns true on 2xx, false otherwise.
+ * POST a JSON payload to `url`. Returns true on 2xx, false on non-2xx,
+ * and null when the URL is blocked by outbound URL policy.
  */
-async function postPayload(url: string, body: string, secret?: string): Promise<boolean> {
+async function postPayload(url: string, body: string, secret?: string): Promise<boolean | null> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'User-Agent': 'VeritasKanban-Webhook/1.0',
@@ -113,12 +114,14 @@ async function postPayload(url: string, body: string, secret?: string): Promise<
     headers['X-Webhook-Signature'] = signPayload(body, secret);
   }
 
-  const res = await fetch(url, {
+  const res = await safeFetch(url, {
     method: 'POST',
     headers,
     body,
     signal: AbortSignal.timeout(10_000), // 10 s hard timeout per attempt
   });
+
+  if (!res) return null;
 
   return res.ok;
 }
@@ -132,18 +135,15 @@ export async function deliverWebhook(payload: WebhookPayload): Promise<void> {
   const url = getWebhookUrl();
   if (!url) return; // webhook not configured — silently skip
 
-  // Validate URL to prevent SSRF attacks
-  const validation = validateWebhookUrl(url);
-  if (!validation.valid) {
-    log.warn({ reason: validation.reason }, 'Webhook URL blocked (SSRF prevention)');
-    return;
-  }
-
   const body = JSON.stringify(payload);
   const secret = getWebhookSecret();
 
   try {
     const ok = await postPayload(url, body, secret);
+    if (ok === null) {
+      log.warn('Webhook URL blocked (SSRF prevention)');
+      return;
+    }
     if (ok) {
       log.debug({ event: payload.event }, 'Webhook delivered');
       return;
@@ -157,6 +157,10 @@ export async function deliverWebhook(payload: WebhookPayload): Promise<void> {
   setTimeout(async () => {
     try {
       const ok = await postPayload(url, body, secret);
+      if (ok === null) {
+        log.warn('Webhook retry URL blocked (SSRF prevention)');
+        return;
+      }
       if (!ok) {
         log.error({ event: payload.event }, 'Webhook retry failed (non-2xx)');
       } else {

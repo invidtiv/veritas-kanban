@@ -135,7 +135,7 @@ This is a sample task created by \`vk setup\`.
    Use the API to create, update, and manage tasks.
    \`\`\`
 3. **Try the CLI** — Run \`vk list\` to see all tasks
-4. **Archive this task** — When done exploring, run \`vk done ${Date.now()}\`
+4. **Archive this task** — When done exploring, run \`vk done <task-id>\` with the task ID printed by setup
 
 ## Resources
 

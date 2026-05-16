@@ -2,9 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import crypto from 'crypto';
 
 const mockValidateWebhookUrl = vi.fn();
+const mockSafeFetch = vi.fn();
 
 vi.mock('../utils/url-validation.js', () => ({
   validateWebhookUrl: mockValidateWebhookUrl,
+  safeFetch: mockSafeFetch,
 }));
 
 describe('squad webhook service', () => {
@@ -14,6 +16,7 @@ describe('squad webhook service', () => {
     vi.resetModules();
     mockValidateWebhookUrl.mockReturnValue({ valid: true });
     fetchSpy = vi.spyOn(globalThis, 'fetch' as any);
+    mockSafeFetch.mockImplementation((url: string, init: RequestInit) => fetch(url, init));
   });
 
   afterEach(() => {
@@ -106,7 +109,10 @@ describe('squad webhook service', () => {
       } as any
     );
 
-    expect(mockValidateWebhookUrl).toHaveBeenCalledWith('https://gateway.test/tools/invoke');
+    expect(mockSafeFetch).toHaveBeenCalledWith(
+      'https://gateway.test/tools/invoke',
+      expect.objectContaining({ method: 'POST' })
+    );
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(fetchSpy.mock.calls[0][0]).toBe('https://gateway.test/tools/invoke');
     expect(JSON.parse(fetchSpy.mock.calls[0][1].body)).toMatchObject({
@@ -130,7 +136,7 @@ describe('squad webhook service', () => {
       notifyOnAgent: true,
       mode: 'openclaw',
     } as any);
-    mockValidateWebhookUrl.mockReturnValue({ valid: false, reason: 'ssrf' });
+    mockSafeFetch.mockResolvedValueOnce(null);
     await mod.fireSquadWebhook(msg, {
       enabled: true,
       notifyOnHuman: true,

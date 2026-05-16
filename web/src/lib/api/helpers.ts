@@ -68,15 +68,30 @@ export async function handleResponse<T>(response: Response): Promise<T> {
   return body as T;
 }
 
+function resolveApiUrl(url: string): string {
+  if (/^[a-z][a-z\d+\-.]*:\/\//i.test(url)) {
+    return url;
+  }
+
+  const apiBase = API_BASE.replace(/\/$/, '');
+  if (url === apiBase || url.startsWith(`${apiBase}/`)) {
+    return url;
+  }
+
+  if (url === '/api' || url.startsWith('/api/')) {
+    return `${apiBase}${url.slice('/api'.length)}`;
+  }
+
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  return base && url.startsWith('/') ? base + url : url;
+}
+
 /**
  * Convenience wrapper: fetch + handleResponse in one call.
  * Use this in hooks instead of raw `fetch` + `response.json()`.
  */
 export async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  // When deployed under a sub-path, prefix absolute paths with BASE_URL
-  // so /api/v1/tasks becomes e.g. /kanban/api/v1/tasks.
-  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
-  const fullUrl = base && url.startsWith('/') ? base + url : url;
+  const fullUrl = resolveApiUrl(url);
   const response = await fetch(fullUrl, {
     credentials: 'include',
     ...init,

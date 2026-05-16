@@ -11,6 +11,7 @@ import { createLogger } from '../lib/logger.js';
 import { ConflictError, NotFoundError, ValidationError } from '../middleware/error-handler.js';
 import { policySchema } from '../schemas/policy-schemas.js';
 import { getPoliciesDir } from '../utils/paths.js';
+import { safeFetch } from '../utils/url-validation.js';
 
 const log = createLogger('policy-service');
 const PRESET_TIMESTAMP = new Date().toISOString();
@@ -440,12 +441,16 @@ export class PolicyService {
     const body = policy.config.sendContext === false ? undefined : JSON.stringify(input);
 
     try {
-      const response = await fetch(policy.config.url, {
+      const response = await safeFetch(policy.config.url, {
         method: policy.config.method ?? 'POST',
         headers: body ? { 'Content-Type': 'application/json' } : undefined,
         body,
         signal: controller.signal,
       });
+
+      if (!response) {
+        throw new Error('Webhook URL blocked by outbound URL policy');
+      }
 
       const text = await response.text().catch(() => '');
       const statusMatches = response.status === (policy.config.expectedStatus ?? 200);

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { readFileSync } from 'node:fs';
 import { registerTaskCommands } from './commands/tasks.js';
 import { registerBacklogCommands } from './commands/backlog.js';
 import { registerAgentCommands } from './commands/agents.js';
@@ -17,11 +18,14 @@ import { registerUsageCommands } from './commands/usage.js';
 import { registerSprintCommands } from './commands/sprints.js';
 
 const program = new Command();
+const packageJson = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf-8')
+) as { version?: string };
 
 program
   .name('vk')
   .description('Veritas Kanban CLI - Task management for AI agents')
-  .version('0.1.0');
+  .version(packageJson.version ?? '0.0.0');
 
 // Register all command groups
 registerTaskCommands(program);

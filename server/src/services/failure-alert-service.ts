@@ -14,6 +14,7 @@
 import { getNotificationService, type NotificationService } from './notification-service.js';
 import { getConfigService, type ConfigService } from './config-service.js';
 import type { TelemetryEventIngestion } from '../schemas/telemetry-schemas.js';
+import { safeFetch } from '../utils/url-validation.js';
 
 // Deduplication cache: taskId -> last alert timestamp
 const recentAlerts = new Map<string, number>();
@@ -204,13 +205,18 @@ export class FailureAlertService {
         return false;
       }
 
-      const response = await fetch(webhookUrl, {
+      const response = await safeFetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: message,
         }),
       });
+
+      if (!response) {
+        log.warn('[FailureAlert] Webhook URL blocked by outbound URL policy');
+        return false;
+      }
 
       if (!response.ok) {
         log.warn(`[FailureAlert] Webhook delivery failed: ${response.status}`);

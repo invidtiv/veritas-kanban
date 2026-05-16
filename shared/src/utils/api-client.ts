@@ -7,10 +7,32 @@ import type { Task } from '../types/task.types.js';
 const DEFAULT_BASE = 'http://localhost:3001';
 
 /** Standard API response envelope */
-interface ApiEnvelope<T> {
-  success: boolean;
+interface ApiSuccessEnvelope<T> {
+  success: true;
   data: T;
   meta?: Record<string, unknown>;
+}
+
+interface ApiErrorEnvelope {
+  success: false;
+  error: {
+    code?: string;
+    message?: string;
+    details?: unknown;
+  };
+  meta?: Record<string, unknown>;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isErrorEnvelope(value: unknown): value is ApiErrorEnvelope {
+  return isRecord(value) && value.success === false && isRecord(value.error);
+}
+
+function isSuccessEnvelope<T>(value: unknown): value is ApiSuccessEnvelope<T> {
+  return isRecord(value) && value.success === true && 'data' in value;
 }
 
 function getEnv(name: string): string | undefined {
@@ -69,10 +91,17 @@ export function createApiClient(baseUrl = DEFAULT_BASE, apiKey = getEnv('VK_API_
     });
 
     if (!res.ok) {
-      const error = (await res.json().catch(() => ({ error: res.statusText }))) as {
-        error?: string;
-      };
-      throw new Error(error.error || `API error: ${res.status}`);
+      const error = (await res.json().catch(() => ({ error: res.statusText }))) as unknown;
+
+      if (isErrorEnvelope(error)) {
+        throw new Error(error.error.message || `API error: ${res.status}`);
+      }
+
+      const legacyError = isRecord(error) && typeof error.error === 'string' ? error.error : null;
+      const legacyMessage =
+        isRecord(error) && typeof error.message === 'string' ? error.message : null;
+
+      throw new Error(legacyError || legacyMessage || `API error: ${res.status}`);
     }
 
     if (res.status === 204) {
@@ -82,8 +111,8 @@ export function createApiClient(baseUrl = DEFAULT_BASE, apiKey = getEnv('VK_API_
     const body = await res.json();
 
     // Unwrap standard API envelope { success, data, meta }
-    if (body && typeof body === 'object' && 'success' in body && 'data' in body) {
-      return (body as ApiEnvelope<T>).data;
+    if (isSuccessEnvelope<T>(body)) {
+      return body.data;
     }
 
     return body as T;

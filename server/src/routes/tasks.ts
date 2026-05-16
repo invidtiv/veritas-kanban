@@ -689,8 +689,12 @@ router.patch(
       // (human users can still approve, or API keys with admin/agent role)
     }
 
-    // Check if trying to move blocked task to in-progress
-    if (input.status === 'in-progress' && oldTask.status === 'todo' && oldTask.blockedBy?.length) {
+    // Check if trying to move a blocked task to in-progress
+    if (
+      input.status === 'in-progress' &&
+      oldTask.status !== 'in-progress' &&
+      oldTask.blockedBy?.length
+    ) {
       const allTasks = await taskService.listTasks();
       const { allowed, blockers } = blockingService.canMoveToInProgress(oldTask, allTasks);
 

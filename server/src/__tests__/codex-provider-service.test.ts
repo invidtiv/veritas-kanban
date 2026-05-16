@@ -194,13 +194,15 @@ describe('ClawdbotAgentService Codex providers', () => {
         model: 'gpt-5.5',
       })
     );
-    expect(mockLogActivity).toHaveBeenCalledWith(
-      'agent_completed',
-      task.id,
-      task.title,
-      expect.objectContaining({ provider: 'codex-cli', success: true }),
-      'codex'
-    );
+    await waitFor(() => {
+      expect(mockLogActivity).toHaveBeenCalledWith(
+        'agent_completed',
+        task.id,
+        task.title,
+        expect.objectContaining({ provider: 'codex-cli', success: true }),
+        'codex'
+      );
+    });
   });
 
   it('maps Codex file events to task deliverables linked to the attempt', async () => {

@@ -5,8 +5,8 @@
  * Manage role-based tool access policies for workflow agents.
  */
 
-import { useState, useEffect } from 'react';
-import { API_BASE } from '@/lib/config';
+import { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '@/lib/api/helpers';
 import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,20 +45,11 @@ export function ToolPoliciesTab() {
   const [formDenied, setFormDenied] = useState('');
   const [formDescription, setFormDescription] = useState('');
 
-  const fetchPolicies = async () => {
+  const fetchPolicies = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/tool-policies`);
-      const result = await response.json();
-      if (result.success) {
-        setPolicies(result.data);
-      } else {
-        toast({
-          title: 'Failed to load policies',
-          description: result.error || 'Unknown error',
-          variant: 'destructive',
-        });
-      }
+      const result = await apiFetch<ToolPolicy[]>('/api/tool-policies');
+      setPolicies(result);
     } catch (error) {
       toast({
         title: 'Failed to load policies',
@@ -68,11 +59,11 @@ export function ToolPoliciesTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     void fetchPolicies();
-  }, []);
+  }, [fetchPolicies]);
 
   const openEditDialog = (policy: ToolPolicy | null) => {
     if (policy) {
@@ -109,28 +100,18 @@ export function ToolPoliciesTab() {
       const url = isNew ? '/api/tool-policies' : `/api/tool-policies/${policy.role}`;
       const method = isNew ? 'POST' : 'PUT';
 
-      const response = await fetch(url, {
+      await apiFetch<ToolPolicy>(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(policy),
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast({
-          title: isNew ? 'Policy created' : 'Policy updated',
-          description: `Tool policy for role "${policy.role}" has been saved.`,
-        });
-        setEditDialogOpen(false);
-        fetchPolicies();
-      } else {
-        toast({
-          title: 'Failed to save policy',
-          description: result.error || 'Unknown error',
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: isNew ? 'Policy created' : 'Policy updated',
+        description: `Tool policy for role "${policy.role}" has been saved.`,
+      });
+      setEditDialogOpen(false);
+      void fetchPolicies();
     } catch (error) {
       toast({
         title: 'Failed to save policy',
@@ -155,25 +136,15 @@ export function ToolPoliciesTab() {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/tool-policies/${role}`, {
+      await apiFetch<{ deleted: string }>(`/api/tool-policies/${role}`, {
         method: 'DELETE',
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast({
-          title: 'Policy deleted',
-          description: `Tool policy for role "${role}" has been deleted.`,
-        });
-        fetchPolicies();
-      } else {
-        toast({
-          title: 'Failed to delete policy',
-          description: result.error || 'Unknown error',
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: 'Policy deleted',
+        description: `Tool policy for role "${role}" has been deleted.`,
+      });
+      void fetchPolicies();
     } catch (error) {
       toast({
         title: 'Failed to delete policy',

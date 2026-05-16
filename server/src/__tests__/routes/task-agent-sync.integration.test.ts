@@ -42,11 +42,11 @@ describe('Task ↔ Agent registry sync (route-level integration)', () => {
     app.use('/api/tasks', taskRoutes);
     app.use('/api/agents/register', agentRegistryRoutes);
     app.use(errorHandler);
-  });
+  }, 30_000);
 
   afterAll(async () => {
-    disposeTaskService();
-    disposeAgentRegistryService();
+    disposeTaskService?.();
+    disposeAgentRegistryService?.();
     delete process.env.VERITAS_TASK_SYNC_FLAP_GUARD_MS;
     await fs.rm(testRoot, { recursive: true, force: true }).catch(() => {});
   });

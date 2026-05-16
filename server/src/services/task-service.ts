@@ -757,9 +757,11 @@ export class TaskService {
       }
 
       // Handle checkpoint resumption: increment resumeCount if transitioning to in-progress with checkpoint
+      const hasCheckpointInput = Object.prototype.hasOwnProperty.call(input, 'checkpoint');
       let checkpointUpdate = input.checkpoint;
+      let clearCheckpoint = hasCheckpointInput && input.checkpoint === undefined;
       if (
-        !checkpointUpdate &&
+        !hasCheckpointInput &&
         freshTask.checkpoint &&
         input.status === 'in-progress' &&
         previousStatus !== 'in-progress'
@@ -773,7 +775,7 @@ export class TaskService {
 
       // Clear checkpoint when task completes successfully
       if (input.status === 'done' && freshTask.checkpoint) {
-        checkpointUpdate = undefined;
+        clearCheckpoint = true;
       }
 
       // Validate agent ref against registry if being changed (#157)
@@ -802,7 +804,11 @@ export class TaskService {
             ? undefined
             : (blockedReasonUpdate ?? freshTask.blockedReason),
         // Apply checkpoint update (resume count or clear)
-        checkpoint: checkpointUpdate !== undefined ? checkpointUpdate : freshTask.checkpoint,
+        checkpoint: clearCheckpoint
+          ? undefined
+          : checkpointUpdate !== undefined
+            ? checkpointUpdate
+            : freshTask.checkpoint,
         updated: new Date().toISOString(),
       };
 

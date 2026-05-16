@@ -1,8 +1,8 @@
 /**
  * Tests for lib/api/helpers.ts — handleResponse envelope unwrapping.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleResponse } from '@/lib/api/helpers';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { API_BASE, apiFetch, handleResponse } from '@/lib/api/helpers';
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -29,6 +29,10 @@ function brokenJsonResponse(status = 200): Response {
 describe('handleResponse', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('returns undefined for 204 No Content', async () => {
@@ -98,5 +102,15 @@ describe('handleResponse', () => {
   it('returns null body as-is for ok response with broken json', async () => {
     const result = await handleResponse(brokenJsonResponse(200));
     expect(result).toBeNull();
+  });
+
+  it('apiFetch routes /api paths through the configured API base once', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ success: true, data: [] })));
+
+    await apiFetch('/api/tasks');
+    await apiFetch(`${API_BASE}/metrics`);
+
+    expect(fetch).toHaveBeenNthCalledWith(1, `${API_BASE}/tasks`, expect.any(Object));
+    expect(fetch).toHaveBeenNthCalledWith(2, `${API_BASE}/metrics`, expect.any(Object));
   });
 });

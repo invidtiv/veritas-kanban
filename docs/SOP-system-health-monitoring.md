@@ -8,21 +8,21 @@ Read system health indicators and respond to alerts.
 
 The Global System Health API aggregates three signal streams into a single status response, displayed in real-time by the health status bar in the VK dashboard:
 
-| Signal       | What It Monitors                                     |
-| ------------ | ---------------------------------------------------- |
-| `system`     | Storage access, disk space (>100 MB free), memory    |
-| `agents`     | Agent registry — online, offline, total counts       |
-| `operations` | Run metrics — 24h success rate, failed runs          |
+| Signal       | What It Monitors                                  |
+| ------------ | ------------------------------------------------- |
+| `system`     | Storage access, disk space (>100 MB free), memory |
+| `agents`     | Agent registry — online, offline, total counts    |
+| `operations` | Run metrics — 24h success rate, failed runs       |
 
 **Overall status values (ordered by severity):**
 
-| Status      | Meaning                                                       |
-| ----------- | ------------------------------------------------------------- |
-| `stable`    | All signals OK                                                |
-| `reviewing` | One warning signal detected                                   |
-| `drifting`  | Two or more warnings, or at least one agent offline           |
-| `elevated`  | Any signal is `critical`                                      |
-| `alert`     | System storage failure, or operations success rate < 50%      |
+| Status      | Meaning                                                  |
+| ----------- | -------------------------------------------------------- |
+| `stable`    | All signals OK                                           |
+| `reviewing` | One warning signal detected                              |
+| `drifting`  | Two or more warnings, or at least one agent offline      |
+| `elevated`  | Any signal is `critical`                                 |
+| `alert`     | System storage failure, or operations success rate < 50% |
 
 ---
 
@@ -38,7 +38,7 @@ The Global System Health API aggregates three signal streams into a single statu
 ### 1. Check System Health
 
 ```bash
-curl http://localhost:3001/api/system/health
+curl http://localhost:3001/api/v1/system/health
 ```
 
 **Response:**
@@ -75,18 +75,22 @@ curl http://localhost:3001/api/system/health
 **`stable`:** No action needed.
 
 **`reviewing`:** Look at which signal is `warn`:
+
 - `system.memory: false` → heap usage >90% — monitor for leaks or restart if persistent
 - `operations.status: warn` → success rate 80–99% or >5 failed runs — check recent task failures
 
 **`drifting`:** Two signals are warning or agents are offline:
+
 - Check `agents.offline` count — confirm agents are expected to be offline
 - Run `GET /api/agents` to see which agents are offline and their last heartbeat
 
 **`elevated`:** A critical signal exists:
+
 - `agents.status: critical` → all agents offline — check agent processes
 - `operations.status: critical` → success rate <50% or massive failure count — check logs immediately
 
 **`alert`:** Immediate action required:
+
 - `system.storage: false` → data directory inaccessible — check filesystem permissions
 - `system.disk: false` → <100 MB disk free — clean up disk space immediately
 - `operations.successRate < 50` → more than half of recent runs failed — check server logs
@@ -127,7 +131,7 @@ For automated monitoring, poll the health endpoint and alert on status changes:
 #!/bin/bash
 PREV_STATUS=""
 while true; do
-  STATUS=$(curl -s http://localhost:3001/api/system/health | jq -r '.status')
+  STATUS=$(curl -s http://localhost:3001/api/v1/system/health | jq -r '.status')
   if [ "$STATUS" != "$PREV_STATUS" ] && [ "$STATUS" != "stable" ]; then
     echo "ALERT: System status changed to $STATUS"
     # trigger your notification here
@@ -141,9 +145,9 @@ done
 
 ## API Endpoints
 
-| Method | Path                  | Description                          |
-| ------ | --------------------- | ------------------------------------ |
-| `GET`  | `/api/system/health`  | Get aggregated system health status  |
+| Method | Path                    | Description                         |
+| ------ | ----------------------- | ----------------------------------- |
+| `GET`  | `/api/v1/system/health` | Get aggregated system health status |
 
 ---
 
@@ -158,6 +162,7 @@ System storage fail OR successRate < 50% → alert
 ```
 
 Thresholds (hardcoded in v4.0):
+
 - **Memory warn:** heap used > 90%
 - **Disk fail:** free space < 100 MB
 - **Operations warn:** success rate 80–99%, or failedRuns > 5

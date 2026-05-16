@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from 'node:fs';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -23,11 +24,15 @@ import { sprintTools, handleSprintTool } from './tools/sprints.js';
 import { commentTools, handleCommentTool } from './tools/comments.js';
 import { projectTools, handleProjectTool } from './tools/projects.js';
 
+const packageJson = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf-8')
+) as { version?: string };
+
 // Create MCP server
 const server = new Server(
   {
     name: 'veritas-kanban',
-    version: '0.1.0',
+    version: packageJson.version ?? '0.0.0',
   },
   {
     capabilities: {

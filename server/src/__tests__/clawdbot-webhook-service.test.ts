@@ -4,6 +4,13 @@
  * Tests payload formatting, HMAC signing, delivery logic, and retry behaviour.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+const mockLookup = vi.hoisted(() => vi.fn());
+
+vi.mock('node:dns/promises', () => ({
+  lookup: mockLookup,
+}));
+
 import {
   signPayload,
   setWebhookUrl,
@@ -33,6 +40,8 @@ function mockFetch(response: { ok: boolean; status?: number } = { ok: true, stat
 describe('ClawdbotWebhookService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    mockLookup.mockReset();
+    mockLookup.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
     // Clear env overrides
     delete process.env.VERITAS_WEBHOOK_URL;
     delete process.env.VERITAS_WEBHOOK_SECRET;
@@ -173,6 +182,17 @@ describe('ClawdbotWebhookService', () => {
       await vi.advanceTimersByTimeAsync(2_000);
 
       expect(fetchSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not fetch or retry when outbound URL policy blocks the host', async () => {
+      setWebhookUrl('https://hook.test/endpoint');
+      mockLookup.mockResolvedValue([{ address: '10.0.0.10', family: 4 }]);
+      const fetchSpy = mockFetch();
+
+      await deliverWebhook(samplePayload);
+      await vi.advanceTimersByTimeAsync(2_000);
+
+      expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it('does NOT retry on success', async () => {

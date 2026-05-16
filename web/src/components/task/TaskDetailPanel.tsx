@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ import {
   NotebookPen,
   Workflow,
   Eye,
+  type LucideIcon,
 } from 'lucide-react';
 import type { Task, ReviewComment, ReviewState } from '@veritas-kanban/shared';
 import { useAddObservation, useDeleteObservation } from '@/hooks/useTasks';
@@ -46,6 +47,85 @@ interface TaskDetailPanelProps {
   readOnly?: boolean;
   onRestore?: (taskId: string) => void;
 }
+
+type TaskDetailTabId =
+  | 'details'
+  | 'progress'
+  | 'observations'
+  | 'attachments'
+  | 'git'
+  | 'agent'
+  | 'changes'
+  | 'review'
+  | 'metrics';
+
+interface TaskDetailTabDefinition {
+  id: TaskDetailTabId;
+  label: string;
+  Icon?: LucideIcon;
+  fallbackTitle?: string;
+  codeOnly?: boolean;
+  feature?: 'attachments';
+  disabledWithoutWorktree?: boolean;
+}
+
+const TASK_DETAIL_TABS: readonly TaskDetailTabDefinition[] = [
+  { id: 'details', label: 'Details' },
+  {
+    id: 'progress',
+    label: 'Progress',
+    Icon: NotebookPen,
+    fallbackTitle: 'Progress section failed to load',
+  },
+  {
+    id: 'observations',
+    label: 'Observations',
+    Icon: Eye,
+    fallbackTitle: 'Observations section failed to load',
+  },
+  {
+    id: 'attachments',
+    label: 'Attachments',
+    Icon: Paperclip,
+    fallbackTitle: 'Attachments section failed to load',
+    feature: 'attachments',
+  },
+  {
+    id: 'git',
+    label: 'Git',
+    Icon: GitBranch,
+    fallbackTitle: 'Git section failed to load',
+    codeOnly: true,
+  },
+  {
+    id: 'agent',
+    label: 'Agent',
+    Icon: Bot,
+    fallbackTitle: 'Agent panel failed to load',
+    codeOnly: true,
+  },
+  {
+    id: 'changes',
+    label: 'Changes',
+    Icon: FileDiff,
+    fallbackTitle: 'Changes viewer failed to load',
+    codeOnly: true,
+    disabledWithoutWorktree: true,
+  },
+  {
+    id: 'review',
+    label: 'Review',
+    Icon: ClipboardCheck,
+    fallbackTitle: 'Review panel failed to load',
+    codeOnly: true,
+  },
+  {
+    id: 'metrics',
+    label: 'Metrics',
+    Icon: BarChart3,
+    fallbackTitle: 'Metrics panel failed to load',
+  },
+];
 
 export function TaskDetailPanel({
   task,
@@ -77,15 +157,105 @@ export function TaskDetailPanel({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onOpenChange]);
 
-  if (!localTask) return null;
+  const isCodeTask = localTask?.type === 'code';
+  const hasWorktree = !!localTask?.git?.worktreePath;
+  const visibleTabs = useMemo(
+    () =>
+      TASK_DETAIL_TABS.filter((tab) => {
+        if (tab.codeOnly && !isCodeTask) return false;
+        if (tab.feature === 'attachments' && !taskSettings.enableAttachments) return false;
+        return true;
+      }).map((tab) => ({
+        ...tab,
+        disabled: tab.disabledWithoutWorktree && !hasWorktree,
+      })),
+    [hasWorktree, isCodeTask, taskSettings.enableAttachments]
+  );
 
-  const isCodeTask = localTask.type === 'code';
-  const hasWorktree = !!localTask.git?.worktreePath;
+  useEffect(() => {
+    const activeTabAvailable = visibleTabs.some((tab) => tab.id === activeTab && !tab.disabled);
+    if (!activeTabAvailable) {
+      setActiveTab('details');
+    }
+  }, [activeTab, visibleTabs]);
+
+  if (!localTask) return null;
 
   // Get current type info
   const currentType = taskTypes.find((t) => t.id === localTask.type);
   const TypeIconComponent = currentType ? getTypeIcon(currentType.icon) : null;
   const typeLabel = currentType ? currentType.label : localTask.type;
+  const renderTabContent = (tabId: TaskDetailTabId) => {
+    switch (tabId) {
+      case 'details':
+        return (
+          <TaskDetailsTab
+            task={localTask}
+            onUpdate={updateField}
+            onClose={() => onOpenChange(false)}
+            readOnly={readOnly}
+            onRestore={onRestore}
+          />
+        );
+      case 'progress':
+        return <ProgressTab task={localTask} />;
+      case 'observations':
+        return (
+          <ObservationsSection
+            task={localTask}
+            onAddObservation={async (data) => {
+              await addObservation.mutateAsync({ taskId: localTask.id, data });
+            }}
+            onDeleteObservation={async (observationId) => {
+              await deleteObservation.mutateAsync({
+                taskId: localTask.id,
+                observationId,
+              });
+            }}
+          />
+        );
+      case 'attachments':
+        return <AttachmentsSection task={localTask} />;
+      case 'git':
+        return (
+          <GitSection
+            task={localTask}
+            onGitChange={(git) => updateField('git', git as Task['git'])}
+          />
+        );
+      case 'agent':
+        return <AgentPanel task={localTask} />;
+      case 'changes':
+        if (!hasWorktree) return null;
+        return (
+          <DiffViewer
+            task={localTask}
+            onAddComment={(comment: ReviewComment) => {
+              const newComments = [...(localTask.reviewComments || []), comment];
+              updateField('reviewComments', newComments);
+            }}
+            onRemoveComment={(commentId: string) => {
+              const newComments = (localTask.reviewComments || []).filter(
+                (comment) => comment.id !== commentId
+              );
+              updateField('reviewComments', newComments.length > 0 ? newComments : undefined);
+            }}
+          />
+        );
+      case 'review':
+        return (
+          <ReviewPanel
+            task={localTask}
+            onReview={(review: ReviewState) => {
+              updateField('review', Object.keys(review).length > 0 ? review : undefined);
+            }}
+            onMergeComplete={() => onOpenChange(false)}
+          />
+        );
+      case 'metrics':
+        return <TaskMetricsPanel task={localTask} />;
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -179,161 +349,34 @@ export function TaskDetailPanel({
           className="flex-1 flex flex-col overflow-hidden px-6 pt-3 pb-6"
         >
           <TabsList className="w-full flex-shrink-0 justify-start overflow-x-auto">
-            <TabsTrigger value="details" className="flex-none px-3">
-              Details
-            </TabsTrigger>
-            <TabsTrigger value="progress" className="flex-none px-3">
-              <NotebookPen className="h-3 w-3" />
-              Progress
-            </TabsTrigger>
-            <TabsTrigger value="observations" className="flex-none px-3">
-              <Eye className="h-3 w-3" />
-              Observations
-            </TabsTrigger>
-            {taskSettings.enableAttachments && (
-              <TabsTrigger value="attachments" className="flex-none px-3">
-                <Paperclip className="h-3 w-3" />
-                Attachments
-              </TabsTrigger>
-            )}
-            {isCodeTask && (
-              <>
-                <TabsTrigger value="git" className="flex-none px-3">
-                  <GitBranch className="h-3 w-3" />
-                  Git
+            {visibleTabs.map((tab) => {
+              const Icon = tab.Icon;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  disabled={tab.disabled}
+                  className="flex-none px-3"
+                >
+                  {Icon && <Icon className="h-3 w-3" />}
+                  {tab.label}
                 </TabsTrigger>
-                <TabsTrigger value="agent" className="flex-none px-3">
-                  <Bot className="h-3 w-3" />
-                  Agent
-                </TabsTrigger>
-                <TabsTrigger value="changes" disabled={!hasWorktree} className="flex-none px-3">
-                  <FileDiff className="h-3 w-3" />
-                  Changes
-                </TabsTrigger>
-                <TabsTrigger value="review" className="flex-none px-3">
-                  <ClipboardCheck className="h-3 w-3" />
-                  Review
-                </TabsTrigger>
-              </>
-            )}
-            <TabsTrigger value="metrics" className="flex-none px-3">
-              <BarChart3 className="h-3 w-3" />
-              Metrics
-            </TabsTrigger>
+              );
+            })}
           </TabsList>
 
           <div className="flex-1 overflow-y-auto mt-4 pr-1">
-            {/* Details Tab */}
-            <TabsContent value="details" className="mt-0">
-              <TaskDetailsTab
-                task={localTask}
-                onUpdate={updateField}
-                onClose={() => onOpenChange(false)}
-                readOnly={readOnly}
-                onRestore={onRestore}
-              />
-            </TabsContent>
-
-            {/* Progress Tab */}
-            <TabsContent value="progress" className="mt-0">
-              <FeatureErrorBoundary fallbackTitle="Progress section failed to load">
-                <ProgressTab task={localTask} />
-              </FeatureErrorBoundary>
-            </TabsContent>
-
-            {/* Observations Tab */}
-            <TabsContent value="observations" className="mt-0">
-              <FeatureErrorBoundary fallbackTitle="Observations section failed to load">
-                <ObservationsSection
-                  task={localTask}
-                  onAddObservation={async (data) => {
-                    await addObservation.mutateAsync({ taskId: localTask.id, data });
-                  }}
-                  onDeleteObservation={async (observationId) => {
-                    await deleteObservation.mutateAsync({
-                      taskId: localTask.id,
-                      observationId,
-                    });
-                  }}
-                />
-              </FeatureErrorBoundary>
-            </TabsContent>
-
-            {/* Attachments Tab */}
-            {taskSettings.enableAttachments && (
-              <TabsContent value="attachments" className="mt-0">
-                <FeatureErrorBoundary fallbackTitle="Attachments section failed to load">
-                  <AttachmentsSection task={localTask} />
-                </FeatureErrorBoundary>
+            {visibleTabs.map((tab) => (
+              <TabsContent key={tab.id} value={tab.id} className="mt-0">
+                {tab.fallbackTitle ? (
+                  <FeatureErrorBoundary fallbackTitle={tab.fallbackTitle}>
+                    {renderTabContent(tab.id)}
+                  </FeatureErrorBoundary>
+                ) : (
+                  renderTabContent(tab.id)
+                )}
               </TabsContent>
-            )}
-
-            {/* Git Tab */}
-            {isCodeTask && (
-              <TabsContent value="git" className="mt-0">
-                <FeatureErrorBoundary fallbackTitle="Git section failed to load">
-                  <GitSection
-                    task={localTask}
-                    onGitChange={(git) => updateField('git', git as Task['git'])}
-                  />
-                </FeatureErrorBoundary>
-              </TabsContent>
-            )}
-
-            {/* Agent Tab */}
-            {isCodeTask && (
-              <TabsContent value="agent" className="mt-0">
-                <FeatureErrorBoundary fallbackTitle="Agent panel failed to load">
-                  <AgentPanel task={localTask} />
-                </FeatureErrorBoundary>
-              </TabsContent>
-            )}
-
-            {/* Changes Tab */}
-            {isCodeTask && hasWorktree && (
-              <TabsContent value="changes" className="mt-0">
-                <FeatureErrorBoundary fallbackTitle="Changes viewer failed to load">
-                  <DiffViewer
-                    task={localTask}
-                    onAddComment={(comment: ReviewComment) => {
-                      const newComments = [...(localTask.reviewComments || []), comment];
-                      updateField('reviewComments', newComments);
-                    }}
-                    onRemoveComment={(commentId: string) => {
-                      const newComments = (localTask.reviewComments || []).filter(
-                        (c) => c.id !== commentId
-                      );
-                      updateField(
-                        'reviewComments',
-                        newComments.length > 0 ? newComments : undefined
-                      );
-                    }}
-                  />
-                </FeatureErrorBoundary>
-              </TabsContent>
-            )}
-
-            {/* Review Tab */}
-            {isCodeTask && (
-              <TabsContent value="review" className="mt-0">
-                <FeatureErrorBoundary fallbackTitle="Review panel failed to load">
-                  <ReviewPanel
-                    task={localTask}
-                    onReview={(review: ReviewState) => {
-                      updateField('review', Object.keys(review).length > 0 ? review : undefined);
-                    }}
-                    onMergeComplete={() => onOpenChange(false)}
-                  />
-                </FeatureErrorBoundary>
-              </TabsContent>
-            )}
-
-            {/* Metrics Tab */}
-            <TabsContent value="metrics" className="mt-0">
-              <FeatureErrorBoundary fallbackTitle="Metrics panel failed to load">
-                <TaskMetricsPanel task={localTask} />
-              </FeatureErrorBoundary>
-            </TabsContent>
+            ))}
           </div>
         </Tabs>
       </SheetContent>

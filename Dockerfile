@@ -25,6 +25,8 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY shared/package.json ./shared/
 COPY server/package.json ./server/
 COPY web/package.json ./web/
+COPY cli/package.json ./cli/
+COPY mcp/package.json ./mcp/
 
 # Install all dependencies (dev + prod) for building
 RUN pnpm install --frozen-lockfile
@@ -76,6 +78,8 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY shared/package.json ./shared/
 COPY server/package.json ./server/
 COPY web/package.json ./web/
+COPY cli/package.json ./cli/
+COPY mcp/package.json ./mcp/
 
 # Install production-only dependencies
 # --ignore-scripts: skip husky prepare hook (not needed in container)

@@ -37,6 +37,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Enforce lint warning budget
+        run: pnpm lint:budget
+
       - name: Type check all packages
         run: pnpm typecheck
 
@@ -103,6 +106,16 @@ jobs:
           fi
           echo "✅ Server build output exists"
           ls -la server/dist/
+
+      - name: Verify CLI and MCP build output
+        run: |
+          for file in cli/dist/index.js mcp/dist/index.js; do
+            if [ ! -f "$file" ]; then
+              echo "::error::$file not found"
+              exit 1
+            fi
+          done
+          echo "✅ CLI and MCP build outputs exist"
 
   # ─── Security Audit ──────────────────────────────────────────────
   security-audit:

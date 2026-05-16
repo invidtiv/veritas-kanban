@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added `pnpm validate:release` to verify workspace versions, required release files, README badge, changelog heading, built artifacts, and optional GitHub tag/release state.
+- Added a scheduled QA workflow that runs Playwright and k6 checks outside the fast pull request CI path.
+- Added a codebase audit report at `docs/CODEBASE-AUDIT-2026-05-16.md` with linked follow-up issues.
+
+### Changed
+
+- Expanded the root build and CI artifact checks to include the CLI and MCP packages.
+- Split heavy web panels and task-detail surfaces out of the initial Vite bundle, removing oversized chunk warnings from the production build.
+- Centralized web view metadata and task-detail tab metadata to reduce navigation and feature-gate drift.
+- Added a lint warning budget gate after reducing current warning debt from 728 to 714.
+
+### Fixed
+
+- Hardened outbound webhook URL handling with shared validation and redirect checks.
+- Fixed board drag reordering, dependency blocking, checkpoint clearing, CLI/MCP version reporting, API envelope handling, and setup guidance found during the audit.
+- Fixed Docker workspace dependency stages to include CLI and MCP package manifests.
+
 ## [4.3.1] - 2026-05-11
 
 ### Security

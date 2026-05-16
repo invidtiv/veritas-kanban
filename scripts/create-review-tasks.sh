@@ -1,18 +1,27 @@
 #!/bin/bash
-# Script to create remaining code review tasks
-# Pauses between requests to avoid rate limiting
+# Legacy one-off script to create historical code review tasks.
+# Requires an explicit opt-in so it is not run accidentally during repo setup.
 
-API="http://localhost:3001/api/tasks"
+if [ "${CONFIRM_CREATE_REVIEW_TASKS:-}" != "1" ]; then
+  echo "This is a legacy one-off script. Set CONFIRM_CREATE_REVIEW_TASKS=1 to run it."
+  exit 1
+fi
+
+API="${VK_API_URL:-http://localhost:3001}/api/tasks"
+AUTH_HEADER=()
+if [ -n "${VK_API_KEY:-}" ]; then
+  AUTH_HEADER=(-H "x-api-key: ${VK_API_KEY}")
+fi
 
 create_task() {
   local title="$1"
   local desc="$2"
   local priority="$3"
   
-  curl -s -X POST "$API" -H "Content-Type: application/json" -d "{
+  curl -s -X POST "$API" "${AUTH_HEADER[@]}" -H "Content-Type: application/json" -d "{
     \"title\": \"$title\",
     \"description\": \"$desc\",
-    \"type\": \"refactor-saXoty\",
+    \"type\": \"code\",
     \"priority\": \"$priority\",
     \"project\": \"veritas-kanban\"
   }" > /dev/null

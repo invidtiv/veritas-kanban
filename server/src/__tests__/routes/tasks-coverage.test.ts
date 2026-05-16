@@ -243,7 +243,7 @@ describe('Tasks Routes (actual module)', () => {
     });
 
     it('should reject blocked task moving to in-progress', async () => {
-      const oldTask = { id: 't1', status: 'todo', title: 'Task', blockedBy: ['t2'] };
+      const oldTask = { id: 't1', status: 'blocked', title: 'Task', blockedBy: ['t2'] };
       mockTaskService.getTask.mockResolvedValue(oldTask);
       mockTaskService.listTasks.mockResolvedValue([oldTask]);
       mockBlockingService.canMoveToInProgress.mockReturnValue({

@@ -53,15 +53,7 @@ import { apiRateLimit, authRateLimit } from './middleware/rate-limit.js';
 import { apiVersionMiddleware } from './middleware/api-version.js';
 import { apiCacheHeaders } from './middleware/cache-control.js';
 import type { AgentOutput } from './services/clawdbot-agent-service.js';
-import { taskArchiveRoutes } from './routes/task-archive.js';
-import { taskTimeRoutes } from './routes/task-time.js';
-import { taskRoutes } from './routes/tasks.js';
-import { taskCommentRoutes } from './routes/task-comments.js';
-import { taskSubtaskRoutes } from './routes/task-subtasks.js';
-import attachmentRoutes from './routes/attachments.js';
 import { webhookN8nRouter } from './routes/webhook-n8n.js';
-import { configRoutes } from './routes/config.js';
-import { agentRoutes } from './routes/agents.js';
 import { cspNonceMiddleware, cspNonceDirective } from './middleware/csp-nonce.js';
 import { healthRouter, apiHealthRouter, setHealthWss } from './routes/health.js';
 import { getPrometheusCollector } from './services/metrics/prometheus.js';
@@ -669,7 +661,7 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
   // Authenticate WebSocket connection
   const authResult = authenticateWebSocket(req);
 
-  if (!authResult.authenticated) {
+  if (!authResult.authenticated || !authResult.role) {
     log.warn({ error: authResult.error }, 'WebSocket connection rejected');
     ws.close(4001, authResult.error || 'Authentication required');
     return;
@@ -677,7 +669,7 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
 
   // Attach auth info to WebSocket for later use
   ws.auth = {
-    role: authResult.role!,
+    role: authResult.role,
     keyName: authResult.keyName,
     isLocalhost: authResult.isLocalhost,
   };
@@ -709,10 +701,16 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
   let currentErrorHandler: ((error: Error) => void) | null = null;
 
   const cleanupEmitterListeners = () => {
-    if (currentEmitter && currentOutputHandler) {
-      currentEmitter.off('output', currentOutputHandler);
-      currentEmitter.off('complete', currentCompleteHandler!);
-      currentEmitter.off('error', currentErrorHandler!);
+    if (currentEmitter) {
+      if (currentOutputHandler) {
+        currentEmitter.off('output', currentOutputHandler);
+      }
+      if (currentCompleteHandler) {
+        currentEmitter.off('complete', currentCompleteHandler);
+      }
+      if (currentErrorHandler) {
+        currentEmitter.off('error', currentErrorHandler);
+      }
       currentEmitter = null;
       currentOutputHandler = null;
       currentCompleteHandler = null;
@@ -759,10 +757,12 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
         // Subscribe to new chat session
         const sessionId: string = message.sessionId;
         subscribedChatSession = sessionId;
-        if (!chatSubscriptions.has(sessionId)) {
-          chatSubscriptions.set(sessionId, new Set());
+        let sessionSubscribers = chatSubscriptions.get(sessionId);
+        if (!sessionSubscribers) {
+          sessionSubscribers = new Set();
+          chatSubscriptions.set(sessionId, sessionSubscribers);
         }
-        chatSubscriptions.get(sessionId)!.add(ws);
+        sessionSubscribers.add(ws);
 
         // Send confirmation
         ws.send(
@@ -772,10 +772,7 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
           })
         );
 
-        log.debug(
-          { sessionId, clients: chatSubscriptions.get(sessionId)!.size },
-          'Chat subscription added'
-        );
+        log.debug({ sessionId, clients: sessionSubscribers.size }, 'Chat subscription added');
       }
 
       // Handle subscription to agent output
@@ -794,10 +791,12 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
         // Subscribe to new task
         const newTaskId: string = message.taskId;
         subscribedTaskId = newTaskId;
-        if (!agentSubscriptions.has(newTaskId)) {
-          agentSubscriptions.set(newTaskId, new Set());
+        let taskSubscribers = agentSubscriptions.get(newTaskId);
+        if (!taskSubscribers) {
+          taskSubscribers = new Set();
+          agentSubscriptions.set(newTaskId, taskSubscribers);
         }
-        agentSubscriptions.get(newTaskId)!.add(ws);
+        taskSubscribers.add(ws);
 
         // Clean up previous emitter listeners before subscribing to new task
         cleanupEmitterListeners();

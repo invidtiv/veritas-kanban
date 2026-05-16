@@ -2,7 +2,6 @@ import { useTasks, useTasksByStatus, useUpdateTask, useReorderTasks } from '@/ho
 import { useBoardDragDrop } from '@/hooks/useBoardDragDrop';
 import { KanbanColumn } from './KanbanColumn';
 import { BoardLoadingSkeleton } from './BoardLoadingSkeleton';
-import { TaskDetailPanel } from '@/components/task/TaskDetailPanel';
 import type { TaskStatus, Task } from '@veritas-kanban/shared';
 import { useFeatureSettings } from '@/hooks/useFeatureSettings';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
@@ -33,6 +32,12 @@ const Dashboard = lazy(() =>
   }))
 );
 
+const TaskDetailPanel = lazy(() =>
+  import('@/components/task/TaskDetailPanel').then((mod) => ({
+    default: mod.TaskDetailPanel,
+  }))
+);
+
 const COLUMNS: { id: TaskStatus; title: string }[] = [
   { id: 'todo', title: 'To Do' },
   { id: 'in-progress', title: 'In Progress' },
@@ -46,6 +51,7 @@ export function KanbanBoard() {
   const { announce } = useLiveAnnouncer();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [detailPanelMounted, setDetailPanelMounted] = useState(false);
 
   // Initialize filters from URL
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -67,6 +73,7 @@ export function KanbanBoard() {
       // Try local task list first
       const localTask = tasks?.find((t) => t.id === pendingTaskId);
       if (localTask) {
+        setDetailPanelMounted(true);
         setSelectedTask(localTask);
         setDetailOpen(true);
         clearPendingTask();
@@ -78,6 +85,7 @@ export function KanbanBoard() {
         const { api } = await import('@/lib/api');
         const fetchedTask = await api.tasks.get(pendingTaskId);
         if (fetchedTask) {
+          setDetailPanelMounted(true);
           setSelectedTask(fetchedTask);
           setDetailOpen(true);
         }
@@ -114,6 +122,7 @@ export function KanbanBoard() {
 
   // Handler for opening a task
   const handleTaskClick = useCallback((task: Task) => {
+    setDetailPanelMounted(true);
     setSelectedTask(task);
     setDetailOpen(true);
   }, []);
@@ -127,6 +136,7 @@ export function KanbanBoard() {
       // Try local task list first
       const localTask = tasks?.find((t) => t.id === taskId);
       if (localTask) {
+        setDetailPanelMounted(true);
         setSelectedTask(localTask);
         setDetailOpen(true);
         return;
@@ -137,6 +147,7 @@ export function KanbanBoard() {
         const { api } = await import('@/lib/api');
         const fetchedTask = await api.tasks.get(taskId);
         if (fetchedTask) {
+          setDetailPanelMounted(true);
           setSelectedTask(fetchedTask);
           setDetailOpen(true);
         }
@@ -318,11 +329,15 @@ export function KanbanBoard() {
         )}
       </FeatureErrorBoundary>
 
-      <TaskDetailPanel
-        task={currentSelectedTask}
-        open={detailOpen}
-        onOpenChange={handleDetailClose}
-      />
+      {detailPanelMounted && (
+        <Suspense fallback={null}>
+          <TaskDetailPanel
+            task={currentSelectedTask}
+            open={detailOpen}
+            onOpenChange={handleDetailClose}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

@@ -16,6 +16,7 @@ import { SkipToContent } from './components/shared/SkipToContent';
 import { LiveAnnouncerProvider } from './components/shared/LiveAnnouncer';
 import { FloatingChat } from './components/chat/FloatingChat';
 import { SystemHealthBar } from './components/layout/SystemHealthBar';
+import { VIEW_BY_ID, type AppView } from './lib/views';
 
 // Lazy-load ActivityFeed and BacklogPage to keep initial bundle small
 const ActivityFeed = lazy(() =>
@@ -72,19 +73,21 @@ const PolicyManager = lazy(() =>
   }))
 );
 
+function ViewLoading({ view }: { view: AppView }) {
+  return (
+    <div className="flex items-center justify-center py-16">
+      <span className="text-muted-foreground">{VIEW_BY_ID[view].loadingLabel ?? 'Loading...'}</span>
+    </div>
+  );
+}
+
 /** Renders the current view (board, activity feed, or backlog). */
 function MainContent() {
   const { view, setView, navigateToTask } = useView();
 
   if (view === 'activity') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading activity feed…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="activity" />}>
         <ActivityFeed
           onBack={() => setView('board')}
           onTaskClick={(taskId) => navigateToTask(taskId)}
@@ -95,13 +98,7 @@ function MainContent() {
 
   if (view === 'backlog') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading backlog…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="backlog" />}>
         <BacklogPage onBack={() => setView('board')} />
       </Suspense>
     );
@@ -109,13 +106,7 @@ function MainContent() {
 
   if (view === 'archive') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading archive…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="archive" />}>
         <ArchivePage onBack={() => setView('board')} />
       </Suspense>
     );
@@ -123,13 +114,7 @@ function MainContent() {
 
   if (view === 'templates') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading templates…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="templates" />}>
         <TemplatesPage onBack={() => setView('board')} />
       </Suspense>
     );
@@ -137,13 +122,7 @@ function MainContent() {
 
   if (view === 'workflows') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading workflows…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="workflows" />}>
         <WorkflowsPage onBack={() => setView('board')} />
       </Suspense>
     );
@@ -151,13 +130,7 @@ function MainContent() {
 
   if (view === 'drift') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading drift monitor…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="drift" />}>
         <DriftMonitor onBack={() => setView('board')} />
       </Suspense>
     );
@@ -165,13 +138,7 @@ function MainContent() {
 
   if (view === 'decisions') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading decisions…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="decisions" />}>
         <DecisionExplorer onBack={() => setView('board')} />
       </Suspense>
     );
@@ -179,13 +146,7 @@ function MainContent() {
 
   if (view === 'scoring') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading scoring…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="scoring" />}>
         <ScoringProfiles onBack={() => setView('board')} />
       </Suspense>
     );
@@ -193,13 +154,7 @@ function MainContent() {
 
   if (view === 'policies') {
     return (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-16">
-            <span className="text-muted-foreground">Loading policies…</span>
-          </div>
-        }
-      >
+      <Suspense fallback={<ViewLoading view="policies" />}>
         <PolicyManager onBack={() => setView('board')} />
       </Suspense>
     );
