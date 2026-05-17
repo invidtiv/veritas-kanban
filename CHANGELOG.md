@@ -7,24 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.2] - 2026-05-16
+
 ### Added
 
-- Added `pnpm validate:release` to verify workspace versions, required release files, README badge, changelog heading, built artifacts, and optional GitHub tag/release state.
-- Added a scheduled QA workflow that runs Playwright and k6 checks outside the fast pull request CI path.
-- Added a codebase audit report at `docs/CODEBASE-AUDIT-2026-05-16.md` with linked follow-up issues.
+- Added `pnpm validate:release` to verify workspace version alignment, required release files, the README version badge, changelog headings, built artifacts, optional GitHub tag/release state, and optional production Docker image builds.
+- Added `.github/workflows/scheduled-qa.yml` so Playwright and k6 smoke/load checks can run on a scheduled cadence outside the fast pull request CI path.
+- Added the full codebase audit report at `docs/CODEBASE-AUDIT-2026-05-16.md`, including completed remediation notes and linked follow-up issues for the remaining larger work.
+- Added dedicated URL validation regression coverage for blocked localhost, private-network, and unsafe redirect webhook targets.
 
 ### Changed
 
-- Expanded the root build and CI artifact checks to include the CLI and MCP packages.
-- Split heavy web panels and task-detail surfaces out of the initial Vite bundle, removing oversized chunk warnings from the production build.
-- Centralized web view metadata and task-detail tab metadata to reduce navigation and feature-gate drift.
-- Added a lint warning budget gate after reducing current warning debt from 728 to 714.
+- Bumped the release from `4.3.1` to `4.3.2` across the root, shared, server, web, CLI, and MCP package manifests.
+- Updated the README version badge and MCP documentation footer for `4.3.2`.
+- Expanded the root build script and CI artifact checks to include the CLI and MCP packages so release validation covers every published/runtime surface.
+- Split heavy web panels, chat, board, command palette, and task-detail surfaces out of the initial Vite bundle, removing oversized chunk warnings from the production build.
+- Centralized web view metadata and task-detail tab metadata to reduce navigation drift, feature-gate drift, and duplicated labels.
+- Added a lint warning budget gate after reducing current warning debt from 728 to 714, making future lint debt increases visible in CI.
+- Stabilized full-suite test execution by tightening async Codex provider assertions, isolating Docker path filesystem mocks, and giving slower jsdom/route-integration tests realistic timeouts.
 
 ### Fixed
 
-- Hardened outbound webhook URL handling with shared validation and redirect checks.
-- Fixed board drag reordering, dependency blocking, checkpoint clearing, CLI/MCP version reporting, API envelope handling, and setup guidance found during the audit.
-- Fixed Docker workspace dependency stages to include CLI and MCP package manifests.
+- Hardened outbound webhook URL handling with shared validation, DNS/IP block checks, and redirect validation before webhook delivery.
+- Fixed board drag reordering persistence, dependency-blocked task transitions, checkpoint clearing semantics, CLI/MCP version reporting, API envelope handling, and setup guidance found during the audit.
+- Fixed Docker workspace dependency stages to include CLI and MCP package manifests before install/build steps.
+- Fixed failure-alert, hook, policy, squad webhook, and transition hook services to use the hardened URL validation path consistently.
 
 ## [4.3.1] - 2026-05-11
 
