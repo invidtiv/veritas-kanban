@@ -6,6 +6,14 @@ import { renderWithProviders } from './test-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NumberInput } from '@/components/ui/number-input';
@@ -70,6 +78,28 @@ function TabsProbe() {
       <TabsContent value="activity">Activity content</TabsContent>
       <span data-testid="selected-tab">{selectedTab}</span>
     </Tabs>
+  );
+}
+
+function DialogProbe() {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button>Open dialog</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Dialog title</DialogTitle>
+          <DialogDescription>Dialog description</DialogDescription>
+          <DialogClose asChild>
+            <Button>Done</Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
+      <span data-testid="dialog-state">{String(open)}</span>
+    </>
   );
 }
 
@@ -181,6 +211,32 @@ describe('Mantine-backed shared UI primitives', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Helpful detail')).toBeDefined();
+    });
+  });
+
+  it('opens and closes Mantine-backed dialogs through the legacy API', async () => {
+    renderWithProviders(<DialogProbe />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open dialog' }));
+
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog');
+      const title = screen.getByText('Dialog title');
+      const description = screen.getByText('Dialog description');
+      const describedBy = dialog.getAttribute('aria-describedby');
+
+      expect(dialog.getAttribute('aria-labelledby')).toBe(title.getAttribute('id'));
+      expect(describedBy).toBeTruthy();
+      expect(document.getElementById(describedBy ?? '')?.textContent).toContain(
+        description.textContent
+      );
+      expect(screen.getByTestId('dialog-state').textContent).toBe('true');
+    });
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('dialog-state').textContent).toBe('false');
     });
   });
 });
