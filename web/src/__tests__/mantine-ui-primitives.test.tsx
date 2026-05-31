@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { notifications } from '@mantine/notifications';
 import { renderWithProviders } from './test-utils';
@@ -31,6 +31,13 @@ import { NumberInput } from '@/components/ui/number-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -45,6 +52,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { toast } from '@/hooks/useToast';
+
+const originalScrollIntoView = Element.prototype.scrollIntoView;
 
 function ToggleProbe() {
   const [checked, setChecked] = React.useState(false);
@@ -171,7 +180,34 @@ function AlertDialogProbe() {
   );
 }
 
+function SelectProbe() {
+  const [value, setValue] = React.useState('todo');
+
+  return (
+    <>
+      <Select value={value} onValueChange={setValue}>
+        <SelectTrigger aria-label="Status" className="w-44">
+          <SelectValue placeholder="Choose status" />
+        </SelectTrigger>
+        <SelectContent align="start">
+          <SelectItem value="todo">To Do</SelectItem>
+          <SelectItem value="done">Done</SelectItem>
+        </SelectContent>
+      </Select>
+      <span data-testid="select-state">{value}</span>
+    </>
+  );
+}
+
 describe('Mantine-backed shared UI primitives', () => {
+  beforeAll(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterAll(() => {
+    Element.prototype.scrollIntoView = originalScrollIntoView;
+  });
+
   afterEach(() => {
     notifications.clean();
     cleanup();
@@ -241,6 +277,17 @@ describe('Mantine-backed shared UI primitives', () => {
 
     expect(screen.getByTestId('selected-tab').textContent).toBe('activity');
     expect(screen.getByText('Activity content')).toBeDefined();
+  });
+
+  it('changes Mantine-backed selects through the legacy value API', async () => {
+    renderWithProviders(<SelectProbe />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Status' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Done' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('select-state').textContent).toBe('done');
+    });
   });
 
   it('opens Mantine-backed popovers through the legacy trigger/content API', async () => {
