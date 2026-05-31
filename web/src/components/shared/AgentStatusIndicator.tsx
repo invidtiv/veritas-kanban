@@ -314,7 +314,7 @@ export function AgentStatusIndicator({
   const Icon = config.icon;
 
   return (
-    <Popover>
+    <Popover position="bottom-start">
       <PopoverTrigger asChild>
         <button
           className={`flex items-center gap-2 min-w-[32px] sm:min-w-[140px] md:min-w-[200px] cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1 transition-colors ${className}`}
@@ -349,7 +349,7 @@ export function AgentStatusIndicator({
         </button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-80" align="start">
+      <PopoverContent className="w-80">
         <div className="space-y-4">
           {/* Current Status Header */}
           <div className="flex items-center gap-3">

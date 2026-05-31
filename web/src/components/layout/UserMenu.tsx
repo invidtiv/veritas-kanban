@@ -82,7 +82,7 @@ export function UserMenu({ onOpenSecuritySettings, onOpenIdentitySettings }: Use
   const role = activeMembership?.role ?? authContext?.role ?? 'admin';
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} position="bottom-end">
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2" title="Session menu">
           <Lock className="h-4 w-4 text-emerald-500" />
@@ -90,7 +90,7 @@ export function UserMenu({ onOpenSecuritySettings, onOpenIdentitySettings }: Use
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="end">
+      <PopoverContent className="w-72 p-0">
         <div className="p-3 border-b border-border">
           <div className="flex items-start gap-2">
             <div className="mt-0.5 rounded-full bg-primary/10 p-1.5 text-primary">

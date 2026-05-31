@@ -5,6 +5,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AgentStatusIndicator } from '@/components/shared/AgentStatusIndicator';
+import { MantineRoot } from '@/theme/MantineRoot';
 
 // ── Mocks ────────────────────────────────────────────────────
 
@@ -30,14 +31,35 @@ vi.mock('@/lib/api', () => ({
 
 // ── Helpers ──────────────────────────────────────────────────
 
+function ensureMantineBrowserApis() {
+  if (typeof window.matchMedia !== 'function') {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }),
+    });
+  }
+}
+
 function renderIndicator(props: { onOpenActivityLog?: () => void } = {}) {
+  ensureMantineBrowserApis();
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={queryClient}>
-      <AgentStatusIndicator {...props} />
-    </QueryClientProvider>
+    <MantineRoot env="test">
+      <QueryClientProvider client={queryClient}>
+        <AgentStatusIndicator {...props} />
+      </QueryClientProvider>
+    </MantineRoot>
   );
 }
 

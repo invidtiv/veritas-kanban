@@ -1,40 +1,75 @@
 import * as React from 'react';
-import { Popover as PopoverPrimitive } from 'radix-ui';
+import { Popover as MantinePopover, type PopoverProps as MantinePopoverProps } from '@mantine/core';
 
 import { cn } from '@/lib/utils';
 
-function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
-}
+type PopoverProps = Omit<MantinePopoverProps, 'opened' | 'defaultOpened' | 'onChange'> & {
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
 
-function PopoverTrigger({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
-}
-
-function PopoverContent({
-  className,
-  align = 'center',
-  sideOffset = 4,
+function Popover({
+  open,
+  defaultOpen,
+  onOpenChange,
+  offset = 4,
+  radius = 'md',
+  shadow = 'md',
+  withinPortal = true,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+}: PopoverProps) {
   return (
-    <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
-        data-slot="popover-content"
-        align={align}
-        sideOffset={sideOffset}
-        className={cn(
-          'z-50 flex w-72 origin-(--radix-popover-content-transform-origin) flex-col gap-2.5 rounded-lg bg-popover p-2.5 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-          className
-        )}
-        {...props}
-      />
-    </PopoverPrimitive.Portal>
+    <MantinePopover
+      opened={open}
+      defaultOpened={defaultOpen}
+      onChange={onOpenChange}
+      offset={offset}
+      radius={radius}
+      shadow={shadow}
+      withinPortal={withinPortal}
+      {...props}
+    />
   );
 }
 
-function PopoverAnchor({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
+function PopoverTrigger({
+  asChild: _asChild,
+  children,
+}: {
+  asChild?: boolean;
+  children: React.ReactNode;
+}) {
+  return <MantinePopover.Target>{children}</MantinePopover.Target>;
+}
+
+type PopoverContentProps = React.ComponentProps<typeof MantinePopover.Dropdown> & {
+  align?: 'start' | 'center' | 'end';
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  sideOffset?: number;
+};
+
+function PopoverContent({
+  className,
+  align: _align,
+  side: _side,
+  sideOffset: _sideOffset,
+  ...props
+}: PopoverContentProps) {
+  return (
+    <MantinePopover.Dropdown
+      data-slot="popover-content"
+      className={cn(
+        'z-50 flex w-72 flex-col gap-2.5 rounded-lg bg-popover p-2.5 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function PopoverAnchor({ children }: { children: React.ReactNode }) {
+  return <MantinePopover.Target>{children}</MantinePopover.Target>;
 }
 
 function PopoverHeader({ className, ...props }: React.ComponentProps<'div'>) {

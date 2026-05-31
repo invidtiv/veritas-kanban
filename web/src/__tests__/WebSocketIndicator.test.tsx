@@ -5,19 +5,41 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { WebSocketStatusProvider } from '@/contexts/WebSocketContext';
 import { WebSocketIndicator } from '@/components/shared/WebSocketIndicator';
+import { MantineRoot } from '@/theme/MantineRoot';
 import type { ConnectionState } from '@/hooks/useWebSocket';
 
 // ── Helpers ──────────────────────────────────────────────────
 
+function ensureMantineBrowserApis() {
+  if (typeof window.matchMedia !== 'function') {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }),
+    });
+  }
+}
+
 function renderIndicator(connectionState: ConnectionState, reconnectAttempt = 0) {
+  ensureMantineBrowserApis();
   return render(
-    <WebSocketStatusProvider
-      isConnected={connectionState === 'connected'}
-      connectionState={connectionState}
-      reconnectAttempt={reconnectAttempt}
-    >
-      <WebSocketIndicator />
-    </WebSocketStatusProvider>
+    <MantineRoot env="test">
+      <WebSocketStatusProvider
+        isConnected={connectionState === 'connected'}
+        connectionState={connectionState}
+        reconnectAttempt={reconnectAttempt}
+      >
+        <WebSocketIndicator />
+      </WebSocketStatusProvider>
+    </MantineRoot>
   );
 }
 

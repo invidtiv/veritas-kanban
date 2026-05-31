@@ -43,9 +43,10 @@ Shared primitive migration progress:
 
 - Mantine-backed compatibility wrappers are now active for `button`, `badge`,
   `input`, `textarea`, `checkbox`, `switch`, `label`, `skeleton`,
-  `scroll-area`, and the app-level `toaster` delivery path.
+  `scroll-area`, `number-input`, `popover`, `tabs`, and the app-level
+  `toaster` delivery path.
 - Temporary Radix holdouts remain for compound/focus-heavy APIs: `select`,
-  `dialog`, `sheet`, `alert-dialog`, `popover`, `tooltip`, and `tabs`.
+  `dialog`, `sheet`, `alert-dialog`, and `tooltip`.
 - The holdouts stay intentionally until their feature surfaces can be migrated
   with visual and keyboard/focus checks in the same PR. New v5 surfaces should
   prefer Mantine primitives directly unless they need one of the compatibility
@@ -190,6 +191,8 @@ Foundation verification currently covers:
 - reduced-motion, focus ring, auto contrast, and breakpoint defaults
 - Mantine-backed shared primitives for buttons, badges, text fields,
   checkbox/switch controls, labels, skeletons, scroll areas, and notifications
+- Mantine-backed shared primitives for number inputs, popovers, and tabs with
+  legacy compatibility coverage
 
 ## Migration Order
 
@@ -222,12 +225,14 @@ Migration batches:
    for the compatibility layer; feature surfaces can now use these wrappers
    while preserving current imports.
 2. Form controls: checkbox and switch completed for the compatibility layer;
-   select and number-like inputs remain for feature-surface migration PRs.
+   number-like settings inputs now route through Mantine `NumberInput`; select
+   remains for feature-surface migration PRs.
 3. Feedback: toast delivery now routes through Mantine notifications.
-4. Overlays: dialog, alert dialog, sheet/drawer, popover, tooltip. Still Radix
-   holdouts until each surface has visual and focus QA.
-5. Navigation modes: tabs, segmented controls, command/search shell. Tabs remain
-   a Radix holdout; new mode controls should use Mantine directly.
+4. Overlays: popover now uses a Mantine-backed compatibility wrapper. Dialog,
+   alert dialog, sheet/drawer, and tooltip remain Radix holdouts until each
+   surface has visual and focus QA.
+5. Navigation modes: tabs now use a Mantine-backed compatibility wrapper.
+   Segmented controls and command/search shell remain surface-level work.
 
 Use compatibility wrappers only when they reduce churn. Each wrapper must have a
 removal target and should not hide incompatible behavior.

@@ -1,8 +1,19 @@
 import { memo, useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { SettingRow } from './SettingRow';
 
-export const NumberRow = memo(function NumberRow({ label, description, value, onChange, min, max, step, unit, hideSpinners, maxLength }: {
+export const NumberRow = memo(function NumberRow({
+  label,
+  description,
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  unit,
+  hideSpinners,
+  maxLength,
+}: {
   label: string;
   description?: string;
   value: number;
@@ -16,11 +27,15 @@ export const NumberRow = memo(function NumberRow({ label, description, value, on
 }) {
   // Use text input with local state - only save on blur
   const [localValue, setLocalValue] = useState(value.toString());
-  
+
   // Sync local value when external value changes (e.g., reset)
   useEffect(() => {
     setLocalValue(value.toString());
   }, [value]);
+
+  const clamp = (nextValue: number, fallbackMin: number) => {
+    return Math.max(min ?? fallbackMin, Math.min(max ?? Infinity, nextValue));
+  };
 
   if (hideSpinners) {
     const handleBlur = () => {
@@ -32,7 +47,7 @@ export const NumberRow = memo(function NumberRow({ label, description, value, on
       }
       const v = parseInt(raw, 10);
       if (!isNaN(v)) {
-        const clamped = Math.max(min ?? 0, Math.min(max ?? Infinity, v));
+        const clamped = clamp(v, 0);
         setLocalValue(clamped.toString());
         onChange(clamped);
       }
@@ -41,15 +56,18 @@ export const NumberRow = memo(function NumberRow({ label, description, value, on
     return (
       <SettingRow label={label} description={description}>
         <div className="flex items-center gap-2">
-          <Input
+          <NumberInput
+            aria-label={label}
             type="text"
             inputMode="numeric"
-            pattern="[0-9]*"
+            allowDecimal={false}
+            allowNegative={false}
+            clampBehavior="blur"
+            hideControls
             value={localValue}
-            onChange={(e) => {
-              // Only allow digits, update local state without saving
-              const raw = e.target.value.replace(/[^0-9]/g, '');
-              setLocalValue(raw);
+            onChange={(nextValue) => {
+              const raw = String(nextValue).replace(/[^0-9]/g, '');
+              setLocalValue(maxLength ? raw.slice(0, maxLength) : raw);
             }}
             onBlur={handleBlur}
             onKeyDown={(e) => {
@@ -58,8 +76,12 @@ export const NumberRow = memo(function NumberRow({ label, description, value, on
                 (e.target as HTMLInputElement).blur();
               }
             }}
+            min={min}
+            max={max}
+            step={step}
             maxLength={maxLength ?? 10}
-            className="w-28 h-8 text-right"
+            className="w-28"
+            styles={{ input: { textAlign: 'right' } }}
           />
           {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
         </div>
@@ -70,20 +92,20 @@ export const NumberRow = memo(function NumberRow({ label, description, value, on
   return (
     <SettingRow label={label} description={description}>
       <div className="flex items-center gap-2">
-        <Input
-          type="number"
+        <NumberInput
+          aria-label={label}
           value={value}
-          onChange={(e) => {
-            const v = parseFloat(e.target.value);
+          onChange={(nextValue) => {
+            const v = typeof nextValue === 'number' ? nextValue : parseFloat(nextValue);
             if (!isNaN(v)) {
-              const clamped = Math.max(min ?? -Infinity, Math.min(max ?? Infinity, v));
-              onChange(clamped);
+              onChange(clamp(v, -Infinity));
             }
           }}
           min={min}
           max={max}
           step={step}
-          className="w-24 h-8 text-right"
+          className="w-24"
+          styles={{ input: { textAlign: 'right' } }}
         />
         {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
       </div>
