@@ -19,6 +19,14 @@ import { Label } from '@/components/ui/label';
 import { NumberInput } from '@/components/ui/number-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -99,6 +107,28 @@ function DialogProbe() {
         </DialogContent>
       </Dialog>
       <span data-testid="dialog-state">{String(open)}</span>
+    </>
+  );
+}
+
+function SheetProbe() {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button>Open sheet</Button>
+        </SheetTrigger>
+        <SheetContent side="left">
+          <SheetTitle>Sheet title</SheetTitle>
+          <SheetDescription>Sheet description</SheetDescription>
+          <SheetClose asChild>
+            <Button>Done</Button>
+          </SheetClose>
+        </SheetContent>
+      </Sheet>
+      <span data-testid="sheet-state">{String(open)}</span>
     </>
   );
 }
@@ -237,6 +267,33 @@ describe('Mantine-backed shared UI primitives', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('dialog-state').textContent).toBe('false');
+    });
+  });
+
+  it('opens and closes Mantine-backed sheets through the legacy API', async () => {
+    renderWithProviders(<SheetProbe />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open sheet' }));
+
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog');
+      const title = screen.getByText('Sheet title');
+      const description = screen.getByText('Sheet description');
+      const describedBy = dialog.getAttribute('aria-describedby');
+
+      expect(dialog.getAttribute('data-side')).toBe('left');
+      expect(dialog.getAttribute('aria-labelledby')).toBe(title.getAttribute('id'));
+      expect(describedBy).toBeTruthy();
+      expect(document.getElementById(describedBy ?? '')?.textContent).toContain(
+        description.textContent
+      );
+      expect(screen.getByTestId('sheet-state').textContent).toBe('true');
+    });
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sheet-state').textContent).toBe('false');
     });
   });
 });
