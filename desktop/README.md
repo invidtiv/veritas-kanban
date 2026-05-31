@@ -13,8 +13,8 @@ pnpm desktop:dev:fresh
 
 `desktop:dev` launches a loopback-only local server and a Vite web renderer
 without requiring a separate terminal. The desktop runtime chooses available
-ports, writes logs under `.veritas-desktop-dev/<profile>/logs`, and uses SQLite
-data under `.veritas-desktop-dev/<profile>/data`.
+ports and isolates data by profile and workspace:
+`.veritas-desktop-dev/profiles/<profile>/workspaces/<workspace>/`.
 
 `desktop:dev:fresh` uses the `fresh` profile so onboarding and startup behavior
 can be tested without reusing the default development home.
@@ -39,9 +39,27 @@ can be tested without reusing the default development home.
   before native execution. Unsupported native features return explicit
   placeholder results until their dedicated v5 issues implement the backing
   behavior.
+- Fresh packaged installs store desktop data below the OS app data directory
+  returned by Electron `app.getPath('userData')`, then under
+  `profiles/<profile>/workspaces/<workspace>/`.
+- Desktop runtime secrets are created through Electron `safeStorage`, which uses
+  the OS credential backend on macOS. The encrypted metadata file lives at
+  `<appHome>/config/desktop-secrets.json`; plaintext admin/JWT secrets are only
+  passed to the supervised local server process environment.
+- Legacy desktop data is copied forward into the profile/workspace app home when
+  a new isolated app home is first initialized. The legacy source is left in
+  place for manual rollback.
 - Local development mode disables app auth only for the supervised loopback
-  runtime. The packaged app path keeps auth enabled and is expected to move to
-  keychain-backed bootstrap credentials in the dedicated keychain issue.
+  runtime. Packaged mode keeps auth enabled and uses the keychain-backed
+  bootstrap secrets for admin and JWT signing.
+
+## Recovery Notes
+
+If Keychain or encrypted desktop secret state breaks, quit the app, move
+`desktop-secrets.json` out of the affected workspace `config` directory, and
+restart. The app will regenerate the desktop bootstrap secrets for that
+profile/workspace. Existing database files, exports, backups, and debug bundles
+remain on disk in the workspace app home.
 
 ## Production Scaffold
 

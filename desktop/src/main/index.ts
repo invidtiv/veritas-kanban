@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, safeStorage, shell } from 'electron';
 import path from 'node:path';
 import { mkdirSync } from 'node:fs';
 
@@ -7,6 +7,7 @@ import { registerDesktopBridge } from './bridge.js';
 import { createDesktopPaths, resolveRepoRoot } from './paths.js';
 import { findAvailablePort } from './ports.js';
 import { DesktopRuntime } from './runtime.js';
+import { DesktopSecretStore } from './secrets.js';
 import { statusPageUrl } from './status-page.js';
 import { DESKTOP_BRIDGE_EVENTS } from '../shared/desktop-bridge-contracts.js';
 
@@ -22,6 +23,7 @@ function isPackagedRuntime(): boolean {
 const launchPackaged = isPackagedRuntime();
 const launchRepoRoot = resolveRepoRoot(app.getAppPath());
 const launchProfile = process.env.VERITAS_DESKTOP_PROFILE || 'default';
+const launchWorkspace = process.env.VERITAS_DESKTOP_WORKSPACE || 'local';
 
 if (!launchPackaged) {
   const devUserDataPath = path.join(
@@ -84,11 +86,13 @@ async function boot(): Promise<void> {
   const packaged = launchPackaged;
   const repoRoot = launchRepoRoot;
   const profile = launchProfile;
+  const workspace = launchWorkspace;
   const paths = createDesktopPaths({
     userDataPath: app.getPath('userData'),
     repoRoot,
     isPackaged: packaged,
     profile,
+    workspace,
   });
 
   const serverPort = await findAvailablePort(
@@ -99,6 +103,28 @@ async function boot(): Promise<void> {
   mainWindow = createMainWindow();
   await mainWindow.loadURL(statusPageUrl('Starting Veritas Kanban', 'Preparing the local app.'));
 
+  const secretStore = new DesktopSecretStore({ safeStorage, paths });
+  const secretState = secretStore.inspect();
+  if (!secretState.available) {
+    await mainWindow.loadURL(
+      statusPageUrl(
+        'Veritas Kanban needs Keychain access',
+        `${secretState.error} ${secretState.recoveryActions.join(' ')}`,
+        undefined
+      )
+    );
+    return;
+  }
+
+  let secrets;
+  try {
+    secrets = await secretStore.loadRuntimeSecrets();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await mainWindow.loadURL(statusPageUrl('Veritas Kanban secret recovery needed', message));
+    return;
+  }
+
   runtime = new DesktopRuntime({
     repoRoot,
     paths,
@@ -106,6 +132,9 @@ async function boot(): Promise<void> {
     webPort,
     isPackaged: packaged,
     profile,
+    workspace,
+    secrets,
+    secretsBackedByKeychain: secretState.available,
   });
 
   registerDesktopBridge(ipcMain, runtime, shell, packaged);

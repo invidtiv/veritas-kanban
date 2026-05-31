@@ -1,9 +1,6 @@
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 
-import type { DesktopPaths, ManagedProcessConfig } from './types.js';
-
-const ADMIN_KEY_PREFIX = 'desktop-dev-admin-key';
+import type { DesktopPaths, DesktopRuntimeSecrets, ManagedProcessConfig } from './types.js';
 
 export interface DesktopLifecycleOptions {
   repoRoot: string;
@@ -11,21 +8,14 @@ export interface DesktopLifecycleOptions {
   serverPort: number;
   webPort: number;
   isPackaged: boolean;
+  secrets: DesktopRuntimeSecrets;
 }
 
 function pnpmCommand(): string {
   return process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 }
 
-export function createDesktopAdminKey(profile = 'default'): string {
-  const safeProfile = profile.replace(/[^a-zA-Z0-9._-]/g, '-');
-  return `${ADMIN_KEY_PREFIX}-${safeProfile}-${randomUUID()}`;
-}
-
-export function buildServerEnvironment(
-  options: DesktopLifecycleOptions,
-  adminKey: string
-): NodeJS.ProcessEnv {
+export function buildServerEnvironment(options: DesktopLifecycleOptions): NodeJS.ProcessEnv {
   const serverOrigin = `http://127.0.0.1:${options.serverPort}`;
   const webOrigin = `http://127.0.0.1:${options.webPort}`;
 
@@ -34,7 +24,8 @@ export function buildServerEnvironment(
     NODE_ENV: options.isPackaged ? 'production' : 'development',
     HOST: '127.0.0.1',
     PORT: String(options.serverPort),
-    VERITAS_ADMIN_KEY: adminKey,
+    VERITAS_ADMIN_KEY: options.secrets.adminKey,
+    VERITAS_JWT_SECRET: options.secrets.jwtSecret,
     VERITAS_AUTH_ENABLED: options.isPackaged ? 'true' : 'false',
     VERITAS_AUTH_LOCALHOST_BYPASS: 'false',
     VERITAS_STORAGE: 'sqlite',
@@ -56,8 +47,7 @@ export function buildWebEnvironment(options: DesktopLifecycleOptions): NodeJS.Pr
 }
 
 export function createManagedProcessConfigs(
-  options: DesktopLifecycleOptions,
-  adminKey: string
+  options: DesktopLifecycleOptions
 ): ManagedProcessConfig[] {
   const serverConfig: ManagedProcessConfig = options.isPackaged
     ? {
@@ -68,7 +58,7 @@ export function createManagedProcessConfigs(
             path.join(options.repoRoot, 'server/dist/index.js'),
         ],
         cwd: options.repoRoot,
-        env: buildServerEnvironment(options, adminKey),
+        env: buildServerEnvironment(options),
         logFile: path.join(options.paths.logsDir, 'server.log'),
         readyUrl: `http://127.0.0.1:${options.serverPort}/api/health`,
       }
@@ -77,7 +67,7 @@ export function createManagedProcessConfigs(
         command: pnpmCommand(),
         args: ['--filter', '@veritas-kanban/server', 'dev'],
         cwd: options.repoRoot,
-        env: buildServerEnvironment(options, adminKey),
+        env: buildServerEnvironment(options),
         logFile: path.join(options.paths.logsDir, 'server.log'),
         readyUrl: `http://127.0.0.1:${options.serverPort}/api/health`,
       };

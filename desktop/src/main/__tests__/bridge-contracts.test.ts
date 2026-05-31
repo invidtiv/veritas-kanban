@@ -40,6 +40,8 @@ import {
 function snapshot(): DesktopStatusSnapshot {
   return {
     mode: 'local-dev',
+    profile: 'fresh',
+    workspace: 'local',
     server: {
       name: 'server',
       state: 'ready',
@@ -61,6 +63,11 @@ function snapshot(): DesktopStatusSnapshot {
     serverOrigin: 'http://127.0.0.1:3001',
     rendererOrigin: 'http://127.0.0.1:3000',
     appHome: '/Users/bradgroux/Projects/veritas-kanban/.veritas-desktop-dev/fresh',
+    dataDir: '/Users/bradgroux/Projects/veritas-kanban/.veritas-desktop-dev/fresh/data',
+    configDir: '/Users/bradgroux/Projects/veritas-kanban/.veritas-desktop-dev/fresh/config',
+    logsDir: '/Users/bradgroux/Projects/veritas-kanban/.veritas-desktop-dev/fresh/logs',
+    secretsBackedByKeychain: true,
+    warnings: [],
     lastError: null,
   };
 }

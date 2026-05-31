@@ -2,9 +2,10 @@ import { EventEmitter } from 'node:events';
 import { mkdir, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 
-import { createDesktopAdminKey, createManagedProcessConfigs } from './lifecycle.js';
+import { createManagedProcessConfigs } from './lifecycle.js';
+import { ensureDesktopPathLayout, type DesktopPathMigrationResult } from './paths.js';
 import { ProcessSupervisor } from './process-supervisor.js';
-import type { DesktopPaths, DesktopStatusSnapshot } from './types.js';
+import type { DesktopPaths, DesktopRuntimeSecrets, DesktopStatusSnapshot } from './types.js';
 
 export interface DesktopRuntimeOptions {
   repoRoot: string;
@@ -13,6 +14,9 @@ export interface DesktopRuntimeOptions {
   webPort: number;
   isPackaged: boolean;
   profile: string;
+  workspace: string;
+  secrets: DesktopRuntimeSecrets;
+  secretsBackedByKeychain: boolean;
 }
 
 export class DesktopRuntime extends EventEmitter {
@@ -21,11 +25,13 @@ export class DesktopRuntime extends EventEmitter {
   private lastError: string | null = null;
   private readonly serverOrigin: string;
   private readonly rendererOrigin: string;
+  private pathMigration: DesktopPathMigrationResult | null = null;
+  private readonly warnings: string[] = [];
 
   constructor(private readonly options: DesktopRuntimeOptions) {
     super();
-    const adminKey = createDesktopAdminKey(options.profile);
-    const [serverConfig, webConfig] = createManagedProcessConfigs(options, adminKey);
+    this.warnings.push(...options.secrets.warnings);
+    const [serverConfig, webConfig] = createManagedProcessConfigs(options);
     this.server = new ProcessSupervisor(serverConfig);
     this.web = webConfig ? new ProcessSupervisor(webConfig) : null;
     this.serverOrigin = `http://127.0.0.1:${options.serverPort}`;
@@ -49,11 +55,18 @@ export class DesktopRuntime extends EventEmitter {
   snapshot(): DesktopStatusSnapshot {
     return {
       mode: this.options.isPackaged ? 'local-production' : 'local-dev',
+      profile: this.options.profile,
+      workspace: this.options.workspace,
       server: this.server.snapshot(),
       web: this.web?.snapshot(),
       serverOrigin: this.serverOrigin,
       rendererOrigin: this.rendererOrigin,
       appHome: this.options.paths.appHome,
+      dataDir: this.options.paths.dataDir,
+      configDir: this.options.paths.configDir,
+      logsDir: this.options.paths.logsDir,
+      secretsBackedByKeychain: this.options.secretsBackedByKeychain,
+      warnings: this.runtimeWarnings(),
       lastError: this.lastError,
     };
   }
@@ -88,9 +101,7 @@ export class DesktopRuntime extends EventEmitter {
   }
 
   private async ensureDirectories(): Promise<void> {
-    await Promise.all(
-      Object.values(this.options.paths).map((targetPath) => mkdir(targetPath, { recursive: true }))
-    );
+    this.pathMigration = await ensureDesktopPathLayout(this.options.paths);
   }
 
   private async writeRuntimeState(): Promise<void> {
@@ -100,8 +111,13 @@ export class DesktopRuntime extends EventEmitter {
       JSON.stringify(
         {
           mode: this.options.isPackaged ? 'local-production' : 'local-dev',
+          profile: this.options.profile,
+          workspace: this.options.workspace,
           serverOrigin: this.serverOrigin,
           rendererOrigin: this.rendererOrigin,
+          appHome: this.options.paths.appHome,
+          dataDir: this.options.paths.dataDir,
+          configDir: this.options.paths.configDir,
           updatedAt: new Date().toISOString(),
         },
         null,
@@ -134,5 +150,15 @@ export class DesktopRuntime extends EventEmitter {
 
   private emitStatus(): void {
     this.emit('status', this.snapshot());
+  }
+
+  private runtimeWarnings(): string[] {
+    const warnings = [...this.warnings];
+    if (this.pathMigration?.migrated && this.pathMigration.from) {
+      warnings.push(
+        `Desktop data was copied from ${this.pathMigration.from} to ${this.pathMigration.to}.`
+      );
+    }
+    return warnings;
   }
 }

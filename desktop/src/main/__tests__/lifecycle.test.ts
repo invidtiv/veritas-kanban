@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   buildServerEnvironment,
   buildWebEnvironment,
-  createDesktopAdminKey,
   createManagedProcessConfigs,
 } from '../lifecycle.js';
 import type { DesktopLifecycleOptions } from '../lifecycle.js';
@@ -12,7 +11,12 @@ function options(): DesktopLifecycleOptions {
   return {
     repoRoot: '/repo/veritas-kanban',
     paths: {
+      profile: 'fresh-profile',
+      workspace: 'local',
       appHome: '/tmp/veritas-desktop',
+      profileDir: '/tmp/veritas-desktop-profile',
+      workspaceDir: '/tmp/veritas-desktop',
+      legacyAppHome: null,
       configDir: '/tmp/veritas-desktop/config',
       dataDir: '/tmp/veritas-desktop/data',
       logsDir: '/tmp/veritas-desktop/logs',
@@ -20,23 +24,28 @@ function options(): DesktopLifecycleOptions {
       exportsDir: '/tmp/veritas-desktop/exports',
       backupsDir: '/tmp/veritas-desktop/backups',
       debugBundlesDir: '/tmp/veritas-desktop/debug-bundles',
+      secretsFile: '/tmp/veritas-desktop/config/desktop-secrets.json',
+      migrationManifest: '/tmp/veritas-desktop/config/desktop-path-migration.json',
     },
     serverPort: 39123,
     webPort: 39124,
     isPackaged: false,
+    secrets: {
+      adminKey: 'desktop-keychain-admin-key',
+      jwtSecret: 'desktop-keychain-jwt-secret',
+      warnings: [],
+    },
   };
 }
 
 describe('desktop lifecycle config', () => {
-  it('creates a dev-only admin key shape without fixed secrets', () => {
-    expect(createDesktopAdminKey('fresh profile')).toMatch(/^desktop-dev-admin-key-fresh-profile-/);
-  });
-
   it('builds loopback server environment for local desktop dev mode', () => {
-    const env = buildServerEnvironment(options(), 'desktop-dev-admin-key-test-000000000000');
+    const env = buildServerEnvironment(options());
 
     expect(env.HOST).toBe('127.0.0.1');
     expect(env.PORT).toBe('39123');
+    expect(env.VERITAS_ADMIN_KEY).toBe('desktop-keychain-admin-key');
+    expect(env.VERITAS_JWT_SECRET).toBe('desktop-keychain-jwt-secret');
     expect(env.VERITAS_STORAGE).toBe('sqlite');
     expect(env.VERITAS_DATA_DIR).toBe('/tmp/veritas-desktop/data');
     expect(env.VERITAS_AUTH_ENABLED).toBe('false');
@@ -51,10 +60,7 @@ describe('desktop lifecycle config', () => {
   });
 
   it('creates server and web process configs in dev mode', () => {
-    const configs = createManagedProcessConfigs(
-      options(),
-      'desktop-dev-admin-key-test-000000000000'
-    );
+    const configs = createManagedProcessConfigs(options());
 
     expect(configs.map((config) => config.name)).toEqual(['server', 'web']);
     expect(configs[0]?.readyUrl).toBe('http://127.0.0.1:39123/api/health');
