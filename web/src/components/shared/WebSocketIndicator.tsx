@@ -54,7 +54,7 @@ export function WebSocketIndicator() {
       : 'Could not establish a WebSocket connection after multiple attempts. The board is polling the server every 10 seconds for updates. Refresh the page to try again.';
 
   return (
-    <Popover>
+    <Popover position="bottom-end">
       <PopoverTrigger asChild>
         <button
           className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer select-none rounded px-1.5 py-1 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -64,7 +64,7 @@ export function WebSocketIndicator() {
           <Icon className={`h-3 w-3 ${iconClass}`} />
         </button>
       </PopoverTrigger>
-      <PopoverContent side="bottom" align="end" className="w-64 p-3">
+      <PopoverContent className="w-64 p-3">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <Icon className={`h-4 w-4 ${iconColor} shrink-0`} />

@@ -8,9 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NumberInput } from '@/components/ui/number-input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Toaster } from '@/components/ui/toaster';
 import { toast } from '@/hooks/useToast';
@@ -53,6 +56,22 @@ function ToastProbe() {
   );
 }
 
+function TabsProbe() {
+  const [selectedTab, setSelectedTab] = React.useState('summary');
+
+  return (
+    <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+      <TabsList>
+        <TabsTrigger value="summary">Summary</TabsTrigger>
+        <TabsTrigger value="activity">Activity</TabsTrigger>
+      </TabsList>
+      <TabsContent value="summary">Summary content</TabsContent>
+      <TabsContent value="activity">Activity content</TabsContent>
+      <span data-testid="selected-tab">{selectedTab}</span>
+    </Tabs>
+  );
+}
+
 describe('Mantine-backed shared UI primitives', () => {
   afterEach(() => {
     notifications.clean();
@@ -69,6 +88,7 @@ describe('Mantine-backed shared UI primitives', () => {
         <Badge variant="secondary">Ready</Badge>
         <Label htmlFor="name">Name</Label>
         <Input id="name" aria-label="Name" placeholder="Task name" />
+        <NumberInput aria-label="Estimate" value={3} />
         <Textarea aria-label="Notes" placeholder="Task notes" />
         <Skeleton data-testid="loading-row" className="h-8 w-full" />
         <ScrollArea data-testid="scroll-area" className="h-24">
@@ -83,6 +103,7 @@ describe('Mantine-backed shared UI primitives', () => {
     );
     expect(screen.getByText('Ready').closest('[data-slot="badge"]')).toBeDefined();
     expect(screen.getByLabelText('Name').getAttribute('data-slot')).toBe('input');
+    expect(screen.getByLabelText('Estimate').closest('[data-slot="number-input"]')).toBeDefined();
     expect(screen.getByLabelText('Notes')).toBeDefined();
     expect(screen.getByTestId('loading-row').getAttribute('data-slot')).toBe('skeleton');
     expect(screen.getByTestId('scroll-area').getAttribute('data-slot')).toBe('scroll-area');
@@ -111,6 +132,35 @@ describe('Mantine-backed shared UI primitives', () => {
     await waitFor(() => {
       expect(screen.getByText('Saved')).toBeDefined();
       expect(screen.getByText('Mantine notification bridge is active.')).toBeDefined();
+    });
+  });
+
+  it('preserves tabs value changes through the legacy onValueChange contract', () => {
+    renderWithProviders(<TabsProbe />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Activity' }));
+
+    expect(screen.getByTestId('selected-tab').textContent).toBe('activity');
+    expect(screen.getByText('Activity content')).toBeDefined();
+  });
+
+  it('opens Mantine-backed popovers through the legacy trigger/content API', async () => {
+    renderWithProviders(
+      <Popover position="bottom-end">
+        <PopoverTrigger asChild>
+          <Button>Open account menu</Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64">Account actions</PopoverContent>
+      </Popover>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Account actions')).toBeDefined();
+      expect(
+        screen.getByText('Account actions').closest('[data-slot="popover-content"]')
+      ).toBeDefined();
     });
   });
 });
