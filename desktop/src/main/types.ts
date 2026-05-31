@@ -5,7 +5,12 @@ export type DesktopProcessState = 'idle' | 'starting' | 'ready' | 'stopping' | '
 export type DesktopConnectionMode = 'local-dev' | 'local-production';
 
 export interface DesktopPaths {
+  profile: string;
+  workspace: string;
   appHome: string;
+  profileDir: string;
+  workspaceDir: string;
+  legacyAppHome: string | null;
   configDir: string;
   dataDir: string;
   logsDir: string;
@@ -13,6 +18,14 @@ export interface DesktopPaths {
   exportsDir: string;
   backupsDir: string;
   debugBundlesDir: string;
+  secretsFile: string;
+  migrationManifest: string;
+}
+
+export interface DesktopRuntimeSecrets {
+  adminKey: string;
+  jwtSecret: string;
+  warnings: string[];
 }
 
 export interface ManagedProcessConfig {
@@ -38,11 +51,18 @@ export interface ManagedProcessSnapshot {
 
 export interface DesktopStatusSnapshot {
   mode: DesktopConnectionMode;
+  profile: string;
+  workspace: string;
   server: ManagedProcessSnapshot;
   web?: ManagedProcessSnapshot;
   serverOrigin: string | null;
   rendererOrigin: string | null;
   appHome: string;
+  dataDir: string;
+  configDir: string;
+  logsDir: string;
+  secretsBackedByKeychain: boolean;
+  warnings: string[];
   lastError: string | null;
 }
 
