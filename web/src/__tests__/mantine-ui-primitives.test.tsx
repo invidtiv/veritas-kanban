@@ -3,6 +3,17 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { notifications } from '@mantine/notifications';
 import { renderWithProviders } from './test-utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -129,6 +140,33 @@ function SheetProbe() {
         </SheetContent>
       </Sheet>
       <span data-testid="sheet-state">{String(open)}</span>
+    </>
+  );
+}
+
+function AlertDialogProbe() {
+  const [confirmed, setConfirmed] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <>
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogTrigger asChild>
+          <Button>Open alert</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alert title</AlertDialogTitle>
+            <AlertDialogDescription>Alert description</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setConfirmed(true)}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <span data-testid="alert-state">{String(open)}</span>
+      <span data-testid="alert-confirmed">{String(confirmed)}</span>
     </>
   );
 }
@@ -294,6 +332,47 @@ describe('Mantine-backed shared UI primitives', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('sheet-state').textContent).toBe('false');
+    });
+  });
+
+  it('opens and closes Mantine-backed alert dialogs through the legacy API', async () => {
+    renderWithProviders(<AlertDialogProbe />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open alert' }));
+
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog');
+      const title = screen.getByText('Alert title');
+      const description = screen.getByText('Alert description');
+      const describedBy = dialog.getAttribute('aria-describedby');
+
+      expect(dialog.getAttribute('aria-labelledby')).toBe(title.getAttribute('id'));
+      expect(describedBy).toBeTruthy();
+      expect(document.getElementById(describedBy ?? '')?.textContent).toContain(
+        description.textContent
+      );
+      expect(screen.getByTestId('alert-state').textContent).toBe('true');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('alert-state').textContent).toBe('false');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open alert' }));
+    fireEvent.keyDown(await screen.findByRole('dialog'), { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('alert-state').textContent).toBe('false');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open alert' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('alert-state').textContent).toBe('false');
+      expect(screen.getByTestId('alert-confirmed').textContent).toBe('true');
     });
   });
 });
