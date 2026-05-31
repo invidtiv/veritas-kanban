@@ -1,53 +1,133 @@
 'use client';
 
 import * as React from 'react';
-import { Tooltip as TooltipPrimitive } from 'radix-ui';
+import { Tooltip as MantineTooltip, type TooltipProps as MantineTooltipProps } from '@mantine/core';
 
 import { cn } from '@/lib/utils';
 
+const TooltipDelayContext = React.createContext(0);
+
+type TooltipPart = 'trigger' | 'content';
+type TooltipTriggerProps = {
+  asChild?: boolean;
+  children?: React.ReactNode;
+};
+type TooltipContentProps = React.ComponentProps<'span'> & {
+  side?: MantineTooltipProps['position'];
+  sideOffset?: number;
+};
+type TooltipPartComponent = React.FC<TooltipTriggerProps | TooltipContentProps> & {
+  __tooltipPart?: TooltipPart;
+};
+
+function isTooltipPart(
+  child: React.ReactNode,
+  part: TooltipPart
+): child is React.ReactElement<TooltipTriggerProps | TooltipContentProps> {
+  return React.isValidElement(child) && (child.type as TooltipPartComponent).__tooltipPart === part;
+}
+
 function TooltipProvider({
   delayDuration = 0,
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+  children,
+}: {
+  delayDuration?: number;
+  children?: React.ReactNode;
+}) {
   return (
-    <TooltipPrimitive.Provider
-      data-slot="tooltip-provider"
-      delayDuration={delayDuration}
-      {...props}
-    />
+    <TooltipDelayContext.Provider value={delayDuration}>
+      <MantineTooltip.Group openDelay={delayDuration}>{children}</MantineTooltip.Group>
+    </TooltipDelayContext.Provider>
   );
 }
 
-function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
+type TooltipProps = Omit<
+  MantineTooltipProps,
+  'children' | 'defaultOpened' | 'label' | 'opened' | 'openDelay'
+> & {
+  children?: React.ReactNode;
+  defaultOpen?: boolean;
+  delayDuration?: number;
+  open?: boolean;
+};
+
+function Tooltip({
+  children,
+  classNames,
+  defaultOpen,
+  delayDuration,
+  offset,
+  open,
+  position,
+  withArrow = true,
+  ...props
+}: TooltipProps) {
+  const providerDelay = React.useContext(TooltipDelayContext);
+  const childArray = React.Children.toArray(children);
+  const trigger = childArray.find((child) => isTooltipPart(child, 'trigger'));
+  const content = childArray.find((child) => isTooltipPart(child, 'content'));
+  const triggerChildren = trigger?.props.children;
+  const contentProps = content?.props as TooltipContentProps | undefined;
+  const classNameMap =
+    classNames && typeof classNames === 'object' && !Array.isArray(classNames) ? classNames : {};
+
+  if (!triggerChildren || !contentProps?.children) {
+    return <>{children}</>;
+  }
+
+  return (
+    <MantineTooltip
+      data-slot="tooltip"
+      defaultOpened={defaultOpen}
+      label={contentProps.children}
+      offset={contentProps.sideOffset ?? offset ?? 5}
+      opened={open}
+      openDelay={delayDuration ?? providerDelay}
+      position={contentProps.side ?? position ?? 'top'}
+      withArrow={withArrow}
+      classNames={{
+        ...classNameMap,
+        tooltip: cn(
+          'z-50 inline-flex w-fit max-w-xs items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-xs text-background',
+          classNameMap.tooltip,
+          contentProps.className
+        ),
+      }}
+      {...props}
+    >
+      {triggerChildren}
+    </MantineTooltip>
+  );
 }
 
-function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
+function TooltipTrigger({ asChild: _asChild, children }: TooltipTriggerProps) {
+  return <>{children}</>;
 }
+
+TooltipTrigger.__tooltipPart = 'trigger';
 
 function TooltipContent({
   className,
+  side: _side,
   sideOffset = 0,
   children,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: TooltipContentProps) {
   return (
-    <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Content
-        data-slot="tooltip-content"
-        sideOffset={sideOffset}
-        className={cn(
-          'z-50 inline-flex w-fit max-w-xs origin-(--radix-tooltip-content-transform-origin) items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-xs text-background has-data-[slot=kbd]:pr-1.5 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-          className
-        )}
-        {...props}
-      >
-        {children}
-        <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground" />
-      </TooltipPrimitive.Content>
-    </TooltipPrimitive.Portal>
+    <span
+      data-slot="tooltip-content"
+      data-side-offset={sideOffset}
+      className={cn(
+        'z-50 inline-flex w-fit max-w-xs items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-xs text-background',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </span>
   );
 }
+
+TooltipContent.__tooltipPart = 'content';
 
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };
