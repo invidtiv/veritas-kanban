@@ -32,7 +32,7 @@ Current shared primitive usage:
 | `tabs`                            | Radix Tabs wrapper                                     | 9 imports    |
 | `checkbox`                        | Radix Checkbox wrapper                                 | 9 imports    |
 | `switch`                          | Radix Switch wrapper                                   | 8 imports    |
-| `sheet`                           | Radix Dialog based side panel wrapper                  | 8 imports    |
+| `sheet`                           | Mantine Drawer compatibility wrapper                   | 8 imports    |
 | `tooltip`                         | Mantine Tooltip compatibility wrapper                  | 4 imports    |
 | `popover`                         | Radix Popover wrapper                                  | 3 imports    |
 | `MarkdownEditor/MarkdownRenderer` | Custom markdown surfaces                               | 2 imports    |
@@ -43,10 +43,10 @@ Shared primitive migration progress:
 
 - Mantine-backed compatibility wrappers are now active for `button`, `badge`,
   `input`, `textarea`, `checkbox`, `switch`, `label`, `skeleton`,
-  `scroll-area`, `number-input`, `dialog`, `popover`, `tooltip`, `tabs`, and
-  the app-level `toaster` delivery path.
-- Temporary Radix holdouts remain for compound/focus-heavy APIs: `select`,
-  `sheet`, and `alert-dialog`.
+  `scroll-area`, `number-input`, `dialog`, `sheet`, `popover`, `tooltip`,
+  `tabs`, and the app-level `toaster` delivery path.
+- Temporary Radix holdouts remain for compound/focus-heavy APIs: `select` and
+  `alert-dialog`.
 - The holdouts stay intentionally until their feature surfaces can be migrated
   with visual and keyboard/focus checks in the same PR. New v5 surfaces should
   prefer Mantine primitives directly unless they need one of the compatibility
@@ -197,6 +197,8 @@ Foundation verification currently covers:
   coverage
 - Mantine-backed dialog compatibility wrapper with trigger/content/title/
   description/close coverage and Modal focus/scroll/Escape behavior
+- Mantine-backed sheet compatibility wrapper with trigger/content/title/
+  description/close coverage and Drawer position/focus/scroll/Escape behavior
 
 ## Migration Order
 
@@ -232,9 +234,9 @@ Migration batches:
    number-like settings inputs now route through Mantine `NumberInput`; select
    remains for feature-surface migration PRs.
 3. Feedback: toast delivery now routes through Mantine notifications.
-4. Overlays: dialog/modal, popover, and tooltip now use Mantine-backed
-   compatibility wrappers. Alert dialog and sheet/drawer remain Radix holdouts
-   until each surface has visual and focus QA.
+4. Overlays: dialog/modal, sheet/drawer, popover, and tooltip now use
+   Mantine-backed compatibility wrappers. Alert dialog remains a Radix holdout
+   until its destructive confirmation surfaces have visual and focus QA.
 5. Navigation modes: tabs now use a Mantine-backed compatibility wrapper.
    Segmented controls and command/search shell remain surface-level work.
 
@@ -280,7 +282,7 @@ Target issue: `v5.0 QA: Mantine migration visual, accessibility, and cleanup gat
 | `components/ui/textarea.tsx`     | Mantine `Textarea`                                      | High     |
 | `components/ui/select.tsx`       | Mantine `Select`/`MultiSelect`                          | High     |
 | `components/ui/dialog.tsx`       | Mantine `Modal`                                         | High     |
-| `components/ui/sheet.tsx`        | Mantine `Drawer` or custom split panel                  | High     |
+| `components/ui/sheet.tsx`        | Mantine `Drawer` compatibility wrapper                  | High     |
 | `components/ui/tabs.tsx`         | Mantine `Tabs`                                          | High     |
 | `components/ui/alert-dialog.tsx` | Mantine `Modal` with danger action pattern              | High     |
 | `components/ui/checkbox.tsx`     | Mantine `Checkbox`                                      | Medium   |
