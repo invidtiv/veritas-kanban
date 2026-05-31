@@ -33,7 +33,7 @@ Current shared primitive usage:
 | `checkbox`                        | Radix Checkbox wrapper                                 | 9 imports    |
 | `switch`                          | Radix Switch wrapper                                   | 8 imports    |
 | `sheet`                           | Radix Dialog based side panel wrapper                  | 8 imports    |
-| `tooltip`                         | Radix Tooltip wrapper                                  | 4 imports    |
+| `tooltip`                         | Mantine Tooltip compatibility wrapper                  | 4 imports    |
 | `popover`                         | Radix Popover wrapper                                  | 3 imports    |
 | `MarkdownEditor/MarkdownRenderer` | Custom markdown surfaces                               | 2 imports    |
 | `toast`/`toaster`                 | Radix Toast wrapper and app-level notification surface | 1 import     |
@@ -43,10 +43,10 @@ Shared primitive migration progress:
 
 - Mantine-backed compatibility wrappers are now active for `button`, `badge`,
   `input`, `textarea`, `checkbox`, `switch`, `label`, `skeleton`,
-  `scroll-area`, `number-input`, `popover`, `tabs`, and the app-level
+  `scroll-area`, `number-input`, `popover`, `tooltip`, `tabs`, and the app-level
   `toaster` delivery path.
 - Temporary Radix holdouts remain for compound/focus-heavy APIs: `select`,
-  `dialog`, `sheet`, `alert-dialog`, and `tooltip`.
+  `dialog`, `sheet`, and `alert-dialog`.
 - The holdouts stay intentionally until their feature surfaces can be migrated
   with visual and keyboard/focus checks in the same PR. New v5 surfaces should
   prefer Mantine primitives directly unless they need one of the compatibility
@@ -70,7 +70,7 @@ High-traffic feature surfaces:
 Package dependencies currently tied to the old primitive layer:
 
 - Radix packages: alert dialog, checkbox, dialog, dropdown menu, label, popover,
-  scroll area, select, slot, switch, tabs, toast, tooltip
+  scroll area, select, slot, switch, tabs, and toast
 - shadcn CLI/package
 - `class-variance-authority`
 - `tailwind-merge`
@@ -193,6 +193,8 @@ Foundation verification currently covers:
   checkbox/switch controls, labels, skeletons, scroll areas, and notifications
 - Mantine-backed shared primitives for number inputs, popovers, and tabs with
   legacy compatibility coverage
+- Mantine-backed tooltip compatibility wrapper with provider/trigger/content
+  coverage
 
 ## Migration Order
 
@@ -228,8 +230,8 @@ Migration batches:
    number-like settings inputs now route through Mantine `NumberInput`; select
    remains for feature-surface migration PRs.
 3. Feedback: toast delivery now routes through Mantine notifications.
-4. Overlays: popover now uses a Mantine-backed compatibility wrapper. Dialog,
-   alert dialog, sheet/drawer, and tooltip remain Radix holdouts until each
+4. Overlays: popover and tooltip now use Mantine-backed compatibility wrappers.
+   Dialog, alert dialog, and sheet/drawer remain Radix holdouts until each
    surface has visual and focus QA.
 5. Navigation modes: tabs now use a Mantine-backed compatibility wrapper.
    Segmented controls and command/search shell remain surface-level work.

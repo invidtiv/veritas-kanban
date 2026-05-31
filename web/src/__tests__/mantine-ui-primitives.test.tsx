@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { toast } from '@/hooks/useToast';
 
@@ -161,6 +162,25 @@ describe('Mantine-backed shared UI primitives', () => {
       expect(
         screen.getByText('Account actions').closest('[data-slot="popover-content"]')
       ).toBeDefined();
+    });
+  });
+
+  it('opens Mantine-backed tooltips through the legacy trigger/content API', async () => {
+    renderWithProviders(
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button>Hover for help</Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Helpful detail</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Hover for help' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Helpful detail')).toBeDefined();
     });
   });
 });

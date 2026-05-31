@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { TaskCard } from '@/components/task/TaskCard';
 import { createMockTask } from './test-utils';
+import { MantineRoot } from '@/theme/MantineRoot';
 import type { Task } from '@veritas-kanban/shared';
 
 // ── Mocks ────────────────────────────────────────────────────
@@ -98,8 +99,31 @@ vi.mock('@/lib/sanitize', () => ({
 
 // ── Helpers ──────────────────────────────────────────────────
 
+function ensureMantineBrowserApis() {
+  if (typeof window.matchMedia !== 'function') {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }),
+    });
+  }
+}
+
 function renderCard(task: Task, props: Partial<React.ComponentProps<typeof TaskCard>> = {}) {
-  return render(<TaskCard task={task} {...props} />);
+  ensureMantineBrowserApis();
+  return render(
+    <MantineRoot env="test">
+      <TaskCard task={task} {...props} />
+    </MantineRoot>
+  );
 }
 
 // ── Tests ────────────────────────────────────────────────────
