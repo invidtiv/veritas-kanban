@@ -355,6 +355,12 @@ Phase 3 progress:
   icon primitives while preserving comment add/edit/delete, attachment upload,
   text preview, download and delete confirmation, observation add/delete, and
   manual time-entry add/delete behavior.
+- Task detail Git selection, worktree status/actions, pull-request creation,
+  workflow run modal, and run-mode/QA gate controls now use direct Mantine
+  select, text input, checkbox, switch, badge, button, alert, code, paper,
+  scroll area, modal, stack, group, and text primitives while preserving Git
+  updates, worktree create/rebase/merge/delete actions, PR draft creation,
+  workflow start behavior, run-mode changes, and QA gate toggles.
 
 ### Phase 4: QA, Cleanup, and Dependency Removal
 

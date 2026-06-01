@@ -10,17 +10,7 @@
  */
 
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { Badge, Button, Group, Paper, Select, Stack, Switch, Text } from '@mantine/core';
 import { CheckCircle2, XCircle, ShieldCheck, Loader2 } from 'lucide-react';
 import { API_BASE } from '@/lib/config';
 import { useToast } from '@/hooks/useToast';
@@ -45,6 +35,15 @@ const RUN_MODE_DESCRIPTIONS: Record<RunMode, string> = {
   'paranoid-review': 'Extra-thorough review — security-sensitive or critical infra',
   qa: 'QA pass required before marking done',
 };
+
+const RUN_MODE_OPTIONS = [
+  { value: 'none', label: 'None' },
+  ...(Object.keys(RUN_MODE_LABELS) as RunMode[]).map((mode) => ({
+    value: mode,
+    label: RUN_MODE_LABELS[mode],
+    description: RUN_MODE_DESCRIPTIONS[mode],
+  })),
+];
 
 export function RunModeGateSection({ task, onUpdate, readOnly = false }: RunModeGateSectionProps) {
   const { toast } = useToast();
@@ -135,138 +134,166 @@ export function RunModeGateSection({ task, onUpdate, readOnly = false }: RunMode
   };
 
   return (
-    <div className="space-y-4">
+    <Stack gap="md">
       {/* Run Mode */}
-      <div className="space-y-2">
-        <Label className="text-muted-foreground flex items-center gap-1">
+      <Stack gap="xs">
+        <Group gap={6}>
           <ShieldCheck className="h-3.5 w-3.5" />
-          Run Mode
-        </Label>
+          <Text size="sm" c="dimmed" fw={500}>
+            Run Mode
+          </Text>
+        </Group>
         {readOnly ? (
-          <div>
+          <Group gap="xs">
             {runMode ? (
               <Badge variant="outline" className="text-xs">
                 {RUN_MODE_LABELS[runMode]}
               </Badge>
             ) : (
-              <span className="text-xs text-muted-foreground">None</span>
+              <Text size="xs" c="dimmed">
+                None
+              </Text>
             )}
-          </div>
+          </Group>
         ) : (
-          <Select value={runMode ?? 'none'} onValueChange={handleRunModeChange} disabled={isSaving}>
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Select run mode…" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">
-                <span className="text-muted-foreground">None</span>
-              </SelectItem>
-              {(Object.keys(RUN_MODE_LABELS) as RunMode[]).map((mode) => (
-                <SelectItem key={mode} value={mode}>
-                  <span className="font-medium">{RUN_MODE_LABELS[mode]}</span>
-                  <span className="ml-2 text-xs text-muted-foreground hidden sm:inline">
-                    — {RUN_MODE_DESCRIPTIONS[mode]}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Select
+            aria-label="Run Mode"
+            allowDeselect={false}
+            data={RUN_MODE_OPTIONS}
+            value={runMode ?? 'none'}
+            onChange={(value) => {
+              if (value) void handleRunModeChange(value);
+            }}
+            disabled={isSaving}
+            placeholder="Select run mode..."
+            renderOption={({ option }) => {
+              const runOption = RUN_MODE_OPTIONS.find((item) => item.value === option.value);
+              return (
+                <Stack gap={2}>
+                  <Text size="sm" fw={option.value === 'none' ? 400 : 500}>
+                    {option.label}
+                  </Text>
+                  {runOption && 'description' in runOption && (
+                    <Text size="xs" c="dimmed">
+                      {runOption.description}
+                    </Text>
+                  )}
+                </Stack>
+              );
+            }}
+          />
         )}
         {runMode && (
-          <p className="text-xs text-muted-foreground">{RUN_MODE_DESCRIPTIONS[runMode]}</p>
+          <Text size="xs" c="dimmed">
+            {RUN_MODE_DESCRIPTIONS[runMode]}
+          </Text>
         )}
-      </div>
+      </Stack>
 
       {/* QA Gate */}
-      <div className="space-y-2">
-        <Label className="text-muted-foreground">QA Gate</Label>
+      <Stack gap="xs">
+        <Text size="sm" c="dimmed" fw={500}>
+          QA Gate
+        </Text>
 
         {readOnly ? (
-          <div className="flex items-center gap-2">
+          <Group gap="xs">
             {qaGate?.required ? (
               qaGate.passed ? (
-                <Badge className="bg-green-100 text-green-800 border-green-300 text-xs flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
+                <Badge
+                  color="green"
+                  variant="light"
+                  leftSection={<CheckCircle2 className="h-3 w-3" />}
+                >
                   QA Passed
                 </Badge>
               ) : (
-                <Badge variant="destructive" className="text-xs flex items-center gap-1">
-                  <XCircle className="h-3 w-3" />
+                <Badge color="red" variant="light" leftSection={<XCircle className="h-3 w-3" />}>
                   QA Required — Not Passed
                 </Badge>
               )
             ) : (
-              <span className="text-xs text-muted-foreground">No QA gate</span>
+              <Text size="xs" c="dimmed">
+                No QA gate
+              </Text>
             )}
-          </div>
+          </Group>
         ) : (
-          <div className="space-y-3">
+          <Stack gap="sm">
             {/* Required toggle */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Require QA before done</span>
+            <Group justify="space-between" align="center">
+              <Text size="sm">Require QA before done</Text>
               <Switch
+                aria-label="Require QA before done"
                 checked={qaGate?.required ?? false}
-                onCheckedChange={handleQaRequiredToggle}
+                onChange={(event) => {
+                  void handleQaRequiredToggle(event.currentTarget.checked);
+                }}
                 disabled={isSaving}
               />
-            </div>
+            </Group>
 
             {/* Pass/fail button — only visible when required */}
             {qaGate?.required && (
-              <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
+              <Paper className="bg-muted/30 p-3" radius="md" withBorder>
                 {qaGate.passed ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-green-700">QA Passed</p>
+                  <Group align="center" gap="sm" wrap="nowrap">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-600" />
+                    <Stack gap={2} className="min-w-0 flex-1">
+                      <Text size="sm" fw={500} c="green.7">
+                        QA Passed
+                      </Text>
                       {qaGate.passedAt && (
-                        <p className="text-xs text-muted-foreground">
+                        <Text size="xs" c="dimmed">
                           {new Date(qaGate.passedAt).toLocaleString()}
                           {qaGate.passedBy ? ` · ${qaGate.passedBy}` : ''}
-                        </p>
+                        </Text>
                       )}
-                    </div>
+                    </Stack>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={handleQaPassToggle}
                       disabled={isSaving}
-                      className="text-xs h-7"
+                      className="text-xs"
                     >
                       {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Revoke'}
                     </Button>
-                  </>
+                  </Group>
                 ) : (
-                  <>
-                    <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-destructive">QA Not Passed</p>
-                      <p className="text-xs text-muted-foreground">
+                  <Group align="center" gap="sm" wrap="nowrap">
+                    <XCircle className="h-4 w-4 flex-shrink-0 text-destructive" />
+                    <Stack gap={2} className="flex-1">
+                      <Text size="sm" fw={500} c="red">
+                        QA Not Passed
+                      </Text>
+                      <Text size="xs" c="dimmed">
                         Task cannot be moved to Done until QA is approved
-                      </p>
-                    </div>
+                      </Text>
+                    </Stack>
                     <Button
                       size="sm"
                       onClick={handleQaPassToggle}
                       disabled={isSaving}
-                      className="text-xs h-7 bg-green-600 hover:bg-green-700"
+                      color="green"
+                      className="text-xs"
+                      leftSection={
+                        isSaving ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3 w-3" />
+                        )
+                      }
                     >
-                      {isSaving ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <>
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Pass QA
-                        </>
-                      )}
+                      {isSaving ? 'Saving...' : 'Pass QA'}
                     </Button>
-                  </>
+                  </Group>
                 )}
-              </div>
+              </Paper>
             )}
-          </div>
+          </Stack>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
