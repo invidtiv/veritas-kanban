@@ -1,5 +1,4 @@
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Group, Paper, Stack, Text, TextInput, ThemeIcon } from '@mantine/core';
 import { AlertCircle } from 'lucide-react';
 
 interface TemplateVariableInputsProps {
@@ -8,31 +7,38 @@ interface TemplateVariableInputsProps {
   onChange: (name: string, value: string) => void;
 }
 
-export function TemplateVariableInputs({ variables, values, onChange }: TemplateVariableInputsProps) {
+export function TemplateVariableInputs({
+  variables,
+  values,
+  onChange,
+}: TemplateVariableInputsProps) {
   if (variables.length === 0) {
     return null;
   }
 
   return (
-    <div className="grid gap-3 border rounded-md p-3 bg-muted/30">
-      <div className="flex items-center gap-2">
-        <AlertCircle className="h-4 w-4 text-blue-500" />
-        <Label className="text-sm font-medium">Template Variables</Label>
-      </div>
-      {variables.map((varName) => (
-        <div key={varName} className="grid gap-1.5">
-          <Label htmlFor={`var-${varName}`} className="text-xs">
-            {varName}
-          </Label>
-          <Input
+    <Paper className="bg-muted/30 p-3" radius="md" withBorder>
+      <Stack gap="sm">
+        <Group gap="xs">
+          <ThemeIcon size="sm" color="blue" variant="light">
+            <AlertCircle className="h-4 w-4" />
+          </ThemeIcon>
+          <Text size="sm" fw={500}>
+            Template Variables
+          </Text>
+        </Group>
+        {variables.map((varName) => (
+          <TextInput
+            key={varName}
             id={`var-${varName}`}
+            label={varName}
             value={values[varName] || ''}
-            onChange={(e) => onChange(varName, e.target.value)}
+            onChange={(e) => onChange(varName, e.currentTarget.value)}
             placeholder={`Enter ${varName}...`}
-            className="h-8"
+            size="xs"
           />
-        </div>
-      ))}
-    </div>
+        ))}
+      </Stack>
+    </Paper>
   );
 }

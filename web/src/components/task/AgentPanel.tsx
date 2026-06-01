@@ -1,26 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
+  Badge,
+  Button,
+  Code,
+  Group,
+  Modal,
+  Paper,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { useConfig } from '@/hooks/useConfig';
 import {
   useAgentStatus,
@@ -80,6 +70,7 @@ export function AgentPanel({ task }: AgentPanelProps) {
   const [message, setMessage] = useState('');
   const [autoScroll, setAutoScroll] = useState(true);
   const [viewingAttemptId, setViewingAttemptId] = useState<string | null>(null);
+  const [stopDialogOpen, setStopDialogOpen] = useState(false);
 
   const models = ['sonnet', 'opus', 'haiku'];
 
@@ -94,6 +85,11 @@ export function AgentPanel({ task }: AgentPanelProps) {
   // Get enabled agents
   const enabledAgents = config?.agents.filter((a) => a.enabled) || [];
   const defaultAgent = config?.defaultAgent;
+  const agentOptions = enabledAgents.map((agent) => ({
+    value: agent.type,
+    label: `${agent.name}${agent.type === defaultAgent ? ' (default)' : ''}`,
+  }));
+  const modelOptions = models.map((model) => ({ value: model, label: model }));
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -132,6 +128,7 @@ export function AgentPanel({ task }: AgentPanelProps) {
 
   const handleStop = () => {
     stopAgent.mutate(task.id);
+    setStopDialogOpen(false);
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -151,57 +148,68 @@ export function AgentPanel({ task }: AgentPanelProps) {
 
   if (!task.git?.worktreePath) {
     return (
-      <div className="space-y-2">
-        <Label className="text-muted-foreground flex items-center gap-2">
-          <Bot className="h-4 w-4" />
-          AI Agent
-        </Label>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 rounded-md border border-dashed">
-          <AlertCircle className="h-4 w-4" />
-          Create a worktree first to use an AI agent.
-        </div>
-      </div>
+      <Stack gap="xs">
+        <Group gap="xs">
+          <Bot className="h-4 w-4 text-muted-foreground" />
+          <Text size="sm" c="dimmed">
+            AI Agent
+          </Text>
+        </Group>
+        <Paper className="p-3" radius="md" withBorder>
+          <Group gap="xs" wrap="nowrap">
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <Text size="sm" c="dimmed">
+              Create a worktree first to use an AI agent.
+            </Text>
+          </Group>
+        </Paper>
+      </Stack>
     );
   }
 
   return (
     <FeatureErrorBoundary fallbackTitle="Agent panel failed to load">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-muted-foreground flex items-center gap-2">
-            <Bot className="h-4 w-4" />
-            AI Agent
-          </Label>
-          <div className="flex items-center gap-2">
+      <Stack gap="sm">
+        <Group justify="space-between">
+          <Group gap="xs">
+            <Bot className="h-4 w-4 text-muted-foreground" />
+            <Text size="sm" c="dimmed">
+              AI Agent
+            </Text>
+          </Group>
+          <Group gap="xs">
             {isConnected ? (
               <Wifi className="h-3 w-3 text-green-500" />
             ) : (
               <WifiOff className="h-3 w-3 text-muted-foreground" />
             )}
             {isAgentRunning && (
-              <span className="flex items-center gap-1 text-xs text-green-500">
+              <Text component="span" size="xs" c="green" className="flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                 Running
-              </span>
+              </Text>
             )}
-          </div>
-        </div>
+          </Group>
+        </Group>
 
-        <div className="rounded-md border bg-muted/30 overflow-hidden">
+        <Paper className="overflow-hidden bg-muted/30" radius="md" withBorder>
           {/* Controls */}
-          <div className="flex items-center gap-2 p-2 border-b bg-card">
+          <Group gap="xs" className="border-b bg-card p-2">
             {!isAgentRunning ? (
               <>
                 {routingResult && !selectedAgent && (
-                  <span
-                    className="text-xs text-muted-foreground truncate max-w-[200px]"
+                  <Text
+                    size="xs"
+                    c="dimmed"
+                    truncate
+                    className="max-w-[200px]"
                     title={routingResult.reason}
                   >
                     Rec:{' '}
                     {enabledAgents.find((a) => a.type === routingResult.agent)?.name ||
                       routingResult.agent}
                     {routingResult.model ? ` (${routingResult.model})` : ''}
-                  </span>
+                  </Text>
                 )}
                 <Select
                   value={
@@ -210,81 +218,50 @@ export function AgentPanel({ task }: AgentPanelProps) {
                     routingResult?.agent ||
                     defaultAgent
                   }
-                  onValueChange={(v) => setSelectedAgent(v as AgentType)}
-                >
-                  <SelectTrigger className="w-[180px] h-8">
-                    <SelectValue placeholder="Select agent..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {enabledAgents.map((agent) => (
-                      <SelectItem key={agent.type} value={agent.type}>
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-3 w-3" />
-                          {agent.name}
-                          {agent.type === defaultAgent && (
-                            <span className="text-xs text-muted-foreground">(default)</span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setSelectedAgent(value as AgentType)}
+                  data={agentOptions}
+                  placeholder="Select agent..."
+                  aria-label="Agent"
+                  className="w-[180px]"
+                  size="xs"
+                  checkIconPosition="right"
+                />
                 <Select
                   value={selectedModel || routingResult?.model || 'sonnet'}
-                  onValueChange={setSelectedModel}
-                >
-                  <SelectTrigger className="w-[100px] h-8">
-                    <SelectValue placeholder="Model..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setSelectedModel(value ?? undefined)}
+                  data={modelOptions}
+                  placeholder="Model..."
+                  aria-label="Model"
+                  className="w-[100px]"
+                  size="xs"
+                  checkIconPosition="right"
+                />
                 <Button
                   size="sm"
                   onClick={handleStart}
                   disabled={!canStart || startAgent.isPending}
+                  leftSection={
+                    startAgent.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )
+                  }
                 >
-                  {startAgent.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  ) : (
-                    <Play className="h-4 w-4 mr-1" />
-                  )}
                   Start
                 </Button>
               </>
             ) : (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="sm" variant="destructive">
-                    <Square className="h-4 w-4 mr-1" />
-                    Stop
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Stop the agent?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will terminate the running agent. The attempt will be marked as failed.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleStop}
-                      className="bg-destructive text-destructive-foreground"
-                    >
-                      Stop Agent
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button
+                size="sm"
+                color="red"
+                leftSection={<Square className="h-4 w-4" />}
+                onClick={() => setStopDialogOpen(true)}
+              >
+                Stop
+              </Button>
             )}
-          </div>
+          </Group>
 
           {/* Output */}
           <div
@@ -319,9 +296,9 @@ export function AgentPanel({ task }: AgentPanelProps) {
           {/* Input */}
           {isAgentRunning && (
             <form onSubmit={handleSendMessage} className="flex gap-2 p-2 border-t bg-card">
-              <Input
+              <TextInput
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => setMessage(e.currentTarget.value)}
                 placeholder="Send a message to the agent..."
                 className="flex-1 h-8 text-sm"
               />
@@ -330,25 +307,32 @@ export function AgentPanel({ task }: AgentPanelProps) {
               </Button>
             </form>
           )}
-        </div>
+        </Paper>
 
         {/* New Attempt button for completed/failed tasks */}
         {task.attempt &&
           ['complete', 'failed'].includes(task.attempt.status) &&
           !isAgentRunning && (
-            <Button variant="outline" size="sm" className="w-full" onClick={handleStart}>
-              <RotateCcw className="h-4 w-4 mr-2" />
+            <Button
+              variant="outline"
+              size="sm"
+              fullWidth
+              leftSection={<RotateCcw className="h-4 w-4" />}
+              onClick={handleStart}
+            >
               New Attempt
             </Button>
           )}
 
         {/* Attempt History */}
         {attempts && attempts.length > 0 && (
-          <div className="space-y-2">
-            <Label className="text-muted-foreground flex items-center gap-2">
+          <Stack gap="xs">
+            <Group gap="xs">
               <History className="h-4 w-4" />
-              Attempt History ({attempts.length})
-            </Label>
+              <Text size="sm" c="dimmed">
+                Attempt History ({attempts.length})
+              </Text>
+            </Group>
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {attempts.map((attemptId) => {
                 const isCurrentAttempt = task.attempt?.id === attemptId;
@@ -376,12 +360,12 @@ export function AgentPanel({ task }: AgentPanelProps) {
                       attemptStatusIcons.complete}
                     <span className="font-mono flex-1 truncate">{attemptId}</span>
                     {isCurrentAttempt && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="light" size="xs">
                         Current
                       </Badge>
                     )}
                     {isViewing && !isCurrentAttempt && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" size="xs">
                         Viewing
                       </Badge>
                     )}
@@ -389,18 +373,20 @@ export function AgentPanel({ task }: AgentPanelProps) {
                 );
               })}
             </div>
-          </div>
+          </Stack>
         )}
 
         {/* Historical attempt log viewer */}
         {viewingAttemptId && viewingAttemptId !== task.attempt?.id && (
-          <div className="rounded-md border bg-muted/30 overflow-hidden">
-            <div className="flex items-center justify-between p-2 border-b bg-card">
-              <span className="text-xs text-muted-foreground">Viewing: {viewingAttemptId}</span>
-              <Button variant="ghost" size="sm" onClick={() => setViewingAttemptId(null)}>
+          <Paper className="overflow-hidden bg-muted/30" radius="md" withBorder>
+            <Group justify="space-between" className="border-b bg-card p-2">
+              <Text size="xs" c="dimmed">
+                Viewing: <Code>{viewingAttemptId}</Code>
+              </Text>
+              <Button variant="subtle" size="xs" onClick={() => setViewingAttemptId(null)}>
                 Close
               </Button>
-            </div>
+            </Group>
             <div className="h-[200px] overflow-y-auto p-3 font-mono text-xs bg-zinc-950 text-zinc-200">
               {isLoadingLog ? (
                 <div className="flex items-center justify-center h-full">
@@ -413,26 +399,57 @@ export function AgentPanel({ task }: AgentPanelProps) {
                 <div className="text-muted-foreground">No log available</div>
               )}
             </div>
-          </div>
+          </Paper>
         )}
 
         {/* Current attempt info */}
         {task.attempt && !viewingAttemptId && (
-          <div className="text-xs text-muted-foreground space-y-1 p-2 rounded-md bg-muted/30">
-            <div className="flex items-center gap-2">
-              {attemptStatusIcons[task.attempt.status]}
-              <span className="font-medium">Current: {task.attempt.id}</span>
-            </div>
-            <div>Agent: {task.attempt.agent}</div>
-            {task.attempt.started && (
-              <div>Started: {new Date(task.attempt.started).toLocaleString()}</div>
-            )}
-            {task.attempt.ended && (
-              <div>Ended: {new Date(task.attempt.ended).toLocaleString()}</div>
-            )}
-          </div>
+          <Paper className="bg-muted/30 p-2" radius="md">
+            <Stack gap={4}>
+              <Group gap="xs">
+                {attemptStatusIcons[task.attempt.status]}
+                <Text size="xs" c="dimmed" fw={500}>
+                  Current: {task.attempt.id}
+                </Text>
+              </Group>
+              <Text size="xs" c="dimmed">
+                Agent: {task.attempt.agent}
+              </Text>
+              {task.attempt.started && (
+                <Text size="xs" c="dimmed">
+                  Started: {new Date(task.attempt.started).toLocaleString()}
+                </Text>
+              )}
+              {task.attempt.ended && (
+                <Text size="xs" c="dimmed">
+                  Ended: {new Date(task.attempt.ended).toLocaleString()}
+                </Text>
+              )}
+            </Stack>
+          </Paper>
         )}
-      </div>
+
+        <Modal
+          opened={stopDialogOpen}
+          onClose={() => setStopDialogOpen(false)}
+          title="Stop the agent?"
+          centered
+        >
+          <Stack gap="md">
+            <Text size="sm" c="dimmed">
+              This will terminate the running agent. The attempt will be marked as failed.
+            </Text>
+            <Group justify="flex-end" gap="xs">
+              <Button variant="default" onClick={() => setStopDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button color="red" onClick={handleStop}>
+                Stop Agent
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+      </Stack>
     </FeatureErrorBoundary>
   );
 }

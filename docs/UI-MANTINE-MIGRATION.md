@@ -367,6 +367,13 @@ Phase 3 progress:
   loader, and theme icon primitives while preserving review decision summaries,
   merge confirmation, inline comment add/remove, preview output/external/stop
   controls, manual conflict resolution, and abort behavior.
+- Task detail agent controls, apply-template flow, task metrics panel, create-task
+  dialog shell, blueprint preview, and template variable helpers now use direct
+  Mantine modal, tabs, select, switch, text input, badge, button, action icon,
+  skeleton, paper, alert, code, stack, group, text, and theme icon primitives
+  while preserving agent start/stop/message flows, template merge previews,
+  force-overwrite/custom-variable application, metrics expansion/export, and
+  blueprint/custom-variable rendering.
 
 ### Phase 4: QA, Cleanup, and Dependency Removal
 
