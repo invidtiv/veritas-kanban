@@ -1,15 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Search, ShieldAlert, BrainCircuit } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Badge, Button, Select, TextInput } from '@mantine/core';
 import { useDecisions } from '@/hooks/useDecisions';
 import type { DecisionListFilters, DecisionRecord } from '@veritas-kanban/shared';
 import { DecisionDetail } from './DecisionDetail';
@@ -20,11 +11,10 @@ interface DecisionExplorerProps {
 
 const BASE_PATH = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 
-function riskTone(riskScore: number): string {
-  if (riskScore >= 75) return 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200';
-  if (riskScore >= 40)
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200';
-  return 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200';
+function riskColor(riskScore: number): string {
+  if (riskScore >= 75) return 'red';
+  if (riskScore >= 40) return 'yellow';
+  return 'green';
 }
 
 export function DecisionExplorer({ onBack }: DecisionExplorerProps) {
@@ -95,7 +85,7 @@ export function DecisionExplorer({ onBack }: DecisionExplorerProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={onBack}>
+          <Button variant="subtle" size="sm" onClick={onBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Board
           </Button>
@@ -106,57 +96,57 @@ export function DecisionExplorer({ onBack }: DecisionExplorerProps) {
             </p>
           </div>
         </div>
-        <Badge variant="secondary">{filteredDecisions.length} decisions</Badge>
+        <Badge variant="light" tt="none">
+          {filteredDecisions.length} decisions
+        </Badge>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_220px_220px_220px]">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+        <div>
+          <TextInput
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search decision id, task, context..."
-            className="pl-9"
+            leftSection={<Search className="h-4 w-4 text-muted-foreground" />}
           />
         </div>
 
-        <Select value={agent} onValueChange={setAgent}>
-          <SelectTrigger>
-            <SelectValue placeholder="All agents" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All agents</SelectItem>
-            {agentOptions.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Select
+          value={agent}
+          onChange={(value) => setAgent(value ?? 'all')}
+          data={[
+            { value: 'all', label: 'All agents' },
+            ...agentOptions.map((option) => ({ value: option, label: option })),
+          ]}
+          placeholder="All agents"
+          allowDeselect={false}
+        />
 
-        <Select value={confidenceFilter} onValueChange={setConfidenceFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Confidence" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All confidence</SelectItem>
-            <SelectItem value="high">80-100</SelectItem>
-            <SelectItem value="medium">50-79</SelectItem>
-            <SelectItem value="low">0-49</SelectItem>
-          </SelectContent>
-        </Select>
+        <Select
+          value={confidenceFilter}
+          onChange={(value) => setConfidenceFilter(value ?? 'all')}
+          data={[
+            { value: 'all', label: 'All confidence' },
+            { value: 'high', label: '80-100' },
+            { value: 'medium', label: '50-79' },
+            { value: 'low', label: '0-49' },
+          ]}
+          placeholder="Confidence"
+          allowDeselect={false}
+        />
 
-        <Select value={riskFilter} onValueChange={setRiskFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Risk" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All risk</SelectItem>
-            <SelectItem value="low">0-39</SelectItem>
-            <SelectItem value="medium">40-69</SelectItem>
-            <SelectItem value="high">70-100</SelectItem>
-          </SelectContent>
-        </Select>
+        <Select
+          value={riskFilter}
+          onChange={(value) => setRiskFilter(value ?? 'all')}
+          data={[
+            { value: 'all', label: 'All risk' },
+            { value: 'low', label: '0-39' },
+            { value: 'medium', label: '40-69' },
+            { value: 'high', label: '70-100' },
+          ]}
+          placeholder="Risk"
+          allowDeselect={false}
+        />
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-card">
@@ -213,8 +203,12 @@ function DecisionRow({ decision, onOpen }: { decision: DecisionRecord; onOpen: (
         <span>{decision.confidenceLevel}%</span>
       </div>
       <div>
-        <Badge className={riskTone(decision.riskScore)}>
-          <ShieldAlert className="mr-1 h-3 w-3" />
+        <Badge
+          color={riskColor(decision.riskScore)}
+          variant="light"
+          tt="none"
+          leftSection={<ShieldAlert className="h-3 w-3" />}
+        >
           {decision.riskScore}
         </Badge>
       </div>

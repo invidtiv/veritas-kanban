@@ -6,6 +6,17 @@ import type {
   PolicyResponseAction,
 } from '@veritas-kanban/shared';
 import { ArrowLeft, Edit, FlaskConical, Plus, ShieldAlert, Trash2 } from 'lucide-react';
+import {
+  ActionIcon,
+  Badge,
+  Button,
+  Group,
+  Modal,
+  Select,
+  Switch,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useToast } from '@/hooks/useToast';
 import {
   useCreatePolicy,
@@ -14,27 +25,6 @@ import {
   usePolicies,
   useUpdatePolicy,
 } from '@/hooks/usePolicies';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 
 interface PolicyManagerProps {
@@ -107,6 +97,44 @@ const DEFAULT_PREVIEW: PreviewState = {
   preview: true,
 };
 
+const policyTypeSelectData = [
+  { value: 'risk-threshold', label: 'Risk Threshold' },
+  { value: 'require-approval', label: 'Require Approval' },
+  { value: 'block-action-type', label: 'Block Action Type' },
+  { value: 'rate-limit', label: 'Rate Limit' },
+  { value: 'webhook-check', label: 'Webhook Check' },
+];
+
+const responseActionSelectData = [
+  { value: 'warn', label: 'Warn' },
+  { value: 'require-approval', label: 'Require Approval' },
+  { value: 'block', label: 'Block' },
+];
+
+const comparatorSelectData = [
+  { value: 'gte', label: 'Greater than or equal' },
+  { value: 'gt', label: 'Greater than' },
+  { value: 'lte', label: 'Less than or equal' },
+  { value: 'lt', label: 'Less than' },
+];
+
+const rateLimitScopeSelectData = [
+  { value: 'agent', label: 'Agent' },
+  { value: 'project', label: 'Project' },
+  { value: 'action-type', label: 'Action Type' },
+  { value: 'global', label: 'Global' },
+];
+
+const webhookMethodSelectData = [
+  { value: 'GET', label: 'GET' },
+  { value: 'POST', label: 'POST' },
+];
+
+const webhookTriggerSelectData = [
+  { value: 'failure', label: 'Failure' },
+  { value: 'success', label: 'Success' },
+];
+
 function splitCsv(value: string): string[] {
   return value
     .split(',')
@@ -141,12 +169,10 @@ function policyTypeLabel(type: PolicyType): string {
   }
 }
 
-function responseVariant(
-  action: PolicyResponseAction
-): 'default' | 'destructive' | 'secondary' | 'outline' {
-  if (action === 'block') return 'destructive';
-  if (action === 'require-approval') return 'secondary';
-  return 'outline';
+function responseColor(action: PolicyResponseAction | 'allow') {
+  if (action === 'block') return 'red';
+  if (action === 'require-approval') return 'yellow';
+  return 'gray';
 }
 
 function policyToForm(policy: AgentPolicy): PolicyFormState {
@@ -388,7 +414,7 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
           <div className="flex items-center gap-2">
             <div className="font-medium">{policy.name}</div>
             {policy.preset && (
-              <Badge variant="outline" className="capitalize">
+              <Badge variant="outline" tt="none" className="capitalize">
                 {policy.preset}
               </Badge>
             )}
@@ -403,7 +429,11 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
     {
       key: 'type',
       header: 'Type',
-      cell: (policy) => <Badge variant="secondary">{policyTypeLabel(policy.type)}</Badge>,
+      cell: (policy) => (
+        <Badge variant="light" tt="none">
+          {policyTypeLabel(policy.type)}
+        </Badge>
+      ),
     },
     {
       key: 'scope',
@@ -416,7 +446,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
       key: 'response',
       header: 'Response',
       cell: (policy) => (
-        <Badge variant={responseVariant(policy.responseAction)}>{policy.responseAction}</Badge>
+        <Badge color={responseColor(policy.responseAction)} variant="light" tt="none">
+          {policy.responseAction}
+        </Badge>
       ),
     },
     {
@@ -425,8 +457,8 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
       cell: (policy) => (
         <Switch
           checked={policy.enabled}
-          onCheckedChange={(enabled) => {
-            void handleToggle(policy, enabled);
+          onChange={(event) => {
+            void handleToggle(policy, event.currentTarget.checked);
           }}
           aria-label={`Toggle ${policy.name}`}
         />
@@ -446,9 +478,13 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
             <FlaskConical className="mr-1 h-3.5 w-3.5" />
             Test
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => void handleDelete(policy)}>
+          <ActionIcon
+            variant="subtle"
+            onClick={() => void handleDelete(policy)}
+            aria-label={`Delete ${policy.name}`}
+          >
             <Trash2 className="h-4 w-4" />
-          </Button>
+          </ActionIcon>
         </div>
       ),
     },
@@ -459,9 +495,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
       <div className="border-b bg-card px-6 py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} aria-label="Back to board">
+            <ActionIcon variant="subtle" onClick={onBack} aria-label="Back to board">
               <ArrowLeft className="h-4 w-4" />
-            </Button>
+            </ActionIcon>
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-bold">
                 <ShieldAlert className="h-6 w-6" />
@@ -503,13 +539,15 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Input
+          <TextInput
             placeholder="Search policies by name, id, type, or scope..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="max-w-md"
           />
-          <Badge variant="outline">{filteredPolicies.length} policies</Badge>
+          <Badge variant="outline" tt="none">
+            {filteredPolicies.length} policies
+          </Badge>
         </div>
 
         {isLoading ? (
@@ -526,29 +564,37 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
         )}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{editingPolicyId ? 'Edit Policy' : 'Create Policy'}</DialogTitle>
-            <DialogDescription>
+      <Modal
+        opened={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        size="xl"
+        centered
+        title={
+          <div>
+            <div className="text-lg font-semibold">
+              {editingPolicyId ? 'Edit Policy' : 'Create Policy'}
+            </div>
+            <div className="text-sm text-muted-foreground">
               Define when the policy applies, what it checks, and how the agent should respond.
-            </DialogDescription>
-          </DialogHeader>
-
+            </div>
+          </div>
+        }
+      >
+        <div className="max-h-[75vh] overflow-y-auto pr-2">
           <div className="grid gap-4 py-2 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="policy-id">Policy ID</Label>
-              <Input
+              <TextInput
                 id="policy-id"
+                label="Policy ID"
                 value={form.id}
                 onChange={(event) => setForm((current) => ({ ...current, id: event.target.value }))}
                 disabled={Boolean(editingPolicyId)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="policy-name">Name</Label>
-              <Input
+              <TextInput
                 id="policy-name"
+                label="Name"
                 value={form.name}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, name: event.target.value }))
@@ -556,48 +602,37 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label>Type</Label>
               <Select
+                label="Type"
                 value={form.type}
-                onValueChange={(value: PolicyType) =>
-                  setForm((current) => ({ ...current, type: value }))
-                }
+                onChange={(value) => {
+                  if (!value) return;
+                  setForm((current) => ({ ...current, type: value as PolicyType }));
+                }}
+                data={policyTypeSelectData}
                 disabled={Boolean(editingPolicyId)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="risk-threshold">Risk Threshold</SelectItem>
-                  <SelectItem value="require-approval">Require Approval</SelectItem>
-                  <SelectItem value="block-action-type">Block Action Type</SelectItem>
-                  <SelectItem value="rate-limit">Rate Limit</SelectItem>
-                  <SelectItem value="webhook-check">Webhook Check</SelectItem>
-                </SelectContent>
-              </Select>
+                allowDeselect={false}
+              />
             </div>
             <div className="space-y-2">
-              <Label>Response Action</Label>
               <Select
+                label="Response Action"
                 value={form.responseAction}
-                onValueChange={(value: PolicyResponseAction) =>
-                  setForm((current) => ({ ...current, responseAction: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="warn">Warn</SelectItem>
-                  <SelectItem value="require-approval">Require Approval</SelectItem>
-                  <SelectItem value="block">Block</SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={(value) => {
+                  if (!value) return;
+                  setForm((current) => ({
+                    ...current,
+                    responseAction: value as PolicyResponseAction,
+                  }));
+                }}
+                data={responseActionSelectData}
+                allowDeselect={false}
+              />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="policy-description">Description</Label>
               <Textarea
                 id="policy-description"
+                label="Description"
                 value={form.description}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, description: event.target.value }))
@@ -606,9 +641,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="scope-agents">Scope: Agents</Label>
-              <Input
+              <TextInput
                 id="scope-agents"
+                label="Scope: Agents"
                 placeholder="codex, reviewer"
                 value={form.scopeAgents}
                 onChange={(event) =>
@@ -617,9 +652,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="scope-projects">Scope: Projects</Label>
-              <Input
+              <TextInput
                 id="scope-projects"
+                label="Scope: Projects"
                 placeholder="core, docs"
                 value={form.scopeProjects}
                 onChange={(event) =>
@@ -628,9 +663,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="scope-actions">Scope: Action Types</Label>
-              <Input
+              <TextInput
                 id="scope-actions"
+                label="Scope: Action Types"
                 placeholder="git.push, deploy.release"
                 value={form.scopeActionTypes}
                 onChange={(event) =>
@@ -643,9 +678,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
           {form.type === 'risk-threshold' && (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="risk-threshold">Threshold</Label>
-                <Input
+                <TextInput
                   id="risk-threshold"
+                  label="Threshold"
                   type="number"
                   value={form.riskThreshold}
                   onChange={(event) =>
@@ -654,23 +689,19 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Comparator</Label>
                 <Select
+                  label="Comparator"
                   value={form.riskComparator}
-                  onValueChange={(value: 'gte' | 'gt' | 'lte' | 'lt') =>
-                    setForm((current) => ({ ...current, riskComparator: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gte">Greater than or equal</SelectItem>
-                    <SelectItem value="gt">Greater than</SelectItem>
-                    <SelectItem value="lte">Less than or equal</SelectItem>
-                    <SelectItem value="lt">Less than</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => {
+                    if (!value) return;
+                    setForm((current) => ({
+                      ...current,
+                      riskComparator: value as 'gte' | 'gt' | 'lte' | 'lt',
+                    }));
+                  }}
+                  data={comparatorSelectData}
+                  allowDeselect={false}
+                />
               </div>
             </div>
           )}
@@ -678,9 +709,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
           {form.type === 'require-approval' && (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="approval-reason">Reason</Label>
                 <Textarea
                   id="approval-reason"
+                  label="Reason"
                   value={form.approvalReason}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, approvalReason: event.target.value }))
@@ -689,9 +720,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="approval-approvers">Approvers</Label>
-                <Input
+                <TextInput
                   id="approval-approvers"
+                  label="Approvers"
                   placeholder="lead, security"
                   value={form.approvalApprovers}
                   onChange={(event) =>
@@ -704,9 +735,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
 
           {form.type === 'block-action-type' && (
             <div className="space-y-2">
-              <Label htmlFor="blocked-actions">Blocked Action Types</Label>
-              <Input
+              <TextInput
                 id="blocked-actions"
+                label="Blocked Action Types"
                 placeholder="git.force-push, prod.delete"
                 value={form.blockedActionTypes}
                 onChange={(event) =>
@@ -719,9 +750,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
           {form.type === 'rate-limit' && (
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="rate-attempts">Max Attempts</Label>
-                <Input
+                <TextInput
                   id="rate-attempts"
+                  label="Max Attempts"
                   type="number"
                   value={form.rateLimitAttempts}
                   onChange={(event) =>
@@ -730,9 +761,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rate-window">Window (ms)</Label>
-                <Input
+                <TextInput
                   id="rate-window"
+                  label="Window (ms)"
                   type="number"
                   value={form.rateLimitWindowMs}
                   onChange={(event) =>
@@ -741,23 +772,19 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Rate Limit Key</Label>
                 <Select
+                  label="Rate Limit Key"
                   value={form.rateLimitScopeKey}
-                  onValueChange={(value: 'agent' | 'project' | 'action-type' | 'global') =>
-                    setForm((current) => ({ ...current, rateLimitScopeKey: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="agent">Agent</SelectItem>
-                    <SelectItem value="project">Project</SelectItem>
-                    <SelectItem value="action-type">Action Type</SelectItem>
-                    <SelectItem value="global">Global</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => {
+                    if (!value) return;
+                    setForm((current) => ({
+                      ...current,
+                      rateLimitScopeKey: value as 'agent' | 'project' | 'action-type' | 'global',
+                    }));
+                  }}
+                  data={rateLimitScopeSelectData}
+                  allowDeselect={false}
+                />
               </div>
             </div>
           )}
@@ -765,9 +792,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
           {form.type === 'webhook-check' && (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="webhook-url">Webhook URL</Label>
-                <Input
+                <TextInput
                   id="webhook-url"
+                  label="Webhook URL"
                   value={form.webhookUrl}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, webhookUrl: event.target.value }))
@@ -775,43 +802,36 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Method</Label>
                 <Select
+                  label="Method"
                   value={form.webhookMethod}
-                  onValueChange={(value: 'GET' | 'POST') =>
-                    setForm((current) => ({ ...current, webhookMethod: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GET">GET</SelectItem>
-                    <SelectItem value="POST">POST</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => {
+                    if (!value) return;
+                    setForm((current) => ({ ...current, webhookMethod: value as 'GET' | 'POST' }));
+                  }}
+                  data={webhookMethodSelectData}
+                  allowDeselect={false}
+                />
               </div>
               <div className="space-y-2">
-                <Label>Trigger On</Label>
                 <Select
+                  label="Trigger On"
                   value={form.webhookTriggerOn}
-                  onValueChange={(value: 'success' | 'failure') =>
-                    setForm((current) => ({ ...current, webhookTriggerOn: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="failure">Failure</SelectItem>
-                    <SelectItem value="success">Success</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => {
+                    if (!value) return;
+                    setForm((current) => ({
+                      ...current,
+                      webhookTriggerOn: value as 'success' | 'failure',
+                    }));
+                  }}
+                  data={webhookTriggerSelectData}
+                  allowDeselect={false}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="webhook-timeout">Timeout (ms)</Label>
-                <Input
+                <TextInput
                   id="webhook-timeout"
+                  label="Timeout (ms)"
                   type="number"
                   value={form.webhookTimeoutMs}
                   onChange={(event) =>
@@ -820,9 +840,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="webhook-status">Expected Status</Label>
-                <Input
+                <TextInput
                   id="webhook-status"
+                  label="Expected Status"
                   type="number"
                   value={form.webhookExpectedStatus}
                   onChange={(event) =>
@@ -834,9 +854,9 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="webhook-body-contains">Expected Body Contains</Label>
-                <Input
+                <TextInput
                   id="webhook-body-contains"
+                  label="Expected Body Contains"
                   value={form.webhookExpectedBodyContains}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -855,8 +875,11 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
                 </div>
                 <Switch
                   checked={form.webhookSendContext}
-                  onCheckedChange={(checked) =>
-                    setForm((current) => ({ ...current, webhookSendContext: checked }))
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      webhookSendContext: event.currentTarget.checked,
+                    }))
                   }
                 />
               </div>
@@ -872,13 +895,13 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
             </div>
             <Switch
               checked={form.enabled}
-              onCheckedChange={(checked) =>
-                setForm((current) => ({ ...current, enabled: checked }))
+              onChange={(event) =>
+                setForm((current) => ({ ...current, enabled: event.currentTarget.checked }))
               }
             />
           </div>
 
-          <DialogFooter>
+          <Group justify="flex-end" mt="md">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
@@ -888,114 +911,120 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
             >
               {editingPolicyId ? 'Save Changes' : 'Create Policy'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </Group>
+        </div>
+      </Modal>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Test Policy Evaluation</DialogTitle>
-            <DialogDescription>
+      <Modal
+        opened={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        size="lg"
+        centered
+        title={
+          <div>
+            <div className="text-lg font-semibold">Test Policy Evaluation</div>
+            <div className="text-sm text-muted-foreground">
               Preview how the guard engine would evaluate an action before an agent executes it.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-2 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="preview-agent">Agent</Label>
-              <Input
-                id="preview-agent"
-                value={previewInput.agent || ''}
-                onChange={(event) =>
-                  setPreviewInput((current) => ({ ...current, agent: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="preview-project">Project</Label>
-              <Input
-                id="preview-project"
-                value={previewInput.project || ''}
-                onChange={(event) =>
-                  setPreviewInput((current) => ({ ...current, project: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="preview-action">Action Type</Label>
-              <Input
-                id="preview-action"
-                value={previewInput.actionType}
-                onChange={(event) =>
-                  setPreviewInput((current) => ({ ...current, actionType: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="preview-risk">Risk Score</Label>
-              <Input
-                id="preview-risk"
-                type="number"
-                value={previewInput.riskScore ?? ''}
-                onChange={(event) =>
-                  setPreviewInput((current) => ({
-                    ...current,
-                    riskScore: event.target.value ? Number(event.target.value) : undefined,
-                  }))
-                }
-              />
             </div>
           </div>
+        }
+      >
+        <div className="grid gap-4 py-2 md:grid-cols-2">
+          <div className="space-y-2">
+            <TextInput
+              id="preview-agent"
+              label="Agent"
+              value={previewInput.agent || ''}
+              onChange={(event) =>
+                setPreviewInput((current) => ({ ...current, agent: event.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <TextInput
+              id="preview-project"
+              label="Project"
+              value={previewInput.project || ''}
+              onChange={(event) =>
+                setPreviewInput((current) => ({ ...current, project: event.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <TextInput
+              id="preview-action"
+              label="Action Type"
+              value={previewInput.actionType}
+              onChange={(event) =>
+                setPreviewInput((current) => ({ ...current, actionType: event.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <TextInput
+              id="preview-risk"
+              label="Risk Score"
+              type="number"
+              value={previewInput.riskScore ?? ''}
+              onChange={(event) =>
+                setPreviewInput((current) => ({
+                  ...current,
+                  riskScore: event.target.value ? Number(event.target.value) : undefined,
+                }))
+              }
+            />
+          </div>
+        </div>
 
-          {previewPolicy && (
-            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
-              Testing against <span className="font-medium">{previewPolicy.name}</span>. Evaluation
-              runs against all enabled policies so you can see collisions and escalations.
+        {previewPolicy && (
+          <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+            Testing against <span className="font-medium">{previewPolicy.name}</span>. Evaluation
+            runs against all enabled policies so you can see collisions and escalations.
+          </div>
+        )}
+
+        {evaluatePolicies.data && (
+          <div className="space-y-3 rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-2">
+              <Badge
+                color={responseColor(evaluatePolicies.data.decision)}
+                variant="light"
+                tt="none"
+              >
+                {evaluatePolicies.data.decision}
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                {evaluatePolicies.data.matches.length} matching policies
+              </span>
             </div>
-          )}
-
-          {evaluatePolicies.data && (
-            <div className="space-y-3 rounded-lg border bg-card p-4">
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant={evaluatePolicies.data.decision === 'block' ? 'destructive' : 'secondary'}
-                >
-                  {evaluatePolicies.data.decision}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
-                  {evaluatePolicies.data.matches.length} matching policies
-                </span>
-              </div>
-              <div className="space-y-2">
-                {evaluatePolicies.data.matches.map((match) => (
-                  <div key={match.policyId} className="rounded-md border px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium">{match.policyName}</div>
-                      <Badge variant={responseVariant(match.responseAction)}>
-                        {match.responseAction}
-                      </Badge>
-                    </div>
-                    <div className="mt-1 text-sm text-muted-foreground">{match.message}</div>
+            <div className="space-y-2">
+              {evaluatePolicies.data.matches.map((match) => (
+                <div key={match.policyId} className="rounded-md border px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium">{match.policyName}</div>
+                    <Badge color={responseColor(match.responseAction)} variant="light" tt="none">
+                      {match.responseAction}
+                    </Badge>
                   </div>
-                ))}
-              </div>
+                  <div className="mt-1 text-sm text-muted-foreground">{match.message}</div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPreviewOpen(false)}>
-              Close
-            </Button>
-            <Button
-              onClick={() => void evaluatePolicies.mutateAsync({ ...previewInput, preview: true })}
-              disabled={evaluatePolicies.isPending}
-            >
-              {evaluatePolicies.isPending ? 'Evaluating...' : 'Run Preview'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Group justify="flex-end" mt="md">
+          <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+            Close
+          </Button>
+          <Button
+            onClick={() => void evaluatePolicies.mutateAsync({ ...previewInput, preview: true })}
+            disabled={evaluatePolicies.isPending}
+          >
+            {evaluatePolicies.isPending ? 'Evaluating...' : 'Run Preview'}
+          </Button>
+        </Group>
+      </Modal>
     </div>
   );
 }
