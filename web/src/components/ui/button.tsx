@@ -5,9 +5,9 @@ import {
   type ActionIconProps as MantineActionIconProps,
   type ButtonProps as MantineButtonProps,
 } from '@mantine/core';
-import { Slot as SlotRoot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 
+import { SlotRoot } from '@/components/ui/slot';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(

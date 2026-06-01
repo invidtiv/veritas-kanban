@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { Box } from '@mantine/core';
 import { KanbanBoard } from './components/board/KanbanBoard';
 import { Header } from './components/layout/Header';
 import { Toaster } from './components/ui/toaster';
@@ -207,15 +208,21 @@ function AppContent() {
             <TaskConfigProvider>
               <ViewProvider>
                 <IdentityProvider>
-                  <div className="min-h-screen bg-background">
+                  <Box className="min-h-screen bg-background">
                     <SkipToContent />
                     <Header />
                     <SystemHealthBar />
-                    <main id="main-content" className="mx-auto px-14 py-6" tabIndex={-1}>
+                    <Box
+                      component="main"
+                      id="main-content"
+                      px={{ base: 'md', md: '3.5rem' }}
+                      py="lg"
+                      tabIndex={-1}
+                    >
                       <ErrorBoundary level="section">
                         <MainContent />
                       </ErrorBoundary>
-                    </main>
+                    </Box>
                     <Toaster />
                     <CommandPalette />
                     <FloatingChat />
@@ -223,7 +230,7 @@ function AppContent() {
                       open={showDesktopOnboarding}
                       onOpenChange={setShowDesktopOnboarding}
                     />
-                  </div>
+                  </Box>
                 </IdentityProvider>
               </ViewProvider>
             </TaskConfigProvider>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import { PasswordInput, TextInput } from '@mantine/core';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Lock, Key, Check, Copy, Download } from 'lucide-react';
+import { Lock, Key, Check, Copy, Download } from 'lucide-react';
 
 export function LoginScreen() {
   const { login, recover } = useAuth();
@@ -13,13 +13,13 @@ export function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Recovery mode state
   const [showRecovery, setShowRecovery] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  
+
   // New recovery key display
   const [newRecoveryKey, setNewRecoveryKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
@@ -28,34 +28,34 @@ export function LoginScreen() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password || isSubmitting) return;
-    
+
     setIsSubmitting(true);
     setError(null);
-    
+
     const result = await login(password, rememberMe);
-    
+
     if (!result.success) {
       setError(result.error || 'Invalid password');
     }
-    
+
     setIsSubmitting(false);
   };
 
   const handleRecover = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recoveryKey || !newPassword || newPassword !== confirmNewPassword || isSubmitting) return;
-    
+
     setIsSubmitting(true);
     setError(null);
-    
+
     const result = await recover(recoveryKey, newPassword);
-    
+
     if (result.success && result.recoveryKey) {
       setNewRecoveryKey(result.recoveryKey);
     } else {
       setError(result.error || 'Recovery failed');
     }
-    
+
     setIsSubmitting(false);
   };
 
@@ -69,7 +69,9 @@ export function LoginScreen() {
   const downloadRecoveryKey = () => {
     if (!newRecoveryKey) return;
     const blob = new Blob(
-      [`Veritas Kanban Recovery Key\n\nYour recovery key: ${newRecoveryKey}\n\nKeep this file safe! You will need it if you forget your password.\n\nGenerated: ${new Date().toISOString()}`],
+      [
+        `Veritas Kanban Recovery Key\n\nYour recovery key: ${newRecoveryKey}\n\nKeep this file safe! You will need it if you forget your password.\n\nGenerated: ${new Date().toISOString()}`,
+      ],
       { type: 'text/plain' }
     );
     const url = URL.createObjectURL(blob);
@@ -140,7 +142,7 @@ export function LoginScreen() {
   if (showRecovery) {
     const passwordsMatch = newPassword === confirmNewPassword;
     const isValid = recoveryKey && newPassword.length >= 8 && passwordsMatch;
-    
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-6">
@@ -149,54 +151,43 @@ export function LoginScreen() {
               <Key className="w-8 h-8" />
             </div>
             <h1 className="text-2xl font-bold">Reset Password</h1>
-            <p className="text-muted-foreground">
-              Enter your recovery key and a new password.
-            </p>
+            <p className="text-muted-foreground">Enter your recovery key and a new password.</p>
           </div>
 
           <form onSubmit={handleRecover} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="recovery-key">Recovery Key</Label>
-              <Input
+              <TextInput
                 id="recovery-key"
-                type="text"
                 value={recoveryKey}
                 onChange={(e) => setRecoveryKey(e.target.value.toUpperCase())}
                 placeholder="XXXX-XXXX-XXXX-XXXX"
-                className="font-mono tracking-wider"
+                classNames={{ input: 'font-mono tracking-wider' }}
                 autoFocus
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="new-password">New Password</Label>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password (8+ characters)"
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (8+ characters)"
+                visible={showPassword}
+                onVisibilityChange={setShowPassword}
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirm-new-password">Confirm New Password</Label>
-              <Input
+              <PasswordInput
                 id="confirm-new-password"
-                type={showPassword ? 'text' : 'password'}
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                 placeholder="Confirm new password"
+                visible={showPassword}
+                onVisibilityChange={setShowPassword}
               />
               {confirmNewPassword && !passwordsMatch && (
                 <p className="text-xs text-destructive">Passwords do not match</p>
@@ -238,32 +229,21 @@ export function LoginScreen() {
             <Lock className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold">Welcome Back</h1>
-          <p className="text-muted-foreground">
-            Enter your password to access Veritas Kanban.
-          </p>
+          <p className="text-muted-foreground">Enter your password to access Veritas Kanban.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="pr-10"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            <PasswordInput
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              visible={showPassword}
+              onVisibilityChange={setShowPassword}
+              autoFocus
+            />
           </div>
 
           <div className="flex items-center space-x-2">

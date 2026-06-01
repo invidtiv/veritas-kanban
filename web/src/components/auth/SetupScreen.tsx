@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import { PasswordInput } from '@mantine/core';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Copy, Download, Check, Shield, Key } from 'lucide-react';
+import { Copy, Download, Check, Shield, Key } from 'lucide-react';
 import { DesktopOnboardingScreen, shouldShowDesktopOnboarding } from './DesktopOnboarding';
 
 // Password strength calculation
@@ -156,24 +156,15 @@ export function SetupScreen() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password (8+ characters)"
-                className="pr-10"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            <PasswordInput
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password (8+ characters)"
+              visible={showPassword}
+              onVisibilityChange={setShowPassword}
+              autoFocus
+            />
             {password && (
               <div className="space-y-1">
                 <div className="flex gap-1 h-1">
@@ -195,12 +186,13 @@ export function SetupScreen() {
 
           <div className="space-y-2">
             <Label htmlFor="confirm-password">Confirm Password</Label>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type={showPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm password"
+              visible={showPassword}
+              onVisibilityChange={setShowPassword}
             />
             {confirmPassword && !passwordsMatch && (
               <p className="text-xs text-destructive">Passwords do not match</p>

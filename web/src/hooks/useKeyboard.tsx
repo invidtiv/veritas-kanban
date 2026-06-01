@@ -108,9 +108,15 @@ export function KeyboardProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Ignore if a dialog is open (except Escape)
-      // Check for visible dialogs only (shadcn uses data-state attribute)
-      const dialogOpen = document.querySelector('[role="dialog"][data-state="open"]');
+      // Ignore if a Mantine dialog, drawer, or alert surface is open (except Escape).
+      const dialogOpen = Array.from(
+        document.querySelectorAll(
+          '[role="dialog"], [aria-modal="true"], [data-slot="dialog-content"], [data-slot="sheet-content"], [data-slot="alert-dialog-content"]'
+        )
+      ).some((element) => {
+        const style = window.getComputedStyle(element);
+        return style.visibility !== 'hidden' && style.display !== 'none';
+      });
       if (dialogOpen && e.key !== 'Escape') {
         return;
       }
