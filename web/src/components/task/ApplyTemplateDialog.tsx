@@ -1,23 +1,19 @@
 import { useState, useMemo } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
+  Alert,
+  Button,
+  Code,
+  Group,
+  Modal,
+  Paper,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
+  Stack,
+  Switch,
+  Tabs,
+  Text,
+  TextInput,
+  ThemeIcon,
+} from '@mantine/core';
 import { useTemplates } from '@/hooks/useTemplates';
 import { useUpdateTask } from '@/hooks/useTasks';
 import type { Task, Subtask } from '@veritas-kanban/shared';
@@ -82,6 +78,21 @@ export function ApplyTemplateDialog({
     if (categoryFilter === 'all') return templates;
     return templates.filter((t) => (t.category || 'custom') === categoryFilter);
   }, [templates, categoryFilter]);
+
+  const templateOptions = useMemo(
+    () => [
+      { value: 'none', label: 'No template selected' },
+      ...filteredTemplates
+        .filter((t) => !t.blueprint)
+        .map((template) => ({
+          value: template.id,
+          label: `${template.category ? `${getCategoryIcon(template.category)} ` : ''}${
+            template.name
+          }${template.description ? ` - ${template.description}` : ''}`,
+        })),
+    ],
+    [filteredTemplates]
+  );
 
   // Get the selected template
   const template = useMemo(() => {
@@ -285,230 +296,213 @@ export function ApplyTemplateDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <FileCode className="h-5 w-5" />
-              Apply Template to Task
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHelp(!showHelp)}
-              className="h-8 gap-1 text-muted-foreground"
-            >
-              <HelpCircle className="h-4 w-4" />
-              {showHelp ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </Button>
-          </div>
-          {showHelp && (
-            <div className="mt-2 p-3 rounded-md bg-muted/50 border border-muted-foreground/20 text-sm space-y-3">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                <div className="space-y-2">
-                  <p className="font-medium text-sm">Apply Template Guide</p>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={
+        <Group gap="xs">
+          <FileCode className="h-5 w-5" />
+          <Text fw={600}>Apply Template to Task</Text>
+        </Group>
+      }
+      size="lg"
+    >
+      <Stack gap="md">
+        <Group justify="flex-end">
+          <Button
+            variant="subtle"
+            size="xs"
+            color="gray"
+            onClick={() => setShowHelp(!showHelp)}
+            leftSection={<HelpCircle className="h-4 w-4" />}
+            rightSection={
+              showHelp ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+            }
+          >
+            Help
+          </Button>
+        </Group>
 
-                  <div className="text-xs text-muted-foreground space-y-1.5">
-                    <div>
-                      <strong className="text-foreground">Safe by Default:</strong>
-                      <p className="mt-0.5">
-                        Templates only fill in empty fields — your existing task data is never
-                        overwritten unless you choose to.
-                      </p>
-                    </div>
+        {showHelp && (
+          <Alert
+            color="blue"
+            variant="light"
+            icon={<AlertCircle className="h-4 w-4" />}
+            title="Apply Template Guide"
+          >
+            <Stack gap="xs">
+              <Text size="xs" c="dimmed">
+                <strong>Safe by Default:</strong> Templates only fill in empty fields. Existing task
+                data is not overwritten unless you choose to.
+              </Text>
+              <Text size="xs" c="dimmed">
+                <strong>Force Overwrite:</strong> Toggle this on to replace existing values with
+                template values. The preview shows exactly what will be modified.
+              </Text>
+              <Text size="xs" c="dimmed">
+                <strong>Subtasks:</strong> Template subtasks are added to your existing subtasks.
+              </Text>
+              <Text size="xs" c="dimmed">
+                <strong>Variables:</strong> Templates with <Code>{'{{date}}'}</Code> or{' '}
+                <Code>{'{{custom:name}}'}</Code> prompt for values before applying.
+              </Text>
+              <Text size="xs" c="dimmed">
+                <strong>Changes Preview:</strong> A before/after diff appears below showing exactly
+                what will change.
+              </Text>
+            </Stack>
+          </Alert>
+        )}
 
-                    <div>
-                      <strong className="text-foreground">Force Overwrite:</strong>
-                      <p className="mt-0.5">
-                        Toggle this on to replace existing values with template values. The changes
-                        preview shows exactly what will be modified before you apply.
-                      </p>
-                    </div>
-
-                    <div>
-                      <strong className="text-foreground">Subtasks:</strong>
-                      <p className="mt-0.5">
-                        Template subtasks are <em>added</em> to your existing subtasks, never
-                        replaced. You'll see a count of how many will be appended.
-                      </p>
-                    </div>
-
-                    <div>
-                      <strong className="text-foreground">Variables:</strong>
-                      <p className="mt-0.5">
-                        Templates with{' '}
-                        <code className="px-1 py-0.5 rounded bg-muted">{'{{date}}'}</code> or{' '}
-                        <code className="px-1 py-0.5 rounded bg-muted">{'{{custom:name}}'}</code>{' '}
-                        will prompt you for values before applying.
-                      </p>
-                    </div>
-
-                    <div>
-                      <strong className="text-foreground">Changes Preview:</strong>
-                      <p className="mt-0.5">
-                        A before/after diff appears below showing exactly what will change. Green
-                        lines are additions, red lines are removals.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          {/* Template selector */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm">Select Template</Label>
-            </div>
-            <Tabs value={categoryFilter} onValueChange={setCategoryFilter}>
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="all" className="text-xs">
-                  All
-                </TabsTrigger>
-                <TabsTrigger value="bug" className="text-xs">
-                  🐛
-                </TabsTrigger>
-                <TabsTrigger value="feature" className="text-xs">
-                  ✨
-                </TabsTrigger>
-                <TabsTrigger value="sprint" className="text-xs">
-                  🔄
-                </TabsTrigger>
-              </TabsList>
+        <Stack gap="md">
+          <Stack gap="sm">
+            <Text size="sm" fw={500}>
+              Select Template
+            </Text>
+            <Tabs value={categoryFilter} onChange={(value) => setCategoryFilter(value ?? 'all')}>
+              <Tabs.List grow>
+                <Tabs.Tab value="all">All</Tabs.Tab>
+                <Tabs.Tab value="bug" aria-label="Bug templates">
+                  Bug
+                </Tabs.Tab>
+                <Tabs.Tab value="feature" aria-label="Feature templates">
+                  Feature
+                </Tabs.Tab>
+                <Tabs.Tab value="sprint" aria-label="Sprint templates">
+                  Sprint
+                </Tabs.Tab>
+              </Tabs.List>
             </Tabs>
             <Select
               value={selectedTemplate || 'none'}
-              onValueChange={(value) => {
-                if (value === 'none') {
+              onChange={(value) => {
+                if (!value || value === 'none') {
                   setSelectedTemplate(null);
                 } else {
                   handleTemplateSelect(value);
                 }
               }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a template..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No template selected</SelectItem>
-                {filteredTemplates
-                  .filter((t) => !t.blueprint) // Exclude blueprint templates
-                  .map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.category && `${getCategoryIcon(template.category)} `}
-                      {template.name}
-                      {template.description && (
-                        <span className="text-muted-foreground ml-2">— {template.description}</span>
-                      )}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
+              data={templateOptions}
+              label="Template"
+              placeholder="Choose a template..."
+              checkIconPosition="right"
+            />
+          </Stack>
 
-          {/* Custom variable inputs */}
           {requiredCustomVars.length > 0 && (
-            <div className="grid gap-3 border rounded-md p-3 bg-muted/30">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-500" />
-                <Label className="text-sm font-medium">Template Variables</Label>
-              </div>
-              {requiredCustomVars.map((varName) => (
-                <div key={varName} className="grid gap-1.5">
-                  <Label htmlFor={`var-${varName}`} className="text-xs">
-                    {varName}
-                  </Label>
-                  <Input
+            <Paper className="bg-muted/30 p-3" radius="md" withBorder>
+              <Stack gap="sm">
+                <Group gap="xs">
+                  <ThemeIcon size="sm" color="blue" variant="light">
+                    <AlertCircle className="h-4 w-4" />
+                  </ThemeIcon>
+                  <Text size="sm" fw={500}>
+                    Template Variables
+                  </Text>
+                </Group>
+                {requiredCustomVars.map((varName) => (
+                  <TextInput
+                    key={varName}
                     id={`var-${varName}`}
+                    label={varName}
                     value={customVars[varName] || ''}
                     onChange={(e) =>
-                      setCustomVars((prev) => ({ ...prev, [varName]: e.target.value }))
+                      setCustomVars((prev) => ({ ...prev, [varName]: e.currentTarget.value }))
                     }
                     placeholder={`Enter ${varName}...`}
-                    className="h-8"
+                    size="xs"
                   />
-                </div>
-              ))}
-            </div>
+                ))}
+              </Stack>
+            </Paper>
           )}
 
-          {/* Force overwrite toggle */}
           {template && (
-            <div className="flex items-center justify-between border rounded-md p-3 bg-muted/30">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Force Overwrite</Label>
-                <p className="text-xs text-muted-foreground">
-                  Replace existing values with template values
-                </p>
-              </div>
-              <Switch checked={forceOverwrite} onCheckedChange={setForceOverwrite} />
-            </div>
+            <Paper className="bg-muted/30 p-3" radius="md" withBorder>
+              <Group justify="space-between" gap="sm" wrap="nowrap">
+                <Stack gap={2}>
+                  <Text size="sm" fw={500}>
+                    Force Overwrite
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    Replace existing values with template values
+                  </Text>
+                </Stack>
+                <Switch
+                  checked={forceOverwrite}
+                  onChange={(event) => setForceOverwrite(event.currentTarget.checked)}
+                  aria-label="Force overwrite"
+                />
+              </Group>
+            </Paper>
           )}
 
-          {/* Merge preview */}
           {mergePreview && mergePreview.fields.length > 0 && (
-            <div className="border rounded-md p-3 bg-muted/30 space-y-3">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-500" />
-                <Label className="text-sm font-medium">Changes Preview</Label>
-              </div>
+            <Paper className="bg-muted/30 p-3" radius="md" withBorder>
+              <Stack gap="sm">
+                <Group gap="xs">
+                  <ThemeIcon size="sm" color="blue" variant="light">
+                    <AlertCircle className="h-4 w-4" />
+                  </ThemeIcon>
+                  <Text size="sm" fw={500}>
+                    Changes Preview
+                  </Text>
+                </Group>
 
-              {mergePreview.fields.map((field) => (
-                <div key={field.field} className="text-sm border-l-2 border-primary/50 pl-3 py-1">
-                  <div className="font-medium text-xs text-muted-foreground uppercase">
-                    {field.label}
+                {mergePreview.fields.map((field) => (
+                  <div key={field.field} className="border-l-2 border-primary/50 py-1 pl-3">
+                    <Text size="xs" c="dimmed" fw={600} tt="uppercase">
+                      {field.label}
+                    </Text>
+                    <Group align="flex-start" gap="xs" mt={4} wrap="nowrap">
+                      <Minus className="mt-0.5 h-3 w-3 flex-shrink-0 text-red-500" />
+                      <Text size="sm" c="red" td="line-through" className="flex-1">
+                        {field.before || '(empty)'}
+                      </Text>
+                    </Group>
+                    <Group align="flex-start" gap="xs" wrap="nowrap">
+                      <Plus className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-500" />
+                      <Text size="sm" c="green" className="flex-1">
+                        {field.after}
+                      </Text>
+                    </Group>
                   </div>
-                  <div className="flex items-start gap-2 mt-1">
-                    <Minus className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-red-500/80 line-through flex-1">
-                      {field.before || '(empty)'}
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Plus className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-green-500/80 flex-1">{field.after}</span>
-                  </div>
-                </div>
-              ))}
+                ))}
 
-              {mergePreview.subtasksAdded > 0 && (
-                <div className="text-sm border-l-2 border-primary/50 pl-3 py-1">
-                  <div className="font-medium text-xs text-muted-foreground uppercase">
-                    Subtasks
+                {mergePreview.subtasksAdded > 0 && (
+                  <div className="border-l-2 border-primary/50 py-1 pl-3">
+                    <Text size="xs" c="dimmed" fw={600} tt="uppercase">
+                      Subtasks
+                    </Text>
+                    <Group gap="xs" mt={4}>
+                      <Plus className="h-3 w-3 text-blue-500" />
+                      <Text size="sm">
+                        Will add {mergePreview.subtasksAdded} subtasks to existing{' '}
+                        {mergePreview.existingSubtasks}
+                      </Text>
+                    </Group>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Plus className="h-3 w-3 text-blue-500" />
-                    <span className="text-sm">
-                      Will add {mergePreview.subtasksAdded} subtasks to existing{' '}
-                      {mergePreview.existingSubtasks}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </Stack>
+            </Paper>
           )}
 
           {!template && (
-            <div className="text-center text-sm text-muted-foreground py-8">
+            <Text ta="center" size="sm" c="dimmed" className="py-8">
               Select a template to see what will change
-            </div>
+            </Text>
           )}
-        </div>
+        </Stack>
 
-        <DialogFooter>
+        <Group justify="flex-end" gap="xs">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button type="button" onClick={handleApply} disabled={!template || updateTask.isPending}>
             {updateTask.isPending ? 'Applying...' : 'Apply Template'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }
