@@ -48,6 +48,10 @@ Shared primitive migration progress:
 - No shared `components/ui` primitive wrapper remains backed by a Radix
   interaction primitive. A local Slot helper now preserves `asChild`
   composition while migrated feature surfaces still depend on that contract.
+- Active feature/runtime surfaces no longer import the `components/ui`
+  primitive compatibility wrappers. The remaining wrapper imports are confined
+  to the wrapper internals that support compatibility tests and the Phase 4
+  cleanup/removal gate.
 - The old direct Radix primitive package dependencies, `@radix-ui/react-slot`,
   and the shadcn package have been removed.
 - Feature surfaces still need visual and keyboard/focus checks before the final
@@ -405,6 +409,10 @@ Phase 3 progress:
   policy CRUD/evaluation, drift analysis/reset, scoring profile edits,
   decision assumption validation, and feedback submission/browse/analytics
   behavior.
+- Final feature-surface cleanup moved templates, board/archive suggestions,
+  archive sidebar, board status chrome, task-card tooltips, desktop onboarding,
+  markdown editing controls, and remaining settings confirmations off the
+  compatibility wrappers and onto direct Mantine controls.
 
 ### Phase 4: QA, Cleanup, and Dependency Removal
 

@@ -1,5 +1,5 @@
 import { memo, useState, useEffect } from 'react';
-import { NumberInput } from '@/components/ui/number-input';
+import { NumberInput } from '@mantine/core';
 import { SettingRow } from './SettingRow';
 
 export const NumberRow = memo(function NumberRow({

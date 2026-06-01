@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Archive, X, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ActionIcon, Button } from '@mantine/core';
 import { useBulkArchive } from '@/hooks/useTasks';
 import type { Task } from '@veritas-kanban/shared';
 
@@ -21,10 +21,10 @@ export function SprintArchiveSuggestion({ tasks }: SprintArchiveSuggestionProps)
   // Find sprints where all tasks are done
   const completedSprints = useMemo(() => {
     const sprintTaskCounts = new Map<string, { total: number; done: number }>();
-    
-    tasks.forEach(task => {
+
+    tasks.forEach((task) => {
       if (!task.sprint) return;
-      
+
       const counts = sprintTaskCounts.get(task.sprint) || { total: 0, done: 0 };
       counts.total++;
       if (task.status === 'done') counts.done++;
@@ -45,30 +45,28 @@ export function SprintArchiveSuggestion({ tasks }: SprintArchiveSuggestionProps)
     setArchivingSprint(sprint);
     try {
       await bulkArchive.mutateAsync(sprint);
-      setDismissedSprints(prev => new Set(prev).add(sprint));
+      setDismissedSprints((prev) => new Set(prev).add(sprint));
     } finally {
       setArchivingSprint(null);
     }
   };
 
   const handleDismiss = (sprint: string) => {
-    setDismissedSprints(prev => new Set(prev).add(sprint));
+    setDismissedSprints((prev) => new Set(prev).add(sprint));
   };
 
   if (completedSprints.length === 0) return null;
 
   return (
     <div className="space-y-2 mb-4">
-      {completedSprints.map(sprint => (
+      {completedSprints.map((sprint) => (
         <div
           key={sprint.name}
           className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
         >
           <Archive className="h-5 w-5 text-green-500 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">
-              All tasks in sprint "{sprint.name}" are complete!
-            </p>
+            <p className="text-sm font-medium">All tasks in sprint "{sprint.name}" are complete!</p>
             <p className="text-xs text-muted-foreground">
               {sprint.taskCount} task{sprint.taskCount > 1 ? 's' : ''} ready to archive
             </p>
@@ -76,7 +74,7 @@ export function SprintArchiveSuggestion({ tasks }: SprintArchiveSuggestionProps)
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              variant="secondary"
+              variant="light"
               onClick={() => handleArchive(sprint.name)}
               disabled={archivingSprint === sprint.name}
             >
@@ -87,14 +85,16 @@ export function SprintArchiveSuggestion({ tasks }: SprintArchiveSuggestionProps)
               )}
               Archive Sprint
             </Button>
-            <Button
+            <ActionIcon
+              type="button"
               size="sm"
-              variant="ghost"
+              variant="subtle"
+              color="gray"
               onClick={() => handleDismiss(sprint.name)}
-              className="h-8 w-8 p-0"
+              aria-label={`Dismiss archive suggestion for ${sprint.name}`}
             >
               <X className="h-4 w-4" />
-            </Button>
+            </ActionIcon>
           </div>
         </div>
       ))}

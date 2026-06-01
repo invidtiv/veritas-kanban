@@ -1,16 +1,6 @@
 import { useState, memo } from 'react';
 import type { ManagedListItem } from '@veritas-kanban/shared';
-import { ActionIcon, TextInput } from '@mantine/core';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../ui/alert-dialog';
+import { ActionIcon, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core';
 import { Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -186,39 +176,38 @@ export const SortableListItem = memo(function SortableListItem<T extends Managed
         </ActionIcon>
       </div>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {deleteInfo && !deleteInfo.allowed ? 'Cannot Delete' : 'Delete Item?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteInfo && deleteInfo.referenceCount > 0 && !deleteInfo.allowed ? (
-                <span>
-                  &quot;{item.label}&quot; is used by {deleteInfo.referenceCount} task(s). Remove or
-                  reassign those tasks first before deleting this item.
-                </span>
-              ) : (
-                <span>
-                  Are you sure you want to delete &quot;{item.label}&quot;? This action cannot be
-                  undone.
-                </span>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            {(!deleteInfo || deleteInfo.allowed) && (
-              <AlertDialogAction
-                onClick={handleDeleteConfirm}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
+      <Modal
+        opened={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        title={deleteInfo && !deleteInfo.allowed ? 'Cannot Delete' : 'Delete Item?'}
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            {deleteInfo && deleteInfo.referenceCount > 0 && !deleteInfo.allowed ? (
+              <>
+                &quot;{item.label}&quot; is used by {deleteInfo.referenceCount} task(s). Remove or
+                reassign those tasks first before deleting this item.
+              </>
+            ) : (
+              <>
+                Are you sure you want to delete &quot;{item.label}&quot;? This action cannot be
+                undone.
+              </>
             )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            {(!deleteInfo || deleteInfo.allowed) && (
+              <Button color="red" onClick={handleDeleteConfirm}>
+                Delete
+              </Button>
+            )}
+          </Group>
+        </Stack>
+      </Modal>
     </>
   );
 }) as <T extends ManagedListItem>(props: SortableListItemProps<T>) => React.JSX.Element;

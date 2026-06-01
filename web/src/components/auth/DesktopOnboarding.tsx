@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Badge, Button, Modal, PasswordInput, TextInput } from '@mantine/core';
 import {
   AlertCircle,
   Bot,
@@ -13,17 +14,6 @@ import {
   Upload,
 } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 export const DESKTOP_ONBOARDING_STORAGE_KEY = 'veritas-desktop-onboarding-complete';
@@ -324,7 +314,7 @@ export function DesktopOnboardingPanel({
     >
       <section className="space-y-5">
         <div className="space-y-3">
-          <Badge variant="outline" className="border-cyan-500/30 text-cyan-300">
+          <Badge variant="outline" color="cyan" tt="none">
             v5 Desktop Setup
           </Badge>
           <div className="space-y-2">
@@ -356,7 +346,8 @@ export function DesktopOnboardingPanel({
               <p className="text-xs text-muted-foreground">Redacted desktop diagnostics</p>
             </div>
             <Button
-              variant="ghost"
+              variant="subtle"
+              color="gray"
               size="sm"
               onClick={loadDiagnostics}
               disabled={diagnosticsLoading}
@@ -423,7 +414,13 @@ export function DesktopOnboardingPanel({
                   <span className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                     <Icon className="h-4 w-4" />
                   </span>
-                  <Badge variant={mode.id === 'board' ? 'default' : 'outline'}>{mode.badge}</Badge>
+                  <Badge
+                    variant={mode.id === 'board' ? 'filled' : 'outline'}
+                    color={mode.id === 'board' ? 'violet' : 'gray'}
+                    tt="none"
+                  >
+                    {mode.badge}
+                  </Badge>
                 </div>
                 <div className="space-y-1">
                   <h2 className="text-base font-semibold">{mode.title}</h2>
@@ -474,28 +471,23 @@ export function DesktopOnboardingPanel({
                 </p>
               </div>
               <div className="grid gap-3">
-                <div className="grid gap-2">
-                  <Label htmlFor="remote-url">Server URL</Label>
-                  <Input
-                    id="remote-url"
-                    value={remoteUrl}
-                    onChange={(event) => {
-                      setRemoteUrl(event.target.value);
-                      setRemoteResult(null);
-                    }}
-                    placeholder="https://veritas.example.com"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="remote-token">Token</Label>
-                  <Input
-                    id="remote-token"
-                    type="password"
-                    value={remoteToken}
-                    onChange={(event) => setRemoteToken(event.target.value)}
-                    placeholder="Optional scoped token"
-                  />
-                </div>
+                <TextInput
+                  id="remote-url"
+                  label="Server URL"
+                  value={remoteUrl}
+                  onChange={(event) => {
+                    setRemoteUrl(event.target.value);
+                    setRemoteResult(null);
+                  }}
+                  placeholder="https://veritas.example.com"
+                />
+                <PasswordInput
+                  id="remote-token"
+                  label="Token"
+                  value={remoteToken}
+                  onChange={(event) => setRemoteToken(event.target.value)}
+                  placeholder="Optional scoped token"
+                />
                 <Button
                   type="button"
                   variant="outline"
@@ -602,16 +594,17 @@ export function DesktopOnboardingDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
-        <DialogHeader>
-          <DialogTitle>Setup & Diagnostics</DialogTitle>
-          <DialogDescription>
-            Recheck desktop readiness, copy redacted diagnostics, and validate remote targets.
-          </DialogDescription>
-        </DialogHeader>
-        <DesktopOnboardingPanel compact />
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title="Setup & Diagnostics"
+      size="xl"
+      centered
+    >
+      <p className="mb-4 text-sm text-muted-foreground">
+        Recheck desktop readiness, copy redacted diagnostics, and validate remote targets.
+      </p>
+      <DesktopOnboardingPanel compact />
+    </Modal>
   );
 }

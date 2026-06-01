@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { ActionIcon, Badge, Button, Group, Select, Switch, TextInput } from '@mantine/core';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+  ActionIcon,
+  Badge,
+  Button,
+  Group,
+  Modal,
+  Select,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import {
   useConfig,
   useAddRepo,
@@ -300,6 +300,13 @@ function AddRepoForm({ onClose }: { onClose: () => void }) {
 
 function RepoItem({ repo }: { repo: RepoConfig }) {
   const removeRepo = useRemoveRepo();
+  const [removeOpen, setRemoveOpen] = useState(false);
+
+  const handleRemove = () => {
+    removeRepo.mutate(repo.name);
+    setRemoveOpen(false);
+  };
+
   return (
     <div className="flex items-center justify-between py-2 px-3 rounded-md border bg-card">
       <div className="flex items-center gap-3">
@@ -313,36 +320,36 @@ function RepoItem({ repo }: { repo: RepoConfig }) {
         <Badge variant="light" color="gray" size="sm">
           {repo.defaultBranch}
         </Badge>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <ActionIcon
-              type="button"
-              variant="subtle"
-              color="gray"
-              size="sm"
-              aria-label={`Remove ${repo.name}`}
-            >
-              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-            </ActionIcon>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remove repository?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will remove "{repo.name}" from your configuration.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => removeRepo.mutate(repo.name)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
+        <ActionIcon
+          type="button"
+          variant="subtle"
+          color="gray"
+          size="sm"
+          aria-label={`Remove ${repo.name}`}
+          onClick={() => setRemoveOpen(true)}
+        >
+          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+        </ActionIcon>
+        <Modal
+          opened={removeOpen}
+          onClose={() => setRemoveOpen(false)}
+          title="Remove repository?"
+          centered
+        >
+          <Stack gap="md">
+            <Text size="sm" c="dimmed">
+              This will remove "{repo.name}" from your configuration.
+            </Text>
+            <Group justify="flex-end">
+              <Button variant="subtle" color="gray" onClick={() => setRemoveOpen(false)}>
+                Cancel
+              </Button>
+              <Button color="red" onClick={handleRemove}>
                 Remove
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
       </div>
     </div>
   );

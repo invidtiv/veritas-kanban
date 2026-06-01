@@ -1,23 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
+  Button,
+  Group,
+  Modal,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+  Stack,
+  Tabs,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useCreateTemplate, useUpdateTemplate, type TaskTemplate } from '@/hooks/useTemplates';
 import { useTaskTypesManager, getTypeIcon } from '@/hooks/useTaskTypes';
 import { useToast } from '@/hooks/useToast';
@@ -46,6 +38,26 @@ export function TemplateEditorDialog({ template, open, onOpenChange }: TemplateE
   const createTemplate = useCreateTemplate();
   const updateTemplate = useUpdateTemplate();
   const isLoading = createTemplate.isPending || updateTemplate.isPending;
+  const categoryOptions = Object.entries(TEMPLATE_CATEGORIES).map(([key, { label }]) => ({
+    value: key,
+    label: `${getCategoryIcon(key)} ${label}`,
+  }));
+  const taskTypeOptions = taskTypes.map((taskType) => ({
+    value: taskType.id,
+    label: taskType.label,
+    icon: taskType.icon,
+  }));
+  const priorityOptions = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'urgent', label: 'Urgent' },
+  ];
+  const agentOptions = [
+    { value: 'claude-opus-4', label: 'Claude Opus 4' },
+    { value: 'claude-sonnet-4', label: 'Claude Sonnet 4' },
+    { value: 'gpt-4', label: 'GPT-4' },
+  ];
 
   // Populate form when editing
   useEffect(() => {
@@ -126,153 +138,129 @@ export function TemplateEditorDialog({ template, open, onOpenChange }: TemplateE
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{template ? 'Edit Template' : 'Create New Template'}</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={template ? 'Edit Template' : 'Create New Template'}
+      size="lg"
+      centered
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="lg">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="defaults">Task Defaults</TabsTrigger>
-            </TabsList>
+            <Tabs.List grow>
+              <Tabs.Tab value="basic">Basic Info</Tabs.Tab>
+              <Tabs.Tab value="defaults">Task Defaults</Tabs.Tab>
+            </Tabs.List>
 
             {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-4 mt-4">
+            <Tabs.Panel value="basic" className="space-y-4 mt-4">
               <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">
-                    Template Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., Bug Fix, Feature Implementation"
-                    required
-                  />
-                </div>
+                <TextInput
+                  id="name"
+                  label={
+                    <>
+                      Template Name <span className="text-destructive">*</span>
+                    </>
+                  }
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Bug Fix, Feature Implementation"
+                  required
+                />
 
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="What is this template used for?"
-                    rows={3}
-                  />
-                </div>
+                <Textarea
+                  id="description"
+                  label="Description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What is this template used for?"
+                  rows={3}
+                />
 
-                <div className="grid gap-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Select a category..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(TEMPLATE_CATEGORIES).map(([key, { label }]) => (
-                        <SelectItem key={key} value={key}>
-                          {getCategoryIcon(key)} {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select
+                  id="category"
+                  label="Category"
+                  value={category || null}
+                  onChange={(value) => setCategory(value ?? '')}
+                  data={categoryOptions}
+                  placeholder="Select a category..."
+                />
               </div>
-            </TabsContent>
+            </Tabs.Panel>
 
             {/* Task Defaults Tab */}
-            <TabsContent value="defaults" className="space-y-4 mt-4">
+            <Tabs.Panel value="defaults" className="space-y-4 mt-4">
               <div className="grid gap-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="type">Default Type</Label>
-                    <Select value={type} onValueChange={setType}>
-                      <SelectTrigger id="type">
-                        <SelectValue placeholder="Any" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {taskTypes.map((taskType) => {
-                          const IconComponent = getTypeIcon(taskType.icon);
-                          return (
-                            <SelectItem key={taskType.id} value={taskType.id}>
-                              <div className="flex items-center gap-2">
-                                {IconComponent && <IconComponent className="h-4 w-4" />}
-                                {taskType.label}
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    id="type"
+                    label="Default Type"
+                    value={type || null}
+                    onChange={(value) => setType(value ?? '')}
+                    data={taskTypeOptions}
+                    placeholder="Any"
+                    renderOption={({ option }) => {
+                      const iconName = taskTypeOptions.find(
+                        (entry) => entry.value === option.value
+                      )?.icon;
+                      const IconComponent = iconName ? getTypeIcon(iconName) : null;
+                      return (
+                        <Group gap="xs">
+                          {IconComponent && <IconComponent className="h-4 w-4" />}
+                          <span>{option.label}</span>
+                        </Group>
+                      );
+                    }}
+                  />
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="priority">Default Priority</Label>
-                    <Select
-                      value={priority}
-                      onValueChange={(v) => setPriority(v as TaskPriority | '')}
-                    >
-                      <SelectTrigger id="priority">
-                        <SelectValue placeholder="None" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="urgent">Urgent</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    id="priority"
+                    label="Default Priority"
+                    value={priority || null}
+                    onChange={(value) => setPriority((value as TaskPriority | null) ?? '')}
+                    data={priorityOptions}
+                    placeholder="None"
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="project">Default Project</Label>
-                    <Input
-                      id="project"
-                      value={project}
-                      onChange={(e) => setProject(e.target.value)}
-                      placeholder="e.g., VK-001"
-                    />
-                  </div>
+                  <TextInput
+                    id="project"
+                    label="Default Project"
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
+                    placeholder="e.g., VK-001"
+                  />
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="agent">Default Agent</Label>
-                    <Select value={agent} onValueChange={(v) => setAgent(v as AgentType | '')}>
-                      <SelectTrigger id="agent">
-                        <SelectValue placeholder="None" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="claude-opus-4">Claude Opus 4</SelectItem>
-                        <SelectItem value="claude-sonnet-4">Claude Sonnet 4</SelectItem>
-                        <SelectItem value="gpt-4">GPT-4</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    id="agent"
+                    label="Default Agent"
+                    value={agent || null}
+                    onChange={(value) => setAgent((value as AgentType | null) ?? '')}
+                    data={agentOptions}
+                    placeholder="None"
+                  />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="descriptionTemplate">Description Template</Label>
                   <Textarea
                     id="descriptionTemplate"
+                    label="Description Template"
                     value={descriptionTemplate}
                     onChange={(e) => setDescriptionTemplate(e.target.value)}
                     placeholder="Template for task description (can include variables like {{date}}, {{project}})"
                     rows={4}
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <Text size="xs" c="dimmed">
                     Tip: Use variables like {'{{date}}'} to auto-populate values
-                  </p>
+                  </Text>
                 </div>
               </div>
-            </TabsContent>
+            </Tabs.Panel>
           </Tabs>
 
-          <DialogFooter>
+          <Group justify="flex-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -280,9 +268,9 @@ export function TemplateEditorDialog({ template, open, onOpenChange }: TemplateE
               {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {template ? 'Update Template' : 'Create Template'}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
   );
 }

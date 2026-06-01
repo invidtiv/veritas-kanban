@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { ActionIcon, Badge, Button, Select, Text, Textarea, TextInput } from '@mantine/core';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+  ActionIcon,
+  Badge,
+  Button,
+  Group,
+  Modal,
+  Select,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { type TaskTemplate, useCreateTemplate, useDeleteTemplate } from '@/hooks/useTemplates';
 import { getTypeIcon, useTaskTypesManager } from '@/hooks/useTaskTypes';
 import { FileText, Trash2 } from 'lucide-react';
@@ -183,6 +183,7 @@ export function AddTemplateForm({ onClose }: { onClose: () => void }) {
 
 export function TemplateItem({ template }: { template: TaskTemplate }) {
   const deleteTemplate = useDeleteTemplate();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const taskDefaults = template.taskDefaults ?? {};
   const metadata = [
     taskDefaults.type,
@@ -213,35 +214,43 @@ export function TemplateItem({ template }: { template: TaskTemplate }) {
           </Text>
         </div>
       </div>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <ActionIcon
-            type="button"
-            variant="subtle"
-            color="red"
-            size="sm"
-            radius="md"
-            aria-label={`Delete ${template.name}`}
-          >
-            <Trash2 className="h-4 w-4" />
-          </ActionIcon>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete template?</AlertDialogTitle>
-            <AlertDialogDescription>This will delete "{template.name}".</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteTemplate.mutate(template.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      <ActionIcon
+        type="button"
+        variant="subtle"
+        color="red"
+        size="sm"
+        radius="md"
+        aria-label={`Delete ${template.name}`}
+        onClick={() => setDeleteOpen(true)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </ActionIcon>
+      <Modal
+        opened={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete template?"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            This will delete "{template.name}".
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                deleteTemplate.mutate(template.id);
+                setDeleteOpen(false);
+              }}
             >
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </div>
   );
 }

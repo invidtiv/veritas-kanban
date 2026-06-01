@@ -8,6 +8,8 @@
 import { useState, useMemo } from 'react';
 import {
   ActionIcon,
+  Badge,
+  Button,
   Checkbox,
   Group,
   Paper,
@@ -31,8 +33,6 @@ import {
   RotateCcw,
   Search,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useArchivedTasks, useRestoreTask } from '@/hooks/useTasks';
 import { useProjects } from '@/hooks/useProjects';
 import { useSprints } from '@/hooks/useSprints';
@@ -188,14 +188,16 @@ export function ArchivePage({ onBack }: ArchivePageProps) {
     <Stack gap="lg">
       <Group justify="space-between" align="center" gap="md" wrap="wrap">
         <Group gap="md" wrap="wrap">
-          <Button variant="ghost" size="sm" onClick={onBack}>
+          <Button variant="subtle" size="sm" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Board
           </Button>
           <Text component="h1" size="xl" fw={700} lh={1.1} m={0}>
             Archive
           </Text>
-          <Badge variant="secondary">{filteredTasks.length} tasks</Badge>
+          <Badge variant="light" color="gray" tt="none">
+            {filteredTasks.length} tasks
+          </Badge>
           {archivedTasks.length !== filteredTasks.length && (
             <Text size="sm" c="dimmed">
               of {archivedTasks.length} total
@@ -368,20 +370,20 @@ export function ArchivePage({ onBack }: ArchivePageProps) {
                   </Group>
 
                   <Group gap="xs" wrap="wrap">
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" color="gray" size="xs" tt="none">
                       {task.id}
                     </Badge>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="light" color="gray" size="xs" tt="none">
                       {task.type}
                     </Badge>
                     {task.project && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="light" color="gray" size="xs" tt="none">
                         <FolderOpen className="h-3 w-3 mr-1" />
                         {projects.find((p) => p.id === task.project)?.label || task.project}
                       </Badge>
                     )}
                     {task.sprint && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="light" color="gray" size="xs" tt="none">
                         {sprints.find((s) => s.id === task.sprint)?.label || task.sprint}
                       </Badge>
                     )}
