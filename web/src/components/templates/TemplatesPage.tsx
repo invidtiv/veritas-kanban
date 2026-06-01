@@ -10,28 +10,19 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useTemplates, useDeleteTemplate } from '@/hooks/useTemplates';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
+  ActionIcon,
+  Badge,
+  Button,
+  Group,
+  Modal,
+  ScrollArea,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
+import { useTemplates, useDeleteTemplate } from '@/hooks/useTemplates';
 import { ArrowLeft, Plus, Trash2, Eye, Edit2, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import type { TaskTemplate } from '@/hooks/useTemplates';
@@ -56,6 +47,13 @@ export function TemplatesPage({ onBack }: TemplatesPageProps) {
   const { toast } = useToast();
   const { data: templates = [], isLoading } = useTemplates();
   const deleteTemplate = useDeleteTemplate();
+  const categoryOptions = [
+    { value: 'all', label: 'All Categories' },
+    ...Object.entries(TEMPLATE_CATEGORIES).map(([key, { label }]) => ({
+      value: key,
+      label,
+    })),
+  ];
 
   // Filter templates
   const filteredTemplates = useMemo(() => {
@@ -95,7 +93,7 @@ export function TemplatesPage({ onBack }: TemplatesPageProps) {
         setSelectedTemplate(null);
       }
       setTemplateToDelete(null);
-    } catch (err) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to delete template',
@@ -115,9 +113,15 @@ export function TemplatesPage({ onBack }: TemplatesPageProps) {
       <div className="border-b bg-card px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} aria-label="Back to board">
+            <ActionIcon
+              type="button"
+              variant="subtle"
+              color="gray"
+              onClick={onBack}
+              aria-label="Back to board"
+            >
               <ArrowLeft className="h-4 w-4" />
-            </Button>
+            </ActionIcon>
             <div>
               <h1 className="text-2xl font-bold">Task Templates</h1>
               <p className="text-sm text-muted-foreground">
@@ -138,25 +142,20 @@ export function TemplatesPage({ onBack }: TemplatesPageProps) {
         <div className="flex-1 flex flex-col gap-4 min-w-0">
           {/* Filters */}
           <div className="flex gap-3">
-            <Input
+            <TextInput
               placeholder="Search templates..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1"
             />
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {Object.entries(TEMPLATE_CATEGORIES).map(([key, { label }]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Select
+              value={categoryFilter}
+              onChange={(value) => setCategoryFilter(value ?? 'all')}
+              data={categoryOptions}
+              allowDeselect={false}
+              className="w-40"
+              aria-label="Filter templates by category"
+            />
           </div>
 
           {/* Templates Grid */}
@@ -202,18 +201,18 @@ export function TemplatesPage({ onBack }: TemplatesPageProps) {
                         {/* Category and Type Badge */}
                         <div className="flex flex-wrap gap-2">
                           {template.category && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" color="gray" size="xs" tt="none">
                               {getCategoryIcon(template.category)}
                               {getCategoryLabel(template.category)}
                             </Badge>
                           )}
                           {template.taskDefaults?.type && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="light" color="gray" size="xs" tt="none">
                               {template.taskDefaults.type}
                             </Badge>
                           )}
                           {template.taskDefaults?.priority && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="light" color="gray" size="xs" tt="none">
                               {template.taskDefaults.priority}
                             </Badge>
                           )}
@@ -261,17 +260,19 @@ export function TemplatesPage({ onBack }: TemplatesPageProps) {
                             <Edit2 className="h-3.5 w-3.5 mr-1" />
                             Edit
                           </Button>
-                          <Button
+                          <ActionIcon
+                            type="button"
                             variant="outline"
                             size="sm"
-                            className="text-destructive hover:text-destructive"
+                            color="red"
                             onClick={(e) => {
                               e.stopPropagation();
                               setTemplateToDelete(template);
                             }}
+                            aria-label={`Delete ${template.name}`}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          </ActionIcon>
                         </div>
                       </div>
                     </div>
@@ -298,53 +299,47 @@ export function TemplatesPage({ onBack }: TemplatesPageProps) {
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog
-        open={!!templateToDelete}
-        onOpenChange={(open) => !open && setTemplateToDelete(null)}
+      <Modal
+        opened={!!templateToDelete}
+        onClose={() => setTemplateToDelete(null)}
+        title="Delete Template?"
+        centered
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{templateToDelete?.name}"? This action cannot be
-              undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            Are you sure you want to delete "{templateToDelete?.name}"? This action cannot be
+            undone.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={() => setTemplateToDelete(null)}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleDeleteConfirm}>
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* Preview Dialog */}
-      {showPreview && selectedTemplate && (
-        <div
-          className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
-          onClick={() => setShowPreview(false)}
-        >
-          <div
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="rounded-lg shadow-lg overflow-hidden border bg-card">
-              <div className="p-6 overflow-y-auto max-h-[80vh]">
-                <TemplatePreviewPanel template={selectedTemplate} />
-                <div className="mt-6 flex justify-end">
-                  <Button variant="outline" onClick={() => setShowPreview(false)}>
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        opened={showPreview && !!selectedTemplate}
+        onClose={() => setShowPreview(false)}
+        title="Template Preview"
+        size="lg"
+        centered
+      >
+        {selectedTemplate && (
+          <Stack gap="md">
+            <TemplatePreviewPanel template={selectedTemplate} />
+            <Group justify="flex-end">
+              <Button variant="outline" onClick={() => setShowPreview(false)}>
+                Close
+              </Button>
+            </Group>
+          </Stack>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -8,6 +8,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '@mantine/core';
 import { useRealtimeAgentStatus } from '@/hooks/useAgentStatus';
 import { useWebSocketStatus } from '@/contexts/WebSocketContext';
 import { api, Activity } from '@/lib/api';
@@ -30,7 +31,6 @@ import {
   GitBranch,
   ShieldAlert,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { BudgetCard } from '@/components/dashboard/BudgetCard';
 import { MultiAgentPanel } from './MultiAgentPanel';
 

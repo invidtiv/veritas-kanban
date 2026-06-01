@@ -1,5 +1,4 @@
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge, ScrollArea } from '@mantine/core';
 import type { TaskTemplate } from '@/hooks/useTemplates';
 import { getCategoryIcon, getCategoryLabel } from '@/lib/template-categories';
 import { Calendar, Flag, FileText, ClipboardList, Link2 } from 'lucide-react';
@@ -15,15 +14,15 @@ export function TemplatePreviewPanel({ template }: TemplatePreviewPanelProps) {
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'urgent':
-        return 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/50';
+        return 'red';
       case 'high':
-        return 'bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/50';
+        return 'orange';
       case 'medium':
-        return 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/50';
+        return 'yellow';
       case 'low':
-        return 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/50';
+        return 'green';
       default:
-        return 'bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/50';
+        return 'gray';
     }
   };
 
@@ -42,7 +41,7 @@ export function TemplatePreviewPanel({ template }: TemplatePreviewPanelProps) {
         {template.category && (
           <div className="space-y-2">
             <label className="text-xs font-semibold text-muted-foreground">CATEGORY</label>
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="outline" color="gray" tt="none">
               {getCategoryIcon(template.category)}
               {getCategoryLabel(template.category)}
             </Badge>
@@ -70,7 +69,9 @@ export function TemplatePreviewPanel({ template }: TemplatePreviewPanelProps) {
               <div className="flex items-center gap-2">
                 <Flag className="h-4 w-4 text-muted-foreground" />
                 <Badge
-                  className={`capitalize border ${getPriorityColor(template.taskDefaults.priority)}`}
+                  color={getPriorityColor(template.taskDefaults.priority)}
+                  variant="light"
+                  tt="capitalize"
                 >
                   {template.taskDefaults.priority}
                 </Badge>

@@ -8,7 +8,18 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Checkbox, Group, Paper, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Group,
+  Paper,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import {
   useBacklogTasks,
   usePromoteTask,
@@ -17,8 +28,6 @@ import {
 } from '@/hooks/useBacklog';
 import { useProjects } from '@/hooks/useProjects';
 import { useTaskTypes } from '@/hooks/useTaskTypes';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ArrowUp, Search, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import type { Task } from '@veritas-kanban/shared';
@@ -157,14 +166,16 @@ export function BacklogPage({ onBack }: BacklogPageProps) {
     <Stack gap="lg">
       <Group justify="space-between" align="center" gap="md" wrap="wrap">
         <Group gap="md" wrap="wrap">
-          <Button variant="ghost" size="sm" onClick={onBack}>
+          <Button variant="subtle" size="sm" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Board
           </Button>
           <Text component="h1" size="xl" fw={700} lh={1.1} m={0}>
             Backlog
           </Text>
-          <Badge variant="secondary">{filteredTasks.length} tasks</Badge>
+          <Badge variant="light" color="gray" tt="none">
+            {filteredTasks.length} tasks
+          </Badge>
         </Group>
 
         {selectedIds.size > 0 && (
@@ -332,7 +343,8 @@ function BacklogTaskCard({
               </Button>
               <Button
                 size="sm"
-                variant="ghost"
+                variant="subtle"
+                color="gray"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete();
@@ -344,27 +356,27 @@ function BacklogTaskCard({
           </Group>
 
           <Group gap="xs" wrap="wrap">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" color="gray" size="xs" tt="none">
               {task.id}
             </Badge>
-            <Badge color={priorityColors[task.priority] ?? 'gray'} className="text-xs">
+            <Badge color={priorityColors[task.priority] ?? 'gray'} size="xs" tt="none">
               {task.priority}
             </Badge>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="light" color="gray" size="xs" tt="none">
               {task.type}
             </Badge>
             {task.project && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="light" color="gray" size="xs" tt="none">
                 {task.project}
               </Badge>
             )}
             {task.sprint && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="light" color="gray" size="xs" tt="none">
                 Sprint: {task.sprint}
               </Badge>
             )}
             {task.subtasks && task.subtasks.length > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="light" color="gray" size="xs" tt="none">
                 {task.subtasks.filter((st) => st.completed).length}/{task.subtasks.length} subtasks
               </Badge>
             )}

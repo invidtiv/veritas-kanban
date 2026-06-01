@@ -1,8 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { ActionIcon, Tabs, Textarea } from '@mantine/core';
 import { Bold, Italic, Code, Link2, List, Heading2, Code2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
@@ -183,14 +181,15 @@ export function MarkdownEditor({
   const previewContent = useMemo(() => value?.trim(), [value]);
 
   return (
-    <Tabs value={mode} onValueChange={setMode} className="space-y-2">
+    <Tabs value={mode} onChange={(value) => value && setMode(value)} className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap items-center gap-1">
           {TOOLBAR_BUTTONS.map(({ id, label, icon: Icon }) => (
-            <Button
+            <ActionIcon
               key={id}
-              variant="ghost"
-              size="icon"
+              variant="subtle"
+              color="gray"
+              size="sm"
               className="h-7 w-7 text-muted-foreground hover:text-foreground"
               aria-label={label}
               onClick={() => handleToolbarAction(id)}
@@ -198,20 +197,20 @@ export function MarkdownEditor({
               disabled={disabled}
             >
               <Icon className="h-3.5 w-3.5" />
-            </Button>
+            </ActionIcon>
           ))}
         </div>
-        <TabsList className="ml-auto">
-          <TabsTrigger value="edit" className="text-xs">
+        <Tabs.List className="ml-auto">
+          <Tabs.Tab value="edit" className="text-xs">
             Edit
-          </TabsTrigger>
-          <TabsTrigger value="preview" className="text-xs">
+          </Tabs.Tab>
+          <Tabs.Tab value="preview" className="text-xs">
             Preview
-          </TabsTrigger>
-        </TabsList>
+          </Tabs.Tab>
+        </Tabs.List>
       </div>
 
-      <TabsContent value="edit" className="mt-0">
+      <Tabs.Panel value="edit" className="mt-0">
         <Textarea
           ref={textareaRef}
           value={value}
@@ -222,9 +221,9 @@ export function MarkdownEditor({
           style={{ minHeight, maxHeight }}
           disabled={disabled}
         />
-      </TabsContent>
+      </Tabs.Panel>
 
-      <TabsContent value="preview" className="mt-0">
+      <Tabs.Panel value="preview" className="mt-0">
         <div
           className={cn(
             'rounded-md border border-border bg-muted/30 p-3 text-sm text-foreground/80',
@@ -234,7 +233,7 @@ export function MarkdownEditor({
         >
           {previewContent ? <MarkdownRenderer content={value} /> : <span>Nothing to preview</span>}
         </div>
-      </TabsContent>
+      </Tabs.Panel>
     </Tabs>
   );
 }

@@ -1,17 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Button, PasswordInput } from '@mantine/core';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Button, Group, Modal, PasswordInput, Stack, Text } from '@mantine/core';
 import { Eye, EyeOff, Check, AlertTriangle, Key } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 
@@ -42,6 +31,7 @@ export function SecurityTab() {
   const [showPasswords, setShowPasswords] = useState(false);
   const [isChanging, setIsChanging] = useState(false);
   const [changeSuccess, setChangeSuccess] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
 
   const strength = getPasswordStrength(newPassword);
   const passwordsMatch = newPassword === confirmPassword;
@@ -182,24 +172,26 @@ export function SecurityTab() {
             </p>
           </div>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button color="red" size="sm">
-                Reset All Security
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reset all security settings?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. Your password and recovery key will be deleted.
-                  You'll need to set up a new password on the next page load.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          <Button color="red" size="sm" onClick={() => setResetOpen(true)}>
+            Reset All Security
+          </Button>
+          <Modal
+            opened={resetOpen}
+            onClose={() => setResetOpen(false)}
+            title="Reset all security settings?"
+            centered
+          >
+            <Stack gap="md">
+              <Text size="sm" c="dimmed">
+                This action cannot be undone. Your password and recovery key will be deleted. You'll
+                need to set up a new password on the next page load.
+              </Text>
+              <Group justify="flex-end">
+                <Button variant="subtle" color="gray" onClick={() => setResetOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  color="red"
                   onClick={async () => {
                     // Call the reset endpoint
                     try {
@@ -221,14 +213,16 @@ export function SecurityTab() {
                         description: 'Please use the CLI command instead.',
                         duration: 5000,
                       });
+                    } finally {
+                      setResetOpen(false);
                     }
                   }}
                 >
                   Reset Everything
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </Button>
+              </Group>
+            </Stack>
+          </Modal>
         </div>
       </section>
     </div>

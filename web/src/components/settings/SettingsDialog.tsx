@@ -1,23 +1,5 @@
 import { useState, useRef, useCallback, lazy, Suspense, useEffect, useMemo } from 'react';
-import { Button, ScrollArea, Select, Skeleton, Stack } from '@mantine/core';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Button, Group, Modal, ScrollArea, Select, Skeleton, Stack, Text } from '@mantine/core';
 import { useFeatureSettings, useDebouncedFeatureUpdate } from '@/hooks/useFeatureSettings';
 import { useIdentity } from '@/hooks/useIdentity';
 import { useToast } from '@/hooks/useToast';
@@ -193,6 +175,7 @@ export function SettingsDialog({ open, onOpenChange, defaultTab }: SettingsDialo
   const { toast } = useToast();
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const firstTabButtonRef = useRef<HTMLButtonElement>(null);
+  const [resetAllOpen, setResetAllOpen] = useState(false);
 
   // Focus first tab when dialog opens
   useEffect(() => {
@@ -298,6 +281,7 @@ export function SettingsDialog({ open, onOpenChange, defaultTab }: SettingsDialo
 
   const handleResetAll = () => {
     debouncedUpdate({ ...DEFAULT_FEATURE_SETTINGS });
+    setResetAllOpen(false);
   };
 
   const handleKeyDown = useCallback(
@@ -395,171 +379,173 @@ export function SettingsDialog({ open, onOpenChange, defaultTab }: SettingsDialo
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] h-[85vh] p-0 overflow-hidden">
-        <DialogDescription className="sr-only">
-          Manage board, task, data, security, and workspace settings.
-        </DialogDescription>
-        <ErrorBoundary level="section">
-          <div className="flex h-full min-h-0">
-            {/* Sidebar Tabs — hidden on narrow screens, shown as dropdown instead */}
-            <div className="hidden sm:flex flex-col w-48 border-r bg-muted/30 py-4">
-              <div className="px-4 pb-3">
-                <h2 className="text-sm font-semibold">Settings</h2>
-              </div>
-              <nav
-                className="flex-1 space-y-0.5 px-2"
-                role="tablist"
-                aria-orientation="vertical"
-                onKeyDown={handleKeyDown}
-              >
-                <Stack gap={4}>
-                  {TABS.map((tab, index) => {
-                    const Icon = tab.icon;
-                    const allowed = canUseTab(tab);
-                    const active = activeTab === tab.id;
-                    return (
-                      <Button
-                        key={tab.id}
-                        id={`tab-${tab.id}`}
-                        ref={index === 0 ? firstTabButtonRef : undefined}
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        aria-controls="settings-tab-content"
-                        tabIndex={active ? 0 : -1}
-                        onClick={() => setActiveTab(tab.id)}
-                        disabled={!allowed}
-                        title={
-                          allowed ? tab.label : `${tab.requiredPermission} permission required`
-                        }
-                        variant={active ? 'light' : 'subtle'}
-                        color={active ? 'violet' : 'gray'}
-                        size="xs"
-                        radius="md"
-                        fullWidth
-                        justify="flex-start"
-                        leftSection={<Icon className="h-4 w-4 flex-shrink-0" />}
-                      >
-                        {tab.label}
-                      </Button>
-                    );
-                  })}
-                </Stack>
-              </nav>
-
-              {/* Import/Export/Reset */}
-              <Stack gap={4} className="mt-auto border-t px-2 pt-3">
-                <input
-                  ref={settingsFileInputRef}
-                  type="file"
-                  accept="application/json,.json"
-                  onChange={handleImportSettings}
-                  className="hidden"
-                  aria-label="Import settings file"
-                />
-                <Button
-                  type="button"
-                  onClick={handleExportSettings}
-                  aria-label="Export settings as JSON file"
-                  variant="subtle"
-                  color="gray"
-                  size="xs"
-                  fullWidth
-                  justify="flex-start"
-                  leftSection={
-                    <Download className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
-                  }
-                >
-                  Export Settings
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => settingsFileInputRef.current?.click()}
-                  disabled={!canWriteSettings}
-                  aria-label="Import settings from JSON file"
-                  variant="subtle"
-                  color="gray"
-                  size="xs"
-                  fullWidth
-                  justify="flex-start"
-                  leftSection={<Upload className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />}
-                >
-                  Import Settings
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<span className="sr-only">Settings</span>}
+      size={800}
+      padding={0}
+      centered
+      styles={{
+        content: { height: '85vh', overflow: 'hidden' },
+        body: { height: '100%', padding: 0 },
+      }}
+    >
+      <ErrorBoundary level="section">
+        <div className="flex h-full min-h-0">
+          {/* Sidebar Tabs — hidden on narrow screens, shown as dropdown instead */}
+          <div className="hidden sm:flex flex-col w-48 border-r bg-muted/30 py-4">
+            <div className="px-4 pb-3">
+              <h2 className="text-sm font-semibold">Settings</h2>
+            </div>
+            <nav
+              className="flex-1 space-y-0.5 px-2"
+              role="tablist"
+              aria-orientation="vertical"
+              onKeyDown={handleKeyDown}
+            >
+              <Stack gap={4}>
+                {TABS.map((tab, index) => {
+                  const Icon = tab.icon;
+                  const allowed = canUseTab(tab);
+                  const active = activeTab === tab.id;
+                  return (
                     <Button
+                      key={tab.id}
+                      id={`tab-${tab.id}`}
+                      ref={index === 0 ? firstTabButtonRef : undefined}
                       type="button"
-                      disabled={!canWriteSettings}
-                      variant="subtle"
-                      color="red"
+                      role="tab"
+                      aria-selected={active}
+                      aria-controls="settings-tab-content"
+                      tabIndex={active ? 0 : -1}
+                      onClick={() => setActiveTab(tab.id)}
+                      disabled={!allowed}
+                      title={allowed ? tab.label : `${tab.requiredPermission} permission required`}
+                      variant={active ? 'light' : 'subtle'}
+                      color={active ? 'violet' : 'gray'}
                       size="xs"
+                      radius="md"
                       fullWidth
                       justify="flex-start"
-                      leftSection={<RotateCcw className="h-3.5 w-3.5 flex-shrink-0" />}
+                      leftSection={<Icon className="h-4 w-4 flex-shrink-0" />}
                     >
-                      Reset All
+                      {tab.label}
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will reset ALL feature settings across every section back to their
-                        default values. This cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleResetAll}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Reset Everything
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                  );
+                })}
               </Stack>
-            </div>
+            </nav>
 
-            {/* Mobile Tab Selector */}
-            <div className="sm:hidden absolute top-3 right-12">
-              <Select
-                value={activeTab}
-                onChange={(value) => {
-                  if (value) setActiveTab(value as TabId);
-                }}
-                data={mobileTabOptions}
-                aria-label="Select settings section"
-                size="xs"
-                checkIconPosition="right"
-                className="w-40"
+            {/* Import/Export/Reset */}
+            <Stack gap={4} className="mt-auto border-t px-2 pt-3">
+              <input
+                ref={settingsFileInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleImportSettings}
+                className="hidden"
+                aria-label="Import settings file"
               />
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 flex flex-col min-w-0 min-h-0">
-              <DialogHeader className="px-6 py-4 border-b sm:hidden">
-                <DialogTitle>Settings</DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="flex-1 min-h-0">
-                <div
-                  id="settings-tab-content"
-                  ref={contentAreaRef}
-                  className="px-6 py-4"
-                  role="tabpanel"
-                  tabIndex={-1}
-                  aria-labelledby={`tab-${activeTab}`}
-                >
-                  {renderTab()}
-                </div>
-              </ScrollArea>
-            </div>
+              <Button
+                type="button"
+                onClick={handleExportSettings}
+                aria-label="Export settings as JSON file"
+                variant="subtle"
+                color="gray"
+                size="xs"
+                fullWidth
+                justify="flex-start"
+                leftSection={<Download className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />}
+              >
+                Export Settings
+              </Button>
+              <Button
+                type="button"
+                onClick={() => settingsFileInputRef.current?.click()}
+                disabled={!canWriteSettings}
+                aria-label="Import settings from JSON file"
+                variant="subtle"
+                color="gray"
+                size="xs"
+                fullWidth
+                justify="flex-start"
+                leftSection={<Upload className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />}
+              >
+                Import Settings
+              </Button>
+              <Button
+                type="button"
+                disabled={!canWriteSettings}
+                variant="subtle"
+                color="red"
+                size="xs"
+                fullWidth
+                justify="flex-start"
+                leftSection={<RotateCcw className="h-3.5 w-3.5 flex-shrink-0" />}
+                onClick={() => setResetAllOpen(true)}
+              >
+                Reset All
+              </Button>
+            </Stack>
           </div>
-        </ErrorBoundary>
-      </DialogContent>
-    </Dialog>
+
+          {/* Mobile Tab Selector */}
+          <div className="sm:hidden absolute top-3 right-12">
+            <Select
+              value={activeTab}
+              onChange={(value) => {
+                if (value) setActiveTab(value as TabId);
+              }}
+              data={mobileTabOptions}
+              aria-label="Select settings section"
+              size="xs"
+              checkIconPosition="right"
+              className="w-40"
+            />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
+            <div className="px-6 py-4 border-b sm:hidden">
+              <h2 className="text-lg font-semibold">Settings</h2>
+            </div>
+            <ScrollArea className="flex-1 min-h-0">
+              <div
+                id="settings-tab-content"
+                ref={contentAreaRef}
+                className="px-6 py-4"
+                role="tabpanel"
+                tabIndex={-1}
+                aria-labelledby={`tab-${activeTab}`}
+              >
+                {renderTab()}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      </ErrorBoundary>
+      <Modal
+        opened={resetAllOpen}
+        onClose={() => setResetAllOpen(false)}
+        title="Reset all settings?"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            This will reset ALL feature settings across every section back to their default values.
+            This cannot be undone.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={() => setResetAllOpen(false)}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleResetAll}>
+              Reset Everything
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Modal>
   );
 }

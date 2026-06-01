@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Popover } from '@mantine/core';
 import { useRealtimeAgentStatus } from '@/hooks/useAgentStatus';
 import { useWebSocketStatus } from '@/contexts/WebSocketContext';
 import { api, Activity } from '@/lib/api';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Clock,
   Users,
@@ -314,8 +314,8 @@ export function AgentStatusIndicator({
   const Icon = config.icon;
 
   return (
-    <Popover position="bottom-start">
-      <PopoverTrigger asChild>
+    <Popover position="bottom-start" width={320} shadow="md" withinPortal>
+      <Popover.Target>
         <button
           className={`flex items-center gap-2 min-w-[32px] sm:min-w-[140px] md:min-w-[200px] cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1 transition-colors ${className}`}
           role="status"
@@ -347,9 +347,9 @@ export function AgentStatusIndicator({
             </span>
           )}
         </button>
-      </PopoverTrigger>
+      </Popover.Target>
 
-      <PopoverContent className="w-80">
+      <Popover.Dropdown>
         <div className="space-y-4">
           {/* Current Status Header */}
           <div className="flex items-center gap-3">
@@ -497,7 +497,7 @@ export function AgentStatusIndicator({
             </p>
           )}
         </div>
-      </PopoverContent>
+      </Popover.Dropdown>
     </Popover>
   );
 }

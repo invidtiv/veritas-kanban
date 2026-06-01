@@ -1,15 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ActionIcon, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { useArchiveSuggestions, useArchiveSprint } from '@/hooks/useTasks';
 import { Archive, X, Loader2, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -83,33 +73,39 @@ export function ArchiveSuggestionBanner() {
                   </>
                 )}
               </Button>
-              <Button
-                variant="ghost"
+              <ActionIcon
+                type="button"
+                variant="subtle"
+                color="gray"
                 size="sm"
                 onClick={() => handleDismiss(suggestion.sprint)}
-                className="hover:bg-green-500/10"
+                aria-label={`Dismiss archive suggestion for ${suggestion.sprint}`}
               >
                 <X className="h-4 w-4" />
-              </Button>
+              </ActionIcon>
             </div>
           </div>
         ))}
       </div>
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={!!confirmSprint} onOpenChange={() => setConfirmSprint(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archive sprint "{confirmSprint}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will archive all{' '}
-              {suggestions.find((s) => s.sprint === confirmSprint)?.taskCount || 0} tasks in this
-              sprint. You can restore them from the archive later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+      <Modal
+        opened={!!confirmSprint}
+        onClose={() => setConfirmSprint(null)}
+        title={`Archive sprint "${confirmSprint}"?`}
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            This will archive all{' '}
+            {suggestions.find((s) => s.sprint === confirmSprint)?.taskCount || 0} tasks in this
+            sprint. You can restore them from the archive later.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={() => setConfirmSprint(null)}>
+              Cancel
+            </Button>
+            <Button
               onClick={() => confirmSprint && handleArchive(confirmSprint)}
               disabled={archiveSprint.isPending}
             >
@@ -124,10 +120,10 @@ export function ArchiveSuggestionBanner() {
                   Archive Sprint
                 </>
               )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   );
 }
