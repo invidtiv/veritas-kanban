@@ -269,8 +269,8 @@ Recommended order:
 
 Phase 3 progress:
 
-- Auth/setup screens and the app shell/header/command palette have an initial
-  direct Mantine surface slice.
+- Auth/setup screens and the app shell/header/command palette have direct
+  Mantine surface slices.
 - Archive and backlog list/filter pages now use direct Mantine layout and form
   controls while preserving custom task card/list behavior.
 - Create-task dialog form controls now use direct Mantine text, textarea,
@@ -330,6 +330,10 @@ Phase 3 progress:
   modal, text input, scroll area, stack, text, and key badge primitives while
   preserving keyboard launch, command filtering, shortcut display, and nested
   search-dialog launch behavior.
+- Header action chrome, workspace switching, session menu, and WebSocket status
+  now use direct Mantine button, action icon, select, badge, popover, and key
+  badge primitives while preserving navigation, theme switching, workspace
+  switching, settings shortcuts, session actions, and status popover behavior.
 
 ### Phase 4: QA, Cleanup, and Dependency Removal
 
