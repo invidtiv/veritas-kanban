@@ -47,19 +47,32 @@ describe('SearchDialog', () => {
           snippet: 'Search active tasks, archive, and docs.',
           score: 4,
         },
+        {
+          id: 'wp-search-brief',
+          title: 'Search implementation brief',
+          path: '/work-products/wp-search-brief',
+          collection: 'work-products',
+          snippet: 'Durable work product with evidence and follow-up notes.',
+          score: 3,
+        },
       ],
     });
 
     const { baseElement } = renderWithProviders(<SearchDialog open onOpenChange={vi.fn()} />);
 
-    expect(screen.getByRole('dialog', { name: 'Search Tasks and Docs' })).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Search tasks and docs' })).toBeDefined();
+    expect(
+      screen.getByRole('dialog', { name: 'Search Tasks, Docs, and Work Products' })
+    ).toBeDefined();
+    expect(
+      screen.getByRole('textbox', { name: 'Search tasks, docs, and work products' })
+    ).toBeDefined();
     expect(screen.getByRole('combobox', { name: 'Search backend' })).toBeDefined();
     expect(screen.getByRole('checkbox', { name: 'Active' })).toBeDefined();
+    expect(screen.getByRole('checkbox', { name: 'Work Products' })).toBeDefined();
     expect(baseElement.querySelector('.mantine-Modal-root')).toBeDefined();
     expect(baseElement.querySelector('.mantine-TextInput-root')).toBeDefined();
     expect(baseElement.querySelector('.mantine-Select-root')).toBeDefined();
-    expect(baseElement.querySelectorAll('.mantine-Checkbox-root').length).toBe(3);
+    expect(baseElement.querySelectorAll('.mantine-Checkbox-root').length).toBe(4);
     expect(baseElement.querySelector('[data-slot="dialog-content"]')).toBeNull();
     expect(baseElement.querySelector('[data-slot="input"]')).toBeNull();
     expect(baseElement.querySelector('[data-slot="select-trigger"]')).toBeNull();
@@ -72,10 +85,12 @@ describe('SearchDialog', () => {
     expect(queryMock).toHaveBeenCalledWith({
       query: 'qmd',
       backend: 'auto',
-      collections: ['tasks-active', 'tasks-archive', 'docs'],
+      collections: ['tasks-active', 'tasks-archive', 'docs', 'work-products'],
       limit: 12,
     });
     expect(await screen.findByText('Build search UI')).toBeDefined();
+    expect(await screen.findByText('Search implementation brief')).toBeDefined();
+    expect(screen.getByText('/work-products/wp-search-brief')).toBeDefined();
     expect(screen.getByText('Fallback')).toBeDefined();
     expect(screen.getByText('qmd unavailable')).toBeDefined();
   });

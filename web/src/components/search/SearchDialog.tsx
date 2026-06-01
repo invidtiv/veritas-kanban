@@ -20,6 +20,7 @@ const COLLECTIONS: { id: SearchCollection; label: string }[] = [
   { id: 'tasks-active', label: 'Active' },
   { id: 'tasks-archive', label: 'Archive' },
   { id: 'docs', label: 'Docs' },
+  { id: 'work-products', label: 'Work Products' },
 ];
 
 const BACKENDS: { id: SearchBackend; label: string }[] = [
@@ -37,6 +38,7 @@ interface SearchDialogProps {
 function collectionIcon(collection: string) {
   if (collection === 'docs') return FileText;
   if (collection === 'tasks-archive') return Archive;
+  if (collection === 'work-products') return Sparkles;
   return Search;
 }
 
@@ -98,7 +100,7 @@ export function SearchDialog({ open, onOpenChange, onTaskOpen }: SearchDialogPro
         <Group gap="xs">
           <span className="flex items-center gap-2 text-base font-semibold">
             <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-            Search Tasks and Docs
+            Search Tasks, Docs, and Work Products
           </span>
         </Group>
       }
@@ -106,7 +108,7 @@ export function SearchDialog({ open, onOpenChange, onTaskOpen }: SearchDialogPro
     >
       <div className="border-b px-5 pb-4">
         <Text size="sm" c="dimmed">
-          Find active work, archived decisions, and project documentation.
+          Find active work, archived decisions, durable work products, and project documentation.
         </Text>
       </div>
 
@@ -122,8 +124,8 @@ export function SearchDialog({ open, onOpenChange, onTaskOpen }: SearchDialogPro
             <TextInput
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search task titles, descriptions, notes, docs..."
-              aria-label="Search tasks and docs"
+              placeholder="Search task titles, notes, docs, work products..."
+              aria-label="Search tasks, docs, and work products"
               leftSection={<Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
               autoFocus
             />
@@ -183,7 +185,7 @@ export function SearchDialog({ open, onOpenChange, onTaskOpen }: SearchDialogPro
         <ScrollArea h={460} className="rounded-md border">
           {!response && !error ? (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-              Search across task markdown and docs.
+              Search across task markdown, docs, and work products.
             </div>
           ) : response && response.results.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">

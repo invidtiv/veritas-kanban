@@ -1,7 +1,7 @@
 import { API_BASE, handleResponse } from './helpers';
 
 export type SearchBackend = 'auto' | 'qmd' | 'keyword';
-export type SearchCollection = 'tasks-active' | 'tasks-archive' | 'docs';
+export type SearchCollection = 'tasks-active' | 'tasks-archive' | 'docs' | 'work-products';
 
 export interface SearchRequest {
   query: string;

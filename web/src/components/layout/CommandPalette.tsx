@@ -1,4 +1,13 @@
-import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import {
+  lazy,
+  Suspense,
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  type ReactNode,
+} from 'react';
 import {
   Box,
   Group,
@@ -34,7 +43,12 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
-import { VIEW_DEFINITIONS, type ViewIcon } from '@/lib/views';
+import {
+  createCommandRegistry,
+  type CommandDescriptor,
+  type CommandIcon,
+} from '@/lib/command-registry';
+import type { ViewIcon } from '@/lib/views';
 
 const SearchDialog = lazy(() =>
   import('@/components/search').then((mod) => ({
@@ -55,19 +69,23 @@ const VIEW_ICONS: Record<ViewIcon, LucideIcon> = {
   Workflow,
 };
 
-function renderViewIcon(icon: ViewIcon) {
-  const Icon = VIEW_ICONS[icon];
+const COMMAND_ICONS: Record<CommandIcon, LucideIcon> = {
+  ...VIEW_ICONS,
+  ArrowRight,
+  Keyboard,
+  Moon,
+  Plus,
+  Sparkles,
+  Sun,
+};
+
+function renderCommandIcon(icon: CommandIcon) {
+  const Icon = COMMAND_ICONS[icon];
   return <Icon className="h-4 w-4" />;
 }
 
-interface CommandItem {
-  id: string;
-  label: string;
-  shortcut?: string;
-  icon: React.ReactNode;
-  category: string;
-  action: () => void;
-  keywords?: readonly string[];
+interface CommandItem extends CommandDescriptor {
+  iconNode: ReactNode;
 }
 
 export function CommandPalette() {
@@ -88,111 +106,35 @@ export function CommandPalette() {
     setSearchOpen(true);
   }, []);
 
+  const executeCommand = useCallback(
+    (cmd: CommandDescriptor) => {
+      switch (cmd.action.type) {
+        case 'open-create-task':
+          openCreateDialog();
+          return;
+        case 'toggle-theme':
+          setTheme(theme === 'dark' ? 'light' : 'dark');
+          return;
+        case 'open-search':
+          openSearchDialog();
+          return;
+        case 'navigate-view':
+          setView(cmd.action.view);
+          return;
+        case 'board-shortcut':
+          return;
+      }
+    },
+    [openCreateDialog, openSearchDialog, setTheme, setView, theme]
+  );
+
   const commands: CommandItem[] = useMemo(
-    () => [
-      // Actions
-      {
-        id: 'new-task',
-        label: 'New Task',
-        shortcut: 'C',
-        icon: <Plus className="h-4 w-4" />,
-        category: 'Actions',
-        action: () => openCreateDialog(),
-        keywords: ['create', 'add', 'task'],
-      },
-      {
-        id: 'toggle-theme',
-        label: theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-        icon: theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />,
-        category: 'Actions',
-        action: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
-        keywords: ['theme', 'dark', 'light', 'mode', 'appearance'],
-      },
-      {
-        id: 'open-search',
-        label: 'Search Tasks and Docs',
-        icon: <Sparkles className="h-4 w-4" />,
-        category: 'Actions',
-        action: openSearchDialog,
-        keywords: ['qmd', 'semantic', 'retrieval', 'docs', 'archive'],
-      },
-
-      ...VIEW_DEFINITIONS.map((definition) => ({
-        id: `go-${definition.view}`,
-        label: definition.commandLabel,
-        shortcut: definition.view === 'board' ? 'B' : undefined,
-        icon: renderViewIcon(definition.icon),
-        category: 'Navigation',
-        action: () => setView(definition.view),
-        keywords: definition.keywords,
+    () =>
+      createCommandRegistry({ theme }).map((command) => ({
+        ...command,
+        iconNode: renderCommandIcon(command.icon),
       })),
-
-      // Board shortcuts
-      {
-        id: 'move-todo',
-        label: 'Move Task → To Do',
-        shortcut: '1',
-        icon: <ArrowRight className="h-4 w-4" />,
-        category: 'Board',
-        action: () => {},
-        keywords: ['status', 'move'],
-      },
-      {
-        id: 'move-inprogress',
-        label: 'Move Task → In Progress',
-        shortcut: '2',
-        icon: <ArrowRight className="h-4 w-4" />,
-        category: 'Board',
-        action: () => {},
-        keywords: ['status', 'move'],
-      },
-      {
-        id: 'move-blocked',
-        label: 'Move Task → Blocked',
-        shortcut: '3',
-        icon: <ArrowRight className="h-4 w-4" />,
-        category: 'Board',
-        action: () => {},
-        keywords: ['status', 'move'],
-      },
-      {
-        id: 'move-done',
-        label: 'Move Task → Done',
-        shortcut: '4',
-        icon: <ArrowRight className="h-4 w-4" />,
-        category: 'Board',
-        action: () => {},
-        keywords: ['status', 'move', 'complete'],
-      },
-      {
-        id: 'nav-up',
-        label: 'Select Previous Task',
-        shortcut: 'K / ↑',
-        icon: <Keyboard className="h-4 w-4" />,
-        category: 'Board',
-        action: () => {},
-        keywords: ['navigate', 'up'],
-      },
-      {
-        id: 'nav-down',
-        label: 'Select Next Task',
-        shortcut: 'J / ↓',
-        icon: <Keyboard className="h-4 w-4" />,
-        category: 'Board',
-        action: () => {},
-        keywords: ['navigate', 'down'],
-      },
-      {
-        id: 'open-task',
-        label: 'Open Selected Task',
-        shortcut: 'Enter',
-        icon: <Keyboard className="h-4 w-4" />,
-        category: 'Board',
-        action: () => {},
-        keywords: ['view', 'detail'],
-      },
-    ],
-    [openCreateDialog, openSearchDialog, setView, theme, setTheme]
+    [theme]
   );
 
   // Filter commands by query
@@ -203,7 +145,8 @@ export function CommandPalette() {
       (cmd) =>
         cmd.label.toLowerCase().includes(q) ||
         cmd.category.toLowerCase().includes(q) ||
-        cmd.keywords?.some((k) => k.includes(q))
+        cmd.keywords?.some((keyword) => keyword.toLowerCase().includes(q)) ||
+        cmd.aliases?.some((alias) => alias.toLowerCase().includes(q))
     );
   }, [commands, query]);
 
@@ -252,11 +195,15 @@ export function CommandPalette() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const runCommand = useCallback((cmd: CommandItem) => {
-    setOpen(false);
-    // Small delay so dialog closes before action fires
-    setTimeout(() => cmd.action(), 50);
-  }, []);
+  const runCommand = useCallback(
+    (cmd: CommandItem) => {
+      if (cmd.disabledReason) return;
+      setOpen(false);
+      // Small delay so dialog closes before action fires
+      setTimeout(() => executeCommand(cmd), 50);
+    },
+    [executeCommand]
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -347,11 +294,15 @@ export function CommandPalette() {
                         <UnstyledButton
                           key={cmd.id}
                           data-index={idx}
+                          disabled={Boolean(cmd.disabledReason)}
+                          title={cmd.disabledReason}
                           className={cn(
                             'flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors',
-                            idx === selectedIndex
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-foreground hover:bg-muted/50'
+                            cmd.disabledReason
+                              ? 'cursor-not-allowed opacity-60'
+                              : idx === selectedIndex
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-foreground hover:bg-muted/50'
                           )}
                           onClick={() => runCommand(cmd)}
                           onMouseEnter={() => setSelectedIndex(idx)}
@@ -362,7 +313,7 @@ export function CommandPalette() {
                               idx === selectedIndex ? 'text-primary' : 'text-muted-foreground'
                             )}
                           >
-                            {cmd.icon}
+                            {cmd.iconNode}
                           </span>
                           <span className="flex-1 text-left">{cmd.label}</span>
                           {cmd.shortcut && (
