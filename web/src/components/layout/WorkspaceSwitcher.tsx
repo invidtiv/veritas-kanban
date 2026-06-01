@@ -1,13 +1,6 @@
 import { useState } from 'react';
+import { Badge, Group, Select, Text } from '@mantine/core';
 import { Building2, Loader2 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { useIdentity } from '@/hooks/useIdentity';
 
 export function WorkspaceSwitcher() {
@@ -34,31 +27,50 @@ export function WorkspaceSwitcher() {
     }
   };
 
+  const workspaceOptions = workspaces.map(({ workspace }) => ({
+    value: workspace.id,
+    label: workspace.name,
+  }));
+  const roleByWorkspaceId = new Map(
+    workspaces.map(({ workspace, membership }) => [workspace.id, membership.role])
+  );
+
   return (
     <div className="hidden md:flex items-center gap-2">
-      <Select value={activeWorkspaceId ?? undefined} onValueChange={handleSwitch}>
-        <SelectTrigger
-          className="h-8 w-[190px] bg-background/60"
-          aria-label="Workspace"
-          disabled={isSwitching}
-        >
-          <Building2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          <SelectValue placeholder={activeWorkspace?.name ?? 'Workspace'} />
-          {isSwitching && <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />}
-        </SelectTrigger>
-        <SelectContent align="start">
-          {workspaces.map(({ workspace, membership }) => (
-            <SelectItem key={workspace.id} value={workspace.id}>
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="truncate">{workspace.name}</span>
-                <span className="text-xs text-muted-foreground">{membership.role}</span>
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Select
+        aria-label="Workspace"
+        value={activeWorkspaceId ?? null}
+        onChange={(workspaceId) => {
+          if (workspaceId) void handleSwitch(workspaceId);
+        }}
+        data={workspaceOptions}
+        placeholder={activeWorkspace?.name ?? 'Workspace'}
+        disabled={isSwitching}
+        allowDeselect={false}
+        checkIconPosition="right"
+        className="w-[190px]"
+        classNames={{
+          input: 'h-8 bg-background/60 text-xs',
+          dropdown: 'bg-popover text-popover-foreground',
+          option: 'text-xs',
+        }}
+        leftSection={<Building2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+        rightSection={
+          isSwitching ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : undefined
+        }
+        renderOption={({ option }) => (
+          <Group gap="xs" justify="space-between" wrap="nowrap" className="w-full">
+            <Text span size="xs" truncate>
+              {option.label}
+            </Text>
+            <Text span size="xs" c="dimmed" className="capitalize">
+              {roleByWorkspaceId.get(option.value)}
+            </Text>
+          </Group>
+        )}
+      />
       {activeMembership && (
-        <Badge variant="secondary" className="hidden lg:inline-flex capitalize">
+        <Badge variant="light" color="gray" size="xs" className="hidden lg:inline-flex capitalize">
           {activeMembership.role}
         </Badge>
       )}

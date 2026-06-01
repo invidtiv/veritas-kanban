@@ -1,6 +1,6 @@
+import { Box, Group, Popover, Text, UnstyledButton } from '@mantine/core';
 import { useWebSocketStatus } from '@/contexts/WebSocketContext';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 /**
  * Tiny indicator showing WebSocket connection status.
@@ -55,24 +55,28 @@ export function WebSocketIndicator() {
 
   return (
     <Popover position="bottom-end">
-      <PopoverTrigger asChild>
-        <button
+      <Popover.Target>
+        <UnstyledButton
           className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer select-none rounded px-1.5 py-1 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           aria-label={label}
         >
-          <span className={`inline-block h-2 w-2 rounded-full ${dotClass}`} />
-          <Icon className={`h-3 w-3 ${iconClass}`} />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-3">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
+          <Box component="span" className={`inline-block h-2 w-2 rounded-full ${dotClass}`} />
+          <Icon className={`h-3 w-3 ${iconClass}`} aria-hidden="true" />
+        </UnstyledButton>
+      </Popover.Target>
+      <Popover.Dropdown className="w-64 bg-popover p-3 text-popover-foreground">
+        <Box className="space-y-1.5">
+          <Group gap="xs" wrap="nowrap">
             <Icon className={`h-4 w-4 ${iconColor} shrink-0`} />
-            <span className="text-sm font-medium">{heading}</span>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">{body}</p>
-        </div>
-      </PopoverContent>
+            <Text size="sm" fw={500}>
+              {heading}
+            </Text>
+          </Group>
+          <Text size="xs" c="dimmed" lh="sm">
+            {body}
+          </Text>
+        </Box>
+      </Popover.Dropdown>
     </Popover>
   );
 }

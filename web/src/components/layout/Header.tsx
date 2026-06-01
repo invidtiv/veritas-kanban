@@ -1,4 +1,14 @@
-import { Box, Container, Divider, Group, Kbd, Text } from '@mantine/core';
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Container,
+  Divider,
+  Group,
+  Kbd,
+  Text,
+} from '@mantine/core';
 import {
   Plus,
   Settings,
@@ -18,7 +28,6 @@ import {
   ShieldAlert,
   type LucideIcon,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 // ActivitySidebar removed — merged into ActivityFeed (GH-66)
 // ArchiveSidebar removed — replaced with full-page ArchivePage
 import { UserMenu } from './UserMenu';
@@ -30,7 +39,6 @@ import { useView } from '@/contexts/ViewContext';
 import { useBacklogCount } from '@/hooks/useBacklog';
 import { useTheme } from '@/hooks/useTheme';
 import { useIdentity } from '@/hooks/useIdentity';
-import { Badge } from '@/components/ui/badge';
 import { NAVIGATION_VIEWS, type ViewIcon } from '@/lib/views';
 
 const CreateTaskDialog = lazy(() =>
@@ -187,13 +195,13 @@ export function Header() {
 
           <Group gap="xs" wrap="nowrap" role="toolbar" aria-label="Board actions">
             <Button
-              variant="default"
-              size="sm"
+              variant="filled"
+              size="xs"
+              leftSection={<Plus className="h-4 w-4" aria-hidden="true" />}
               onClick={openCreateDialog}
               disabled={!canCreateTask}
               title={canCreateTask ? 'New Task' : 'Task write permission required'}
             >
-              <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
               New Task
             </Button>
             {NAVIGATION_VIEWS.map((item) => {
@@ -201,58 +209,67 @@ export function Header() {
               const isBacklog = item.view === 'backlog';
 
               return (
-                <Button
+                <ActionIcon
                   key={item.view}
-                  variant={view === item.view ? 'secondary' : 'ghost'}
-                  size="icon"
+                  variant={view === item.view ? 'light' : 'subtle'}
+                  color={view === item.view ? 'veritas' : 'gray'}
+                  size={32}
                   onClick={() => setView(view === item.view ? 'board' : item.view)}
                   aria-label={item.label}
+                  aria-pressed={view === item.view}
                   title={item.title ?? item.label}
                   className={isBacklog ? 'relative' : undefined}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                   {isBacklog && backlogCount > 0 && (
                     <Badge
-                      variant="secondary"
-                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+                      variant="light"
+                      color="gray"
+                      size="xs"
+                      px={0}
+                      className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full text-[10px]"
                     >
                       {backlogCount > 99 ? '99+' : backlogCount}
                     </Badge>
                   )}
-                </Button>
+                </ActionIcon>
               );
             })}
-            <Button
-              variant="ghost"
-              size="icon"
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size={32}
               onClick={openSearchDialog}
               aria-label="Search"
               title="Search"
             >
               <Search className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size={32}
               onClick={openSquadChatPanel}
               aria-label="Squad Chat"
               title="Squad Chat — Agent communication"
             >
               <Users className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size={32}
               onClick={openSettingsDialog}
               disabled={!canOpenSettings}
               aria-label="Settings"
               title={canOpenSettings ? 'Settings' : 'Settings permission required'}
             >
               <Settings className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size={32}
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               aria-label="Toggle theme"
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -262,14 +279,16 @@ export function Header() {
               ) : (
                 <Sun className="h-4 w-4" aria-hidden="true" />
               )}
-            </Button>
+            </ActionIcon>
             <UserMenu
               onOpenSecuritySettings={openSecuritySettings}
               onOpenIdentitySettings={openIdentitySettings}
             />
             <Button
-              variant="ghost"
-              size="sm"
+              variant="subtle"
+              color="gray"
+              size="xs"
+              leftSection={<Search className="h-4 w-4" aria-hidden="true" />}
               onClick={() =>
                 window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))
               }
@@ -277,7 +296,6 @@ export function Header() {
               title="Command palette (⌘K)"
               className="gap-1.5 text-muted-foreground"
             >
-              <Search className="h-4 w-4" aria-hidden="true" />
               <Kbd className="hidden h-5 items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] sm:inline-flex">
                 ⌘K
               </Kbd>

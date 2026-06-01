@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
+import {
+  Badge,
+  Box,
+  Button,
+  Group,
+  Kbd,
+  Popover,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core';
 import { Building2, Clock, ChevronDown, KeyRound, Lock, LogOut, Shield, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/hooks/useAuth';
 import { useIdentity } from '@/hooks/useIdentity';
 
@@ -82,54 +90,78 @@ export function UserMenu({ onOpenSecuritySettings, onOpenIdentitySettings }: Use
   const role = activeMembership?.role ?? authContext?.role ?? 'admin';
 
   return (
-    <Popover open={open} onOpenChange={setOpen} position="bottom-end">
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2" title="Session menu">
-          <Lock className="h-4 w-4 text-emerald-500" />
-          <span className="text-xs text-muted-foreground hidden sm:inline">{displayName}</span>
-          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+    <Popover
+      opened={open}
+      onChange={setOpen}
+      position="bottom-end"
+      offset={4}
+      radius="md"
+      shadow="md"
+      withinPortal
+    >
+      <Popover.Target>
+        <Button
+          variant="subtle"
+          color="gray"
+          size="xs"
+          leftSection={<Lock className="h-4 w-4 text-emerald-500" aria-hidden="true" />}
+          rightSection={
+            <ChevronDown className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+          }
+          title="Session menu"
+          onClick={() => setOpen((current) => !current)}
+        >
+          <Text span size="xs" c="dimmed" className="hidden sm:inline">
+            {displayName}
+          </Text>
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-0">
-        <div className="p-3 border-b border-border">
-          <div className="flex items-start gap-2">
-            <div className="mt-0.5 rounded-full bg-primary/10 p-1.5 text-primary">
+      </Popover.Target>
+      <Popover.Dropdown className="w-72 bg-popover p-0 text-popover-foreground">
+        <Box className="border-b border-border p-3">
+          <Group align="flex-start" gap="xs" wrap="nowrap">
+            <Box className="mt-0.5 rounded-full bg-primary/10 p-1.5 text-primary">
               <User className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{displayName}</div>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <Badge variant="secondary" className="capitalize">
+            </Box>
+            <Box className="min-w-0 flex-1">
+              <Text size="sm" fw={500} truncate>
+                {displayName}
+              </Text>
+              <Group mt={4} gap={6} wrap="wrap">
+                <Badge variant="light" color="gray" size="xs" className="capitalize">
                   {role}
                 </Badge>
                 {authContext?.authMethod && (
-                  <Badge variant="outline" className="capitalize">
+                  <Badge variant="outline" color="gray" size="xs" className="capitalize">
                     {authContext.authMethod}
                   </Badge>
                 )}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+              </Group>
+            </Box>
+          </Group>
+          <Group gap="xs" mt="sm" wrap="nowrap" className="text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
             {formatExpiry(status.sessionExpiry)}
-          </div>
+          </Group>
           {activeWorkspace && (
-            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            <Group gap="xs" mt={4} wrap="nowrap" className="text-xs text-muted-foreground">
               <Building2 className="h-3 w-3" />
-              <span className="truncate">{activeWorkspace.name}</span>
-            </div>
+              <Text span size="xs" c="dimmed" truncate>
+                {activeWorkspace.name}
+              </Text>
+            </Group>
           )}
           {authContext?.tokenName && (
-            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            <Group gap="xs" mt={4} wrap="nowrap" className="text-xs text-muted-foreground">
               <KeyRound className="h-3 w-3" />
-              <span className="truncate">{authContext.tokenName}</span>
-            </div>
+              <Text span size="xs" c="dimmed" truncate>
+                {authContext.tokenName}
+              </Text>
+            </Group>
           )}
-        </div>
+        </Box>
 
-        <div className="p-1">
-          <button
+        <Stack gap={2} p={4}>
+          <UnstyledButton
             onClick={handleIdentityClick}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
           >
@@ -138,27 +170,27 @@ export function UserMenu({ onOpenSecuritySettings, onOpenIdentitySettings }: Use
             {!canManageMembers && (
               <span className="ml-auto text-xs text-muted-foreground">View</span>
             )}
-          </button>
+          </UnstyledButton>
 
-          <button
+          <UnstyledButton
             onClick={handleSecurityClick}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
           >
             <Shield className="h-4 w-4" />
             Security Settings
-          </button>
+          </UnstyledButton>
 
-          <button
+          <UnstyledButton
             onClick={handleLogout}
             disabled={isLoggingOut}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-destructive/10 text-destructive transition-colors"
           >
             <LogOut className="h-4 w-4" />
             {isLoggingOut ? 'Logging out...' : 'Log Out'}
-            <span className="ml-auto text-xs text-muted-foreground">⌘⇧L</span>
-          </button>
-        </div>
-      </PopoverContent>
+            <Kbd className="ml-auto text-[10px] text-muted-foreground">⌘⇧L</Kbd>
+          </UnstyledButton>
+        </Stack>
+      </Popover.Dropdown>
     </Popover>
   );
 }
