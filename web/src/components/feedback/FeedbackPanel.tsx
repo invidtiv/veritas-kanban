@@ -17,20 +17,17 @@ import type {
   Sentiment,
 } from '@veritas-kanban/shared';
 import { CheckCircle, MessageSquare, Star, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  ActionIcon,
+  Badge,
+  Button,
+  InputLabel,
+  ScrollArea,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
+  Tabs,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useToast } from '@/hooks/useToast';
 import {
   useCreateFeedback,
@@ -55,6 +52,28 @@ const CATEGORY_LABELS: Record<FeedbackCategory, string> = {
   safety: 'Safety',
   ux: 'UX',
 };
+
+const sentimentSelectData = [
+  { value: 'all', label: 'All sentiments' },
+  ...SENTIMENTS.map((sentiment) => ({
+    value: sentiment,
+    label: sentiment.charAt(0).toUpperCase() + sentiment.slice(1),
+  })),
+];
+
+const categorySelectData = [
+  { value: 'all', label: 'All categories' },
+  ...CATEGORIES.map((category) => ({
+    value: category,
+    label: CATEGORY_LABELS[category],
+  })),
+];
+
+const statusSelectData = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'false', label: 'Unresolved' },
+  { value: 'true', label: 'Resolved' },
+];
 
 // ─── Star Rating Input ────────────────────────────────────────────────────────
 
@@ -98,16 +117,14 @@ function StarRating({
 
 function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
   const colors: Record<Sentiment, string> = {
-    positive: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    neutral: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    negative: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    positive: 'green',
+    neutral: 'gray',
+    negative: 'red',
   };
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[sentiment]}`}
-    >
+    <Badge color={colors[sentiment]} variant="light" tt="none">
       {sentiment}
-    </span>
+    </Badge>
   );
 }
 
@@ -162,18 +179,19 @@ function SubmitTab() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="taskId">Task ID *</Label>
-          <Input
+          <TextInput
             id="taskId"
+            label="Task ID"
+            required
             placeholder="task_xxx"
             value={taskId}
             onChange={(e) => setTaskId(e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="agent">Agent (optional)</Label>
-          <Input
+          <TextInput
             id="agent"
+            label="Agent (optional)"
             placeholder="e.g. VERITAS"
             value={agent}
             onChange={(e) => setAgent(e.target.value)}
@@ -182,12 +200,12 @@ function SubmitTab() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Rating *</Label>
+        <InputLabel required>Rating</InputLabel>
         <StarRating value={rating} onChange={setRating} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Categories</Label>
+        <InputLabel>Categories</InputLabel>
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map((cat) => (
             <button
@@ -208,9 +226,9 @@ function SubmitTab() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="comment">Comment</Label>
         <Textarea
           id="comment"
+          label="Comment"
           placeholder="What went well or didn't? Sentiment is detected automatically."
           rows={4}
           value={comment}
@@ -258,74 +276,51 @@ function BrowseTab() {
     <div className="flex flex-col gap-4 p-4">
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <Input
+        <TextInput
           placeholder="Filter by agent"
           className="w-40"
           value={filters.agent ?? ''}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, agent: e.target.value || undefined }))
-          }
+          onChange={(e) => setFilters((f) => ({ ...f, agent: e.target.value || undefined }))}
         />
         <Select
           value={filters.sentiment ?? 'all'}
-          onValueChange={(val) =>
+          onChange={(val) =>
             setFilters((f) => ({
               ...f,
-              sentiment: val === 'all' ? undefined : (val as Sentiment),
+              sentiment: !val || val === 'all' ? undefined : (val as Sentiment),
             }))
           }
-        >
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Sentiment" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All sentiments</SelectItem>
-            {SENTIMENTS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          data={sentimentSelectData}
+          placeholder="Sentiment"
+          className="w-36"
+          allowDeselect={false}
+        />
         <Select
           value={filters.category ?? 'all'}
-          onValueChange={(val) =>
+          onChange={(val) =>
             setFilters((f) => ({
               ...f,
-              category: val === 'all' ? undefined : (val as FeedbackCategory),
+              category: !val || val === 'all' ? undefined : (val as FeedbackCategory),
             }))
           }
-        >
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {CATEGORY_LABELS[c]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          data={categorySelectData}
+          placeholder="Category"
+          className="w-36"
+          allowDeselect={false}
+        />
         <Select
           value={filters.resolved !== undefined ? String(filters.resolved) : 'all'}
-          onValueChange={(val) =>
+          onChange={(val) =>
             setFilters((f) => ({
               ...f,
-              resolved: val === 'all' ? undefined : val === 'true',
+              resolved: !val || val === 'all' ? undefined : val === 'true',
             }))
           }
-        >
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="false">Unresolved</SelectItem>
-            <SelectItem value="true">Resolved</SelectItem>
-          </SelectContent>
-        </Select>
+          data={statusSelectData}
+          placeholder="Status"
+          className="w-36"
+          allowDeselect={false}
+        />
       </div>
 
       {isLoading ? (
@@ -367,7 +362,7 @@ function FeedbackCard({
             <StarRating value={item.rating} readOnly />
             <SentimentBadge sentiment={item.sentiment} />
             {item.resolved && (
-              <Badge variant="outline" className="text-green-600">
+              <Badge variant="outline" color="green" tt="none">
                 Resolved
               </Badge>
             )}
@@ -379,13 +374,13 @@ function FeedbackCard({
                 {' '}
                 · Agent: <span className="font-medium">{item.agent}</span>
               </>
-            )}
-            {' '}· {new Date(item.createdAt).toLocaleDateString()}
+            )}{' '}
+            · {new Date(item.createdAt).toLocaleDateString()}
           </p>
           {item.categories.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {item.categories.map((cat) => (
-                <Badge key={cat} variant="secondary" className="text-xs">
+                <Badge key={cat} variant="light" tt="none" className="text-xs">
                   {CATEGORY_LABELS[cat]}
                 </Badge>
               ))}
@@ -397,25 +392,25 @@ function FeedbackCard({
         </div>
         <div className="flex gap-1 shrink-0">
           {!item.resolved && (
-            <Button
-              variant="ghost"
-              size="icon"
+            <ActionIcon
+              variant="subtle"
               className="h-7 w-7 text-green-600 hover:text-green-700"
               title="Mark resolved"
+              aria-label="Mark resolved"
               onClick={() => onResolve(item.id)}
             >
               <CheckCircle className="h-4 w-4" />
-            </Button>
+            </ActionIcon>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
+          <ActionIcon
+            variant="subtle"
             className="h-7 w-7 text-destructive hover:text-destructive"
             title="Delete"
+            aria-label="Delete feedback"
             onClick={() => onDelete(item.id)}
           >
             <Trash2 className="h-4 w-4" />
-          </Button>
+          </ActionIcon>
         </div>
       </div>
     </div>
@@ -484,9 +479,7 @@ function AnalyticsTab() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="w-10 text-right text-muted-foreground">
-                    {pct.toFixed(0)}%
-                  </span>
+                  <span className="w-10 text-right text-muted-foreground">{pct.toFixed(0)}%</span>
                 </div>
               );
             })}
@@ -500,11 +493,7 @@ function AnalyticsTab() {
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={analytics.satisfactionTrends}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11 }}
-                  className="fill-muted-foreground"
-                />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
                 <YAxis domain={[0, 5]} tick={{ fontSize: 11 }} className="fill-muted-foreground" />
                 <Tooltip
                   formatter={(val) => [`${Number(val).toFixed(2)}`, 'Avg Rating']}
@@ -598,26 +587,26 @@ export function FeedbackPanel() {
         <MessageSquare className="h-4 w-4 text-muted-foreground" />
         <h2 className="text-sm font-semibold">User Feedback</h2>
         {unresolved.length > 0 && (
-          <Badge variant="destructive" className="ml-auto text-xs">
+          <Badge color="red" variant="light" tt="none" className="ml-auto text-xs">
             {unresolved.length} unresolved
           </Badge>
         )}
       </div>
       <Tabs defaultValue="submit">
-        <TabsList className="mx-4 mt-3 mb-0">
-          <TabsTrigger value="submit">Submit</TabsTrigger>
-          <TabsTrigger value="browse">Browse</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-        <TabsContent value="submit">
+        <Tabs.List className="mx-4 mt-3 mb-0">
+          <Tabs.Tab value="submit">Submit</Tabs.Tab>
+          <Tabs.Tab value="browse">Browse</Tabs.Tab>
+          <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="submit">
           <SubmitTab />
-        </TabsContent>
-        <TabsContent value="browse">
+        </Tabs.Panel>
+        <Tabs.Panel value="browse">
           <BrowseTab />
-        </TabsContent>
-        <TabsContent value="analytics">
+        </Tabs.Panel>
+        <Tabs.Panel value="analytics">
           <AnalyticsTab />
-        </TabsContent>
+        </Tabs.Panel>
       </Tabs>
     </div>
   );

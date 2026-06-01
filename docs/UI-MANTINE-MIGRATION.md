@@ -399,6 +399,12 @@ Phase 3 progress:
   status history, daily summaries, board/task chat export and clear
   confirmation, squad sender/filter controls, system-message toggling, and the
   floating chat launcher.
+- Governance, policy, scoring, drift, decision, and feedback surfaces now use
+  direct Mantine text input, textarea, select, tabs, scroll area, switch,
+  modal, badge, button, action icon, and skeleton primitives while preserving
+  policy CRUD/evaluation, drift analysis/reset, scoring profile edits,
+  decision assumption validation, and feedback submission/browse/analytics
+  behavior.
 
 ### Phase 4: QA, Cleanup, and Dependency Removal
 

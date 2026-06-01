@@ -17,10 +17,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Badge, Button, Skeleton, TextInput } from '@mantine/core';
 import {
   useAcknowledgeDriftAlert,
   useAnalyzeDrift,
@@ -65,9 +62,9 @@ function formatMetricValue(metric: DriftMetric, value: number) {
 }
 
 function severityTone(severity: DriftSeverity) {
-  if (severity === 'critical') return 'destructive';
-  if (severity === 'warning') return 'secondary';
-  return 'outline';
+  if (severity === 'critical') return 'red';
+  if (severity === 'warning') return 'yellow';
+  return 'gray';
 }
 
 function zScoreColor(value: number) {
@@ -125,7 +122,9 @@ function AlertsTable({
           {alerts.map((alert) => (
             <tr key={alert.id} className="border-b last:border-b-0">
               <td className="px-4 py-3">
-                <Badge variant={severityTone(alert.severity)}>{alert.severity}</Badge>
+                <Badge color={severityTone(alert.severity)} variant="light" tt="none">
+                  {alert.severity}
+                </Badge>
               </td>
               <td className="px-4 py-3 font-medium">{alert.agentId}</td>
               <td className="px-4 py-3">{METRIC_LABELS[alert.metric]}</td>
@@ -255,7 +254,9 @@ function DriftChart({ alerts, baselines }: { alerts: DriftAlert[]; baselines: Dr
           <h3 className="font-semibold">Trend Visualization</h3>
           <p className="text-sm text-muted-foreground">{baselines.length} baselines loaded</p>
         </div>
-        <Badge variant="outline">Z-score bars</Badge>
+        <Badge variant="outline" tt="none">
+          Z-score bars
+        </Badge>
       </div>
       <div className="h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -343,7 +344,7 @@ export function DriftMonitor({ onBack }: DriftMonitorProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack}>
+          <Button variant="subtle" size="sm" onClick={onBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Board
           </Button>
@@ -356,7 +357,7 @@ export function DriftMonitor({ onBack }: DriftMonitorProps) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Input
+          <TextInput
             placeholder="Agent ID"
             value={agentId}
             onChange={(event) => setAgentId(event.target.value)}
@@ -447,7 +448,9 @@ export function DriftMonitor({ onBack }: DriftMonitorProps) {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Alerts</h2>
-          <Badge variant="outline">{sortedAlerts.length} total</Badge>
+          <Badge variant="outline" tt="none">
+            {sortedAlerts.length} total
+          </Badge>
         </div>
         <AlertsTable
           alerts={sortedAlerts}

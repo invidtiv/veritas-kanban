@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, GitBranch, MinusCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Badge, Button, Textarea } from '@mantine/core';
 import { useDecision, useUpdateDecisionAssumption } from '@/hooks/useDecisions';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
@@ -13,9 +11,9 @@ interface DecisionDetailProps {
 }
 
 const assumptionTone = {
-  pending: 'bg-muted text-muted-foreground',
-  validated: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200',
-  invalidated: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
+  pending: 'gray',
+  validated: 'green',
+  invalidated: 'red',
 } as const;
 
 export function DecisionDetail({ decisionId, onBack }: DecisionDetailProps) {
@@ -66,13 +64,17 @@ export function DecisionDetail({ decisionId, onBack }: DecisionDetailProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack}>
+        <Button variant="subtle" size="sm" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Decisions
         </Button>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">{data.decision.agentId}</Badge>
-          <Badge variant="outline">{data.decision.taskId}</Badge>
+          <Badge variant="light" tt="none">
+            {data.decision.agentId}
+          </Badge>
+          <Badge variant="outline" tt="none">
+            {data.decision.taskId}
+          </Badge>
         </div>
       </div>
 
@@ -97,7 +99,7 @@ export function DecisionDetail({ decisionId, onBack }: DecisionDetailProps) {
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{item.outputAction}</span>
-                    {item.id === data.decision.id && <Badge>Selected</Badge>}
+                    {item.id === data.decision.id && <Badge tt="none">Selected</Badge>}
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">{item.inputContext}</p>
                   <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -121,7 +123,12 @@ export function DecisionDetail({ decisionId, onBack }: DecisionDetailProps) {
                 <div key={`${assumption.text}-${index}`} className="rounded-md border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm leading-6">{assumption.text}</p>
-                    <Badge className={cn('shrink-0', assumptionTone[assumption.status])}>
+                    <Badge
+                      color={assumptionTone[assumption.status]}
+                      variant="light"
+                      tt="none"
+                      className="shrink-0"
+                    >
                       {assumption.status}
                     </Badge>
                   </div>

@@ -10,16 +10,7 @@ import {
   YAxis,
 } from 'recharts';
 import type { EvaluationResult, ScoringProfile } from '@veritas-kanban/shared';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge, ScrollArea, Select, TextInput } from '@mantine/core';
 import { useScoringHistory } from '@/hooks/useScoring';
 
 interface ScoreExplorerProps {
@@ -90,38 +81,29 @@ export function ScoreExplorer({ profiles }: ScoreExplorerProps) {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 lg:grid-cols-[220px_220px_1fr]">
-        <Select value={profileId} onValueChange={setProfileId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by profile" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All profiles</SelectItem>
-            {profiles.map((profile) => (
-              <SelectItem key={profile.id} value={profile.id}>
-                {profile.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Select
+          value={profileId}
+          onChange={(value) => setProfileId(value ?? 'all')}
+          data={[
+            { value: 'all', label: 'All profiles' },
+            ...profiles.map((profile) => ({ value: profile.id, label: profile.name })),
+          ]}
+          placeholder="Filter by profile"
+          allowDeselect={false}
+        />
 
         <Select
           value={agent || 'all'}
-          onValueChange={(value) => setAgent(value === 'all' ? '' : value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by agent" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All agents</SelectItem>
-            {availableAgents.map((agentName) => (
-              <SelectItem key={agentName} value={agentName}>
-                {agentName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(value) => setAgent(value === 'all' || !value ? '' : value)}
+          data={[
+            { value: 'all', label: 'All agents' },
+            ...availableAgents.map((agentName) => ({ value: agentName, label: agentName })),
+          ]}
+          placeholder="Filter by agent"
+          allowDeselect={false}
+        />
 
-        <Input
+        <TextInput
           placeholder="Filter by task ID"
           value={taskId}
           onChange={(event) => setTaskId(event.target.value)}
@@ -229,10 +211,16 @@ export function ScoreExplorer({ profiles }: ScoreExplorerProps) {
                 <div key={result.id} className="space-y-3 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="font-medium">{result.profileName}</div>
-                    <Badge variant="secondary">{Math.round(result.compositeScore * 100)}%</Badge>
-                    {result.agent && <Badge variant="outline">{result.agent}</Badge>}
+                    <Badge variant="light" tt="none">
+                      {Math.round(result.compositeScore * 100)}%
+                    </Badge>
+                    {result.agent && (
+                      <Badge variant="outline" tt="none">
+                        {result.agent}
+                      </Badge>
+                    )}
                     {result.taskId && (
-                      <Badge variant="outline" className="font-mono">
+                      <Badge variant="outline" tt="none" className="font-mono">
                         {result.taskId}
                       </Badge>
                     )}

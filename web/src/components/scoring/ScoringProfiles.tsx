@@ -7,19 +7,16 @@ import type {
   ScoringProfile,
 } from '@veritas-kanban/shared';
 import { ArrowLeft, Copy, Plus, Save, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  ActionIcon,
+  Badge,
+  Button,
+  ScrollArea,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  Tabs,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useToast } from '@/hooks/useToast';
 import {
   useCreateScoringProfile,
@@ -76,6 +73,20 @@ const scorerTypeOptions: ScorerType[] = [
   'RegexMatch',
   'NumericRange',
   'CustomExpression',
+];
+
+const scorerTypeSelectData = scorerTypeOptions.map((type) => ({ value: type, label: type }));
+
+const compositeMethodSelectData = [
+  { value: 'weightedAvg', label: 'Weighted average' },
+  { value: 'minimum', label: 'Minimum' },
+  { value: 'geometricMean', label: 'Geometric mean' },
+];
+
+const targetSelectData = [
+  { value: 'output', label: 'Output' },
+  { value: 'action', label: 'Action' },
+  { value: 'combined', label: 'Combined' },
 ];
 
 export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
@@ -228,9 +239,9 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
       <div className="border-b bg-card px-6 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} aria-label="Back to board">
+            <ActionIcon variant="subtle" onClick={onBack} aria-label="Back to board">
               <ArrowLeft className="h-4 w-4" />
-            </Button>
+            </ActionIcon>
             <div>
               <h1 className="text-2xl font-bold">Agent Output Scoring</h1>
               <p className="text-sm text-muted-foreground">
@@ -255,13 +266,17 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
       </div>
 
       <div className="flex-1 overflow-hidden px-6 pb-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col gap-4">
-          <TabsList className="w-fit">
-            <TabsTrigger value="profiles">Profiles</TabsTrigger>
-            <TabsTrigger value="explorer">Score Explorer</TabsTrigger>
-          </TabsList>
+        <Tabs
+          value={activeTab}
+          onChange={(value) => setActiveTab(value ?? 'profiles')}
+          className="flex h-full flex-col gap-4"
+        >
+          <Tabs.List className="w-fit">
+            <Tabs.Tab value="profiles">Profiles</Tabs.Tab>
+            <Tabs.Tab value="explorer">Score Explorer</Tabs.Tab>
+          </Tabs.List>
 
-          <TabsContent value="profiles" className="m-0 flex min-h-0 flex-1 gap-4">
+          <Tabs.Panel value="profiles" className="m-0 flex min-h-0 flex-1 gap-4">
             <div className="flex w-[340px] min-w-[320px] flex-col rounded-lg border bg-card">
               <div className="border-b px-4 py-3">
                 <div className="font-semibold">Scoring Profiles</div>
@@ -285,8 +300,14 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                         <div className="flex items-center justify-between gap-2">
                           <div className="font-medium">{profile.name}</div>
                           <div className="flex gap-2">
-                            {profile.builtIn && <Badge variant="secondary">Built-in</Badge>}
-                            <Badge variant="outline">{profile.compositeMethod}</Badge>
+                            {profile.builtIn && (
+                              <Badge variant="light" tt="none">
+                                Built-in
+                              </Badge>
+                            )}
+                            <Badge variant="outline" tt="none">
+                              {profile.compositeMethod}
+                            </Badge>
                           </div>
                         </div>
                         {profile.description && (
@@ -341,7 +362,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                   <div className="grid gap-4 lg:grid-cols-2">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Name</label>
-                      <Input
+                      <TextInput
                         value={draft.name}
                         onChange={(event) =>
                           setDraft((current) => ({ ...current, name: event.target.value }))
@@ -353,23 +374,18 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                       <label className="text-sm font-medium">Composite Method</label>
                       <Select
                         value={draft.compositeMethod}
-                        onValueChange={(value) =>
+                        onChange={(value) =>
                           setDraft((current) => ({
                             ...current,
-                            compositeMethod: value as ProfileDraft['compositeMethod'],
+                            compositeMethod:
+                              (value as ProfileDraft['compositeMethod'] | null) ??
+                              current.compositeMethod,
                           }))
                         }
+                        data={compositeMethodSelectData}
                         disabled={selectedProfile?.builtIn}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="weightedAvg">Weighted average</SelectItem>
-                          <SelectItem value="minimum">Minimum</SelectItem>
-                          <SelectItem value="geometricMean">Geometric mean</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        allowDeselect={false}
+                      />
                     </div>
                   </div>
 
@@ -413,7 +429,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div className="grid flex-1 gap-3 lg:grid-cols-[1fr_180px_120px]">
-                                <Input
+                                <TextInput
                                   value={scorer.name}
                                   onChange={(event) =>
                                     updateScorer(index, (current) => ({
@@ -425,28 +441,20 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                 />
                                 <Select
                                   value={scorer.type}
-                                  onValueChange={(value) =>
+                                  onChange={(value) => {
+                                    if (!value) return;
                                     updateScorer(index, () => ({
                                       ...createScorer(value as ScorerType),
                                       id: scorer.id,
                                       name: scorer.name,
                                       weight: scorer.weight,
-                                    }))
-                                  }
+                                    }));
+                                  }}
+                                  data={scorerTypeSelectData}
                                   disabled={selectedProfile?.builtIn}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {scorerTypeOptions.map((type) => (
-                                      <SelectItem key={type} value={type}>
-                                        {type}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <Input
+                                  allowDeselect={false}
+                                />
+                                <TextInput
                                   type="number"
                                   min="0"
                                   step="0.1"
@@ -460,9 +468,8 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                   disabled={selectedProfile?.builtIn}
                                 />
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
+                              <ActionIcon
+                                variant="subtle"
                                 onClick={() =>
                                   setDraft((current) => ({
                                     ...current,
@@ -472,9 +479,10 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                   }))
                                 }
                                 disabled={selectedProfile?.builtIn || draft.scorers.length === 1}
+                                aria-label="Remove scorer"
                               >
                                 <Trash2 className="h-4 w-4" />
-                              </Button>
+                              </ActionIcon>
                             </div>
 
                             <div className="grid gap-3 lg:grid-cols-2">
@@ -484,23 +492,16 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                 </label>
                                 <Select
                                   value={scorer.target || 'output'}
-                                  onValueChange={(value) =>
+                                  onChange={(value) =>
                                     updateScorer(index, (current) => ({
                                       ...current,
-                                      target: value as Scorer['target'],
+                                      target: (value as Scorer['target'] | null) ?? current.target,
                                     }))
                                   }
+                                  data={targetSelectData}
                                   disabled={selectedProfile?.builtIn}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="output">Output</SelectItem>
-                                    <SelectItem value="action">Action</SelectItem>
-                                    <SelectItem value="combined">Combined</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  allowDeselect={false}
+                                />
                               </div>
 
                               {'keywords' in scorer && (
@@ -508,7 +509,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                   <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                     Keywords
                                   </label>
-                                  <Input
+                                  <TextInput
                                     value={scorer.keywords.join(', ')}
                                     onChange={(event) =>
                                       updateScorer(index, (current) => ({
@@ -530,7 +531,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                     <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                       Regex Pattern
                                     </label>
-                                    <Input
+                                    <TextInput
                                       value={scorer.pattern}
                                       onChange={(event) =>
                                         updateScorer(index, (current) => ({
@@ -545,7 +546,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                     <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                       Flags
                                     </label>
-                                    <Input
+                                    <TextInput
                                       value={scorer.flags || ''}
                                       onChange={(event) =>
                                         updateScorer(index, (current) => ({
@@ -565,7 +566,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                     <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                       Value Path
                                     </label>
-                                    <Input
+                                    <TextInput
                                       value={scorer.valuePath}
                                       onChange={(event) =>
                                         updateScorer(index, (current) => ({
@@ -577,7 +578,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                     />
                                   </div>
                                   <div className="grid gap-3 sm:grid-cols-2">
-                                    <Input
+                                    <TextInput
                                       type="number"
                                       placeholder="Min"
                                       value={scorer.min ?? ''}
@@ -592,7 +593,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                                       }
                                       disabled={selectedProfile?.builtIn}
                                     />
-                                    <Input
+                                    <TextInput
                                       type="number"
                                       placeholder="Max"
                                       value={scorer.max ?? ''}
@@ -648,23 +649,18 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                   <div className="space-y-3">
                     <Select
                       value={evaluationForm.profileId}
-                      onValueChange={(value) =>
-                        setEvaluationForm((current) => ({ ...current, profileId: value }))
+                      onChange={(value) =>
+                        setEvaluationForm((current) => ({
+                          ...current,
+                          profileId: value ?? current.profileId,
+                        }))
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select profile" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {profiles.map((profile) => (
-                          <SelectItem key={profile.id} value={profile.id}>
-                            {profile.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      data={profiles.map((profile) => ({ value: profile.id, label: profile.name }))}
+                      placeholder="Select profile"
+                      allowDeselect={false}
+                    />
 
-                    <Input
+                    <TextInput
                       placeholder="Agent (optional)"
                       value={evaluationForm.agent || ''}
                       onChange={(event) =>
@@ -672,7 +668,7 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                       }
                     />
 
-                    <Input
+                    <TextInput
                       placeholder="Task ID (optional)"
                       value={evaluationForm.taskId || ''}
                       onChange={(event) =>
@@ -707,7 +703,9 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                     <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="font-medium">Latest Evaluation</div>
-                        <Badge>{Math.round(runEvaluation.data.compositeScore * 100)}%</Badge>
+                        <Badge tt="none">
+                          {Math.round(runEvaluation.data.compositeScore * 100)}%
+                        </Badge>
                       </div>
                       {runEvaluation.data.scores.map((score) => (
                         <div key={score.scorerId} className="space-y-1">
@@ -731,11 +729,11 @@ export function ScoringProfiles({ onBack }: ScoringProfilesProps) {
                 </div>
               </div>
             </div>
-          </TabsContent>
+          </Tabs.Panel>
 
-          <TabsContent value="explorer" className="m-0 min-h-0 flex-1 overflow-auto">
+          <Tabs.Panel value="explorer" className="m-0 min-h-0 flex-1 overflow-auto">
             <ScoreExplorer profiles={profiles} />
-          </TabsContent>
+          </Tabs.Panel>
         </Tabs>
       </div>
     </div>
