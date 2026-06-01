@@ -1,5 +1,4 @@
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Button, Group, Paper, Stack, Text } from '@mantine/core';
 import { useConfig } from '@/hooks/useConfig';
 import { GitBranch, Loader2, AlertCircle } from 'lucide-react';
 import type { Task, TaskGit } from '@veritas-kanban/shared';
@@ -27,61 +26,69 @@ export function GitSection({ task, onGitChange }: GitSectionProps) {
 
   if (configLoading) {
     return (
-      <div className="space-y-2">
-        <Label className="text-muted-foreground flex items-center gap-2">
+      <Stack gap="xs">
+        <Group gap="xs">
           <GitBranch className="h-4 w-4" />
-          Git Integration
-        </Label>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Text size="sm" c="dimmed" fw={500}>
+            Git Integration
+          </Text>
+        </Group>
+        <Group gap="xs">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Loading...
-        </div>
-      </div>
+          <Text size="sm" c="dimmed">
+            Loading...
+          </Text>
+        </Group>
+      </Stack>
     );
   }
 
   if (!config?.repos.length) {
     return (
-      <div className="space-y-2">
-        <Label className="text-muted-foreground flex items-center gap-2">
+      <Stack gap="xs">
+        <Group gap="xs">
           <GitBranch className="h-4 w-4" />
-          Git Integration
-        </Label>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 rounded-md border border-dashed">
-          <AlertCircle className="h-4 w-4" />
-          No repositories configured. Add one in Settings.
-        </div>
-      </div>
+          <Text size="sm" c="dimmed" fw={500}>
+            Git Integration
+          </Text>
+        </Group>
+        <Paper className="border-dashed p-3" radius="md" withBorder>
+          <Group gap="xs">
+            <AlertCircle className="h-4 w-4" />
+            <Text size="sm" c="dimmed">
+              No repositories configured. Add one in Settings.
+            </Text>
+          </Group>
+        </Paper>
+      </Stack>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Label className="text-muted-foreground flex items-center gap-2">
+    <Stack gap="sm">
+      <Group justify="space-between" align="center">
+        <Group gap="xs">
           <GitBranch className="h-4 w-4" />
-          Git Integration
-        </Label>
+          <Text size="sm" c="dimmed" fw={500}>
+            Git Integration
+          </Text>
+        </Group>
         {selectedRepo && !isLocked && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 text-xs"
-            onClick={handleClearGit}
-            disabled={!canEditTaskGit}
-          >
+          <Button variant="subtle" size="xs" onClick={handleClearGit} disabled={!canEditTaskGit}>
             Clear
           </Button>
         )}
-      </div>
+      </Group>
 
       {!canEditTaskGit && (
-        <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-          Task write permission is required to change Git settings.
-        </div>
+        <Paper className="border-dashed p-3" radius="md" withBorder>
+          <Text size="sm" c="dimmed">
+            Task write permission is required to change Git settings.
+          </Text>
+        </Paper>
       )}
       <GitSelectionForm task={task} onGitChange={onGitChange} disabled={!canEditTaskGit} />
       <WorktreeStatus task={task} />
-    </div>
+    </Stack>
   );
 }

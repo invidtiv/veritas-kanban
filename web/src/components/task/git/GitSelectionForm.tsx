@@ -1,13 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Group, Paper, Select, Stack, Text, TextInput } from '@mantine/core';
 import { useConfig, useRepoBranches } from '@/hooks/useConfig';
 import { Loader2, FolderGit2 } from 'lucide-react';
 import type { Task, TaskGit } from '@veritas-kanban/shared';
@@ -103,69 +95,85 @@ export function GitSelectionForm({ task, onGitChange, disabled = false }: GitSel
   const isLocked = !!task.git?.worktreePath || disabled;
 
   return (
-    <div className="grid gap-3 p-3 rounded-md border bg-muted/30">
-      {/* Repository Selection */}
-      <div className="grid gap-1.5">
-        <Label className="text-xs">Repository</Label>
-        <Select value={selectedRepo} onValueChange={handleRepoChange} disabled={isLocked}>
-          <SelectTrigger className={cn(isLocked && 'opacity-60')}>
-            <SelectValue placeholder="Select repository..." />
-          </SelectTrigger>
-          <SelectContent>
-            {config?.repos.map((repo) => (
-              <SelectItem key={repo.name} value={repo.name}>
-                <div className="flex items-center gap-2">
-                  <FolderGit2 className="h-3 w-3" />
-                  {repo.name}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {selectedRepo && (
-        <>
-          {/* Base Branch */}
-          <div className="grid gap-1.5">
-            <Label className="text-xs">Base Branch</Label>
-            {branchesLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground h-9 px-3">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Loading branches...
-              </div>
-            ) : (
-              <Select value={baseBranch} onValueChange={handleBaseBranchChange} disabled={isLocked}>
-                <SelectTrigger className={cn(isLocked && 'opacity-60')}>
-                  <SelectValue placeholder="Select base branch..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {branches?.map((branch) => (
-                    <SelectItem key={branch} value={branch}>
-                      {branch}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+    <Paper className="bg-muted/30 p-3" radius="md" withBorder>
+      <Stack gap="sm">
+        {/* Repository Selection */}
+        <Stack gap={6}>
+          <Text size="xs" fw={500}>
+            Repository
+          </Text>
+          <Select
+            aria-label="Repository"
+            allowDeselect={false}
+            data={config?.repos.map((repo) => ({ value: repo.name, label: repo.name })) ?? []}
+            value={selectedRepo || null}
+            onChange={(value) => {
+              if (value) handleRepoChange(value);
+            }}
+            disabled={isLocked}
+            className={cn(isLocked && 'opacity-60')}
+            placeholder="Select repository..."
+            renderOption={({ option }) => (
+              <Group gap="xs">
+                <FolderGit2 className="h-3 w-3" />
+                <Text size="sm">{option.label}</Text>
+              </Group>
             )}
-          </div>
+          />
+        </Stack>
 
-          {/* Feature Branch */}
-          <div className="grid gap-1.5">
-            <Label className="text-xs">Feature Branch</Label>
-            <Input
-              value={featureBranch}
-              onChange={(e) => handleFeatureBranchChange(e.target.value)}
-              placeholder="feature/my-feature"
-              disabled={isLocked}
-              className={cn(isLocked && 'opacity-60')}
-            />
-            {autoGenerateBranch && featureBranch && !isLocked && (
-              <p className="text-xs text-muted-foreground">Auto-generated from task title</p>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+        {selectedRepo && (
+          <>
+            {/* Base Branch */}
+            <Stack gap={6}>
+              <Text size="xs" fw={500}>
+                Base Branch
+              </Text>
+              {branchesLoading ? (
+                <Group gap="xs" className="h-9 px-3">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <Text size="sm" c="dimmed">
+                    Loading branches...
+                  </Text>
+                </Group>
+              ) : (
+                <Select
+                  aria-label="Base Branch"
+                  allowDeselect={false}
+                  data={branches?.map((branch) => ({ value: branch, label: branch })) ?? []}
+                  value={baseBranch || null}
+                  onChange={(value) => {
+                    if (value) handleBaseBranchChange(value);
+                  }}
+                  disabled={isLocked}
+                  className={cn(isLocked && 'opacity-60')}
+                  placeholder="Select base branch..."
+                />
+              )}
+            </Stack>
+
+            {/* Feature Branch */}
+            <Stack gap={6}>
+              <Text size="xs" fw={500}>
+                Feature Branch
+              </Text>
+              <TextInput
+                aria-label="Feature Branch"
+                value={featureBranch}
+                onChange={(e) => handleFeatureBranchChange(e.currentTarget.value)}
+                placeholder="feature/my-feature"
+                disabled={isLocked}
+                className={cn(isLocked && 'opacity-60')}
+              />
+              {autoGenerateBranch && featureBranch && !isLocked && (
+                <Text size="xs" c="dimmed">
+                  Auto-generated from task title
+                </Text>
+              )}
+            </Stack>
+          </>
+        )}
+      </Stack>
+    </Paper>
   );
 }

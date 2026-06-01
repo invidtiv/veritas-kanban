@@ -1,16 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Alert, Badge, Button, Code, Group, Modal, Stack, Text } from '@mantine/core';
 import {
   useWorktreeStatus,
   useCreateWorktree,
@@ -37,7 +26,6 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { Task } from '@veritas-kanban/shared';
-import { cn } from '@/lib/utils';
 
 interface WorktreeStatusProps {
   task: Task;
@@ -58,6 +46,8 @@ export function WorktreeStatus({ task }: WorktreeStatusProps) {
   // Conflict resolver state
   const [conflictResolverOpen, setConflictResolverOpen] = useState(false);
   const [prDialogOpen, setPrDialogOpen] = useState(false);
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleOpenInVSCode = () => {
     if (task.git?.worktreePath) {
@@ -78,89 +68,91 @@ export function WorktreeStatus({ task }: WorktreeStatusProps) {
   // No worktree yet - show create button
   if (!hasWorktree) {
     return (
-      <div className="mt-3 pt-3 border-t">
+      <Stack gap="xs" className="mt-3 border-t pt-3">
         <Button
           variant="outline"
-          className="w-full"
+          fullWidth
           onClick={() => createWorktree.mutate(task.id)}
           disabled={createWorktree.isPending}
+          leftSection={
+            createWorktree.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )
+          }
         >
-          {createWorktree.isPending ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Play className="h-4 w-4 mr-2" />
-          )}
           Create Worktree
         </Button>
         {createWorktree.error && (
-          <p className="text-xs text-red-500 mt-2">{(createWorktree.error as Error).message}</p>
+          <Text size="xs" c="red">
+            {(createWorktree.error as Error).message}
+          </Text>
         )}
-      </div>
+      </Stack>
     );
   }
 
   // Loading worktree status
   if (isLoading) {
     return (
-      <div className="mt-3 pt-3 border-t">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
+      <Group gap="xs" className="mt-3 border-t pt-3">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <Text size="sm" c="dimmed">
           Loading worktree status...
-        </div>
-      </div>
+        </Text>
+      </Group>
     );
   }
 
   // Error loading status
   if (error) {
     return (
-      <div className="mt-3 pt-3 border-t">
-        <div className="flex items-center gap-2 text-sm text-red-500">
-          <AlertCircle className="h-4 w-4" />
+      <Group gap="xs" className="mt-3 border-t pt-3">
+        <AlertCircle className="h-4 w-4" />
+        <Text size="sm" c="red">
           {(error as Error).message}
-        </div>
-      </div>
+        </Text>
+      </Group>
     );
   }
 
   // Show worktree status
   return (
-    <div className="mt-3 pt-3 border-t space-y-3">
+    <Stack gap="sm" className="mt-3 border-t pt-3">
       {/* Conflict warning banner */}
       {conflictStatus?.hasConflicts && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                {conflictStatus.conflictingFiles.length} conflict
-                {conflictStatus.conflictingFiles.length !== 1 ? 's' : ''} detected
-              </p>
-              <p className="text-xs text-amber-600 dark:text-amber-500">
-                {conflictStatus.rebaseInProgress ? 'Rebase' : 'Merge'} requires manual resolution
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setConflictResolverOpen(true)}
-            className="border-amber-500/30 hover:bg-amber-500/10"
-          >
-            <AlertTriangle className="h-4 w-4 mr-1" />
-            Resolve Conflicts
-          </Button>
-        </div>
+        <Alert
+          color="yellow"
+          icon={<AlertTriangle className="h-5 w-5" />}
+          title={`${conflictStatus.conflictingFiles.length} conflict${
+            conflictStatus.conflictingFiles.length !== 1 ? 's' : ''
+          } detected`}
+        >
+          <Group justify="space-between" align="center" gap="sm">
+            <Text size="xs" c="yellow.7">
+              {conflictStatus.rebaseInProgress ? 'Rebase' : 'Merge'} requires manual resolution
+            </Text>
+            <Button
+              size="xs"
+              variant="outline"
+              color="yellow"
+              onClick={() => setConflictResolverOpen(true)}
+              leftSection={<AlertTriangle className="h-4 w-4" />}
+            >
+              Resolve Conflicts
+            </Button>
+          </Group>
+        </Alert>
       )}
 
       {/* Status indicators */}
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2">
+      <Group justify="space-between" align="center">
+        <Group gap="xs">
           <span
-            className={cn(
-              'h-2 w-2 rounded-full',
+            className={`h-2 w-2 rounded-full ${
               conflictStatus?.hasConflicts ? 'bg-amber-500' : 'bg-green-500'
-            )}
+            }`}
           >
             <span className="sr-only">
               {conflictStatus?.hasConflicts
@@ -168,55 +160,68 @@ export function WorktreeStatus({ task }: WorktreeStatusProps) {
                 : 'Status: active and healthy'}
             </span>
           </span>
-          <span className="text-muted-foreground">
+          <Text size="sm" c="dimmed">
             {conflictStatus?.hasConflicts ? 'Conflicts detected' : 'Worktree active'}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          </Text>
+        </Group>
+        <Group gap="sm">
           {status && (
             <>
               {status.aheadBehind.ahead > 0 && (
-                <span className="flex items-center gap-1">
-                  <ArrowUp className="h-3 w-3" />
+                <Badge variant="light" color="blue" leftSection={<ArrowUp className="h-3 w-3" />}>
                   {status.aheadBehind.ahead} ahead
-                </span>
+                </Badge>
               )}
               {status.aheadBehind.behind > 0 && (
-                <span className="flex items-center gap-1 text-amber-500">
-                  <ArrowDown className="h-3 w-3" />
+                <Badge
+                  variant="light"
+                  color="yellow"
+                  leftSection={<ArrowDown className="h-3 w-3" />}
+                >
                   {status.aheadBehind.behind} behind
-                </span>
+                </Badge>
               )}
               {status.hasChanges && (
-                <span className="flex items-center gap-1">
-                  <FileCode className="h-3 w-3" />
+                <Badge variant="light" color="gray" leftSection={<FileCode className="h-3 w-3" />}>
                   {status.changedFiles} changed
-                </span>
+                </Badge>
               )}
             </>
           )}
-        </div>
-      </div>
+        </Group>
+      </Group>
 
       {/* Action buttons */}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={handleOpenInVSCode}>
-          <ExternalLink className="h-3 w-3 mr-1" />
+      <Group gap="xs">
+        <Button
+          variant="outline"
+          size="xs"
+          onClick={handleOpenInVSCode}
+          leftSection={<ExternalLink className="h-3 w-3" />}
+        >
           Open in VS Code
         </Button>
 
         {/* PR Button - show View PR if exists, Create PR if not */}
         {hasPR ? (
-          <Button variant="outline" size="sm" onClick={handleOpenPR}>
-            <GitPullRequest className="h-3 w-3 mr-1" />
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={handleOpenPR}
+            leftSection={<GitPullRequest className="h-3 w-3" />}
+          >
             View PR #{task.git?.prNumber}
           </Button>
         ) : (
           status &&
           status.aheadBehind.ahead > 0 &&
           ghStatus?.authenticated && (
-            <Button variant="outline" size="sm" onClick={() => setPrDialogOpen(true)}>
-              <GitPullRequest className="h-3 w-3 mr-1" />
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => setPrDialogOpen(true)}
+              leftSection={<GitPullRequest className="h-3 w-3" />}
+            >
               Create PR
             </Button>
           )
@@ -225,86 +230,47 @@ export function WorktreeStatus({ task }: WorktreeStatusProps) {
         {status && status.aheadBehind.behind > 0 && (
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             onClick={() => rebaseWorktree.mutate(task.id)}
             disabled={rebaseWorktree.isPending}
+            leftSection={
+              rebaseWorktree.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )
+            }
           >
-            {rebaseWorktree.isPending ? (
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3 w-3 mr-1" />
-            )}
             Rebase
           </Button>
         )}
 
         {status && status.aheadBehind.ahead > 0 && !status.hasChanges && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="default" size="sm">
-                <GitMerge className="h-3 w-3 mr-1" />
-                Merge
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Merge to {task.git?.baseBranch}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will merge {task.git?.branch} into {task.git?.baseBranch}, push to remote,
-                  delete the worktree, and mark the task as Done.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => mergeWorktree.mutate(task.id)}
-                  disabled={mergeWorktree.isPending}
-                >
-                  {mergeWorktree.isPending ? 'Merging...' : 'Merge & Complete'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            color="green"
+            size="xs"
+            onClick={() => setMergeDialogOpen(true)}
+            leftSection={<GitMerge className="h-3 w-3" />}
+          >
+            Merge
+          </Button>
         )}
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
-              <Trash2 className="h-3 w-3 mr-1" />
-              Delete Worktree
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete worktree?</AlertDialogTitle>
-              <AlertDialogDescription>
-                {status?.hasChanges
-                  ? 'Warning: This worktree has uncommitted changes that will be lost.'
-                  : 'This will remove the worktree but keep the branch.'}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() =>
-                  deleteWorktree.mutate({
-                    taskId: task.id,
-                    force: status?.hasChanges,
-                  })
-                }
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+        <Button
+          variant="subtle"
+          color="gray"
+          size="xs"
+          onClick={() => setDeleteDialogOpen(true)}
+          leftSection={<Trash2 className="h-3 w-3" />}
+        >
+          Delete Worktree
+        </Button>
+      </Group>
 
       {/* Worktree path */}
-      <div className="text-xs text-muted-foreground font-mono truncate">
+      <Code className="truncate" color="dark">
         {task.git.worktreePath}
-      </div>
+      </Code>
 
       {/* Conflict Resolver */}
       <ConflictResolver
@@ -315,6 +281,67 @@ export function WorktreeStatus({ task }: WorktreeStatusProps) {
 
       {/* PR Dialog */}
       <PRDialog task={task} open={prDialogOpen} onOpenChange={setPrDialogOpen} />
-    </div>
+
+      <Modal
+        opened={mergeDialogOpen}
+        onClose={() => setMergeDialogOpen(false)}
+        title={`Merge to ${task.git?.baseBranch}?`}
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            This will merge {task.git?.branch} into {task.git?.baseBranch}, push to remote, delete
+            the worktree, and mark the task as Done.
+          </Text>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="default" onClick={() => setMergeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              color="green"
+              onClick={() => {
+                mergeWorktree.mutate(task.id);
+                setMergeDialogOpen(false);
+              }}
+              disabled={mergeWorktree.isPending}
+            >
+              {mergeWorktree.isPending ? 'Merging...' : 'Merge & Complete'}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        title="Delete worktree?"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            {status?.hasChanges
+              ? 'Warning: This worktree has uncommitted changes that will be lost.'
+              : 'This will remove the worktree but keep the branch.'}
+          </Text>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="default" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                deleteWorktree.mutate({
+                  taskId: task.id,
+                  force: status?.hasChanges,
+                });
+                setDeleteDialogOpen(false);
+              }}
+            >
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Stack>
   );
 }
