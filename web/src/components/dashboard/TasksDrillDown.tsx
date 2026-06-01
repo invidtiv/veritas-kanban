@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
+import { Badge, Group, Paper, Skeleton, Stack, Text } from '@mantine/core';
 import { useTasks } from '@/hooks/useTasks';
 import { useProjects } from '@/hooks/useProjects';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, Play, Ban, ListTodo } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TaskStatus, Task } from '@veritas-kanban/shared';
@@ -18,32 +17,38 @@ const statusConfig: Record<
   {
     icon: React.ReactNode;
     color: string;
+    iconClassName: string;
     label: string;
   }
 > = {
   todo: {
     icon: <ListTodo className="h-4 w-4" />,
-    color: 'text-muted-foreground',
+    color: 'gray',
+    iconClassName: 'text-muted-foreground',
     label: 'To Do',
   },
   'in-progress': {
     icon: <Play className="h-4 w-4" />,
-    color: 'text-blue-500',
+    color: 'blue',
+    iconClassName: 'text-blue-500',
     label: 'In Progress',
   },
   blocked: {
     icon: <Ban className="h-4 w-4" />,
-    color: 'text-red-500',
+    color: 'red',
+    iconClassName: 'text-red-500',
     label: 'Blocked',
   },
   done: {
     icon: <CheckCircle className="h-4 w-4" />,
-    color: 'text-green-500',
+    color: 'green',
+    iconClassName: 'text-green-500',
     label: 'Done',
   },
   cancelled: {
     icon: <Ban className="h-4 w-4" />,
-    color: 'text-gray-400',
+    color: 'gray',
+    iconClassName: 'text-gray-400',
     label: 'Cancelled',
   },
 };
@@ -92,37 +97,34 @@ export function TasksDrillDown({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <Stack gap="md">
         {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
+          <Skeleton key={i} h={64} radius="md" />
         ))}
-      </div>
+      </Stack>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <Stack gap="md">
       {/* Summary Stats */}
-      <div className="flex gap-2 flex-wrap">
+      <Group gap="xs" wrap="wrap">
         {Object.entries(statusCounts).map(([status, count]) => {
           const config = statusConfig[status as TaskStatus];
           return (
-            <Badge
-              key={status}
-              variant="secondary"
-              className={cn('flex items-center gap-1', config.color)}
-            >
-              {config.icon}
+            <Badge key={status} variant="light" color={config.color} leftSection={config.icon}>
               {config.label}: {count}
             </Badge>
           );
         })}
-      </div>
+      </Group>
 
       {/* Task List */}
-      <div className="space-y-2">
+      <Stack gap="xs">
         {filteredTasks.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">No tasks found</div>
+          <Text ta="center" c="dimmed" py="xl">
+            No tasks found
+          </Text>
         ) : (
           filteredTasks.map((task) => (
             <TaskRow
@@ -133,8 +135,8 @@ export function TasksDrillDown({
             />
           ))
         )}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -153,31 +155,36 @@ function TaskRow({
     : null;
 
   return (
-    <button
+    <Paper
+      component="button"
+      type="button"
+      withBorder
+      radius="md"
+      p="sm"
       onClick={onClick}
       className={cn(
-        'w-full text-left rounded-lg border p-3',
+        'w-full text-left',
         'hover:bg-muted/50 transition-colors',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset'
       )}
     >
-      <div className="flex items-start gap-3">
-        <div className={cn('mt-0.5', config.color)}>{config.icon}</div>
+      <Group align="flex-start" gap="sm" wrap="nowrap">
+        <div className={cn('mt-0.5', config.iconClassName)}>{config.icon}</div>
         <div className="flex-1 min-w-0">
           <div className="font-medium truncate">{task.title}</div>
-          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+          <Group gap="xs" mt={4} className="text-xs text-muted-foreground" wrap="wrap">
             {projectLabel && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" color="gray" size="xs">
                 {projectLabel}
               </Badge>
             )}
             <span>{new Date(task.updated).toLocaleDateString()}</span>
-          </div>
+          </Group>
         </div>
-        <Badge variant="secondary" className={cn('text-xs', config.color)}>
+        <Badge variant="light" color={config.color} size="xs">
           {config.label}
         </Badge>
-      </div>
-    </button>
+      </Group>
+    </Paper>
   );
 }

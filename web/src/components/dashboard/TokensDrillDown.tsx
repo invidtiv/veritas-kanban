@@ -1,6 +1,5 @@
+import { Badge, Group, Paper, Progress, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core';
 import { useTokenMetrics, formatTokens, type MetricsPeriod } from '@/hooks/useMetrics';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { Coins, Bot, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,32 +34,32 @@ export function TokensDrillDown({ period, project, from, to }: TokensDrillDownPr
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-24 w-full" />
+      <Stack gap="md">
+        <Skeleton h={96} radius="md" />
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
+          <Skeleton key={i} h={64} radius="md" />
         ))}
-      </div>
+      </Stack>
     );
   }
 
   if (!metrics) {
     return (
-      <div className="text-center py-8">
+      <Stack align="center" gap="xs" py="xl">
         <Coins className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <p className="text-muted-foreground">No token data available</p>
-      </div>
+        <Text c="dimmed">No token data available</Text>
+      </Stack>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Summary Card */}
-      <div className="rounded-lg border bg-card p-4">
-        <h4 className="text-sm font-medium text-muted-foreground mb-3">
+      <Paper withBorder p="md" radius="md">
+        <Text size="sm" fw={500} c="dimmed" mb="sm">
           Token Usage Summary ({getPeriodLabel(period)})
-        </h4>
-        <div className={cn('grid gap-4', metrics.cacheTokens > 0 ? 'grid-cols-4' : 'grid-cols-3')}>
+        </Text>
+        <SimpleGrid cols={{ base: 2, sm: metrics.cacheTokens > 0 ? 4 : 3 }} spacing="md">
           <div>
             <div className="text-2xl font-bold text-primary">
               {formatTokens(metrics.totalTokens)}
@@ -87,13 +86,13 @@ export function TokensDrillDown({ period, project, from, to }: TokensDrillDownPr
               <div className="text-xs text-muted-foreground">Cache Hits</div>
             </div>
           )}
-        </div>
+        </SimpleGrid>
 
-        <div className="mt-4 pt-3 border-t">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Per Run Statistics:</span>
-          </div>
-          <div className="flex gap-4 mt-1">
+        <div className="mt-4 border-t pt-3">
+          <Text size="sm" c="dimmed">
+            Per Run Statistics:
+          </Text>
+          <Group gap="md" mt={4}>
             <div>
               <span className="text-muted-foreground text-xs">Avg: </span>
               <span className="font-medium">{formatTokens(metrics.perSuccessfulRun.avg)}</span>
@@ -106,21 +105,25 @@ export function TokensDrillDown({ period, project, from, to }: TokensDrillDownPr
               <span className="text-muted-foreground text-xs">p95: </span>
               <span className="font-medium">{formatTokens(metrics.perSuccessfulRun.p95)}</span>
             </div>
-          </div>
+          </Group>
         </div>
-      </div>
+      </Paper>
 
       {/* Per-Agent Breakdown */}
-      <div>
-        <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+      <Stack gap="sm">
+        <Group gap="xs">
           <Bot className="h-4 w-4" />
-          Breakdown by Agent
-        </h4>
+          <Text size="sm" fw={500} c="dimmed">
+            Breakdown by Agent
+          </Text>
+        </Group>
 
         {metrics.byAgent.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">No agent data available</div>
+          <Text ta="center" c="dimmed" py="md">
+            No agent data available
+          </Text>
         ) : (
-          <div className="space-y-2">
+          <Stack gap="xs">
             {metrics.byAgent.map((agent, index) => {
               const percentage =
                 metrics.totalTokens > 0 ? (agent.totalTokens / metrics.totalTokens) * 100 : 0;
@@ -134,10 +137,10 @@ export function TokensDrillDown({ period, project, from, to }: TokensDrillDownPr
                 />
               );
             })}
-          </div>
+          </Stack>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -156,30 +159,31 @@ interface AgentTokenRowProps {
 
 function AgentTokenRow({ agent, percentage, isTop }: AgentTokenRowProps) {
   return (
-    <div className={cn('rounded-lg border p-3', isTop && 'border-primary/30 bg-primary/5')}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+    <Paper withBorder p="sm" radius="md" className={cn(isTop && 'border-primary/30 bg-primary/5')}>
+      <Group align="center" justify="space-between" gap="sm" mb="xs" wrap="nowrap">
+        <Group gap="xs" wrap="wrap">
           <Bot className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{agent.agent}</span>
           {isTop && (
-            <Badge variant="secondary" className="text-xs flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
+            <Badge
+              variant="light"
+              color="blue"
+              size="xs"
+              leftSection={<TrendingUp className="h-3 w-3" />}
+            >
               Top Consumer
             </Badge>
           )}
-        </div>
-        <Badge variant="outline" className="text-xs">
+        </Group>
+        <Badge variant="outline" color="gray" size="xs">
           {agent.runs} runs
         </Badge>
-      </div>
+      </Group>
 
-      {/* Progress Bar */}
-      <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
-        <div className="h-full bg-primary transition-all" style={{ width: `${percentage}%` }} />
-      </div>
+      <Progress value={percentage} size="sm" mb="xs" />
 
-      <div className="flex justify-between text-sm">
-        <div className="flex gap-4 flex-wrap">
+      <Group justify="space-between" align="flex-start" gap="sm" className="text-sm">
+        <Group gap="md" wrap="wrap">
           <span>
             <span className="text-muted-foreground">Total: </span>
             <span className="font-medium">{formatTokens(agent.totalTokens)}</span>
@@ -198,9 +202,9 @@ function AgentTokenRow({ agent, percentage, isTop }: AgentTokenRowProps) {
               <span className="text-amber-500">{formatTokens(agent.cacheTokens)}</span>
             </span>
           )}
-        </div>
+        </Group>
         <span className="text-muted-foreground">{percentage.toFixed(1)}%</span>
-      </div>
-    </div>
+      </Group>
+    </Paper>
   );
 }

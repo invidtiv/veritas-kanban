@@ -1,7 +1,6 @@
+import { Badge, Group, Paper, Skeleton, Stack, Text, ThemeIcon } from '@mantine/core';
 import { useFailedRuns, formatDuration, type MetricsPeriod } from '@/hooks/useMetrics';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Clock, Bot, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Clock, Bot, ExternalLink, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ErrorsDrillDownProps {
@@ -36,43 +35,45 @@ export function ErrorsDrillDown({ period, project, onTaskClick, from, to }: Erro
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <Stack gap="md">
         {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-20 w-full" />
+          <Skeleton key={i} h={80} radius="md" />
         ))}
-      </div>
+      </Stack>
     );
   }
 
   if (!failedRuns || failedRuns.length === 0) {
     return (
-      <div className="text-center py-8">
-        <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-green-500/10 flex items-center justify-center">
-          <span className="text-green-500 text-xl">✓</span>
-        </div>
-        <p className="text-foreground font-medium">All runs successful</p>
-        <p className="text-sm text-muted-foreground mt-1">No failures in the selected period</p>
-      </div>
+      <Stack align="center" gap="xs" py="xl">
+        <ThemeIcon color="green" variant="light" size={48} radius="xl">
+          <CheckCircle className="h-6 w-6" />
+        </ThemeIcon>
+        <Text fw={600}>All runs successful</Text>
+        <Text size="sm" c="dimmed">
+          No failures in the selected period
+        </Text>
+      </Stack>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <Stack gap="md">
       {/* Summary */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Group gap="xs" className="text-sm text-muted-foreground">
         <AlertTriangle className="h-4 w-4 text-red-500" />
         <span>
           {failedRuns.length} failed run(s) in the {getPeriodLabel(period)}
         </span>
-      </div>
+      </Group>
 
       {/* Failed Runs List */}
-      <div className="space-y-2">
+      <Stack gap="xs">
         {failedRuns.map((run, index) => (
           <FailedRunRow key={`${run.timestamp}-${index}`} run={run} onTaskClick={onTaskClick} />
         ))}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -90,58 +91,63 @@ interface FailedRunRowProps {
 
 function FailedRunRow({ run, onTaskClick }: FailedRunRowProps) {
   const date = new Date(run.timestamp);
-  const canNavigate = run.taskId && onTaskClick;
+  const taskId = run.taskId;
+  const canNavigate = Boolean(taskId && onTaskClick);
 
   const content = (
-    <div
+    <Paper
+      withBorder
+      p="sm"
+      radius="md"
       className={cn(
-        'rounded-lg border border-red-500/20 bg-red-500/5 p-3',
+        'border-red-500/20 bg-red-500/5',
         canNavigate && 'hover:bg-red-500/10 transition-colors cursor-pointer'
       )}
     >
-      <div className="flex items-start justify-between gap-2">
+      <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <Group gap="xs" wrap="nowrap">
             <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
             <span className="font-medium truncate">{run.taskId || 'Unknown task'}</span>
             {canNavigate && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
-          </div>
+          </Group>
 
           {run.errorMessage && (
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{run.errorMessage}</p>
           )}
 
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
+          <Group gap="sm" mt="xs" className="text-xs text-muted-foreground" wrap="wrap">
+            <Group gap={4}>
               <Bot className="h-3 w-3" />
               {run.agent}
-            </span>
+            </Group>
             {run.project && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" color="gray" size="xs">
                 {run.project}
               </Badge>
             )}
             {run.durationMs && (
-              <span className="flex items-center gap-1">
+              <Group gap={4}>
                 <Clock className="h-3 w-3" />
                 {formatDuration(run.durationMs)}
-              </span>
+              </Group>
             )}
-          </div>
+          </Group>
         </div>
 
         <div className="text-xs text-muted-foreground text-right flex-shrink-0">
           <div>{date.toLocaleDateString()}</div>
           <div>{date.toLocaleTimeString()}</div>
         </div>
-      </div>
-    </div>
+      </Group>
+    </Paper>
   );
 
-  if (canNavigate) {
+  if (taskId && onTaskClick) {
     return (
       <button
-        onClick={() => onTaskClick(run.taskId!)}
+        type="button"
+        onClick={() => onTaskClick(taskId)}
         className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset rounded-lg"
       >
         {content}

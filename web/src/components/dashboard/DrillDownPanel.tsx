@@ -1,6 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import { ActionIcon, Drawer, Group, ScrollArea, Stack, Title } from '@mantine/core';
 
 export type DrillDownType = 'tasks' | 'errors' | 'tokens' | 'duration' | null;
 
@@ -13,19 +12,28 @@ interface DrillDownPanelProps {
 
 export function DrillDownPanel({ type, title, onClose, children }: DrillDownPanelProps) {
   return (
-    <Sheet open={type !== null} onOpenChange={() => onClose()}>
-      <SheetContent className="w-[600px] sm:max-w-[600px] overflow-hidden flex flex-col">
-        <SheetHeader className="flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <SheetTitle className="flex-1">{title}</SheetTitle>
-          </div>
-        </SheetHeader>
+    <Drawer
+      opened={type !== null}
+      onClose={onClose}
+      position="right"
+      size={600}
+      withCloseButton={false}
+      classNames={{ body: 'h-full overflow-hidden' }}
+    >
+      <Stack h="100%" gap={0}>
+        <Group gap="sm" className="flex-shrink-0">
+          <ActionIcon aria-label="Close drilldown" variant="subtle" onClick={onClose}>
+            <ArrowLeft className="h-4 w-4" />
+          </ActionIcon>
+          <Title order={2} className="text-lg">
+            {title}
+          </Title>
+        </Group>
 
-        <div className="flex-1 overflow-y-auto mt-4">{children}</div>
-      </SheetContent>
-    </Sheet>
+        <ScrollArea className="mt-4 flex-1" type="auto">
+          {children}
+        </ScrollArea>
+      </Stack>
+    </Drawer>
   );
 }
