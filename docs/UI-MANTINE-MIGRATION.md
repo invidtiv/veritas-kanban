@@ -380,6 +380,13 @@ Phase 3 progress:
   simple grid, alert, code, text, title, and theme icon primitives while
   preserving workflow search, run start, dashboard filters, run selection, live
   status rendering, health progress, resume action, and step output expansion.
+- Dashboard telemetry filter, export, drawer, task, failure, token, and duration
+  drilldown surfaces now use direct Mantine select, text input, modal, drawer,
+  badge, skeleton, paper, progress, stack, group, simple grid, text, title,
+  theme icon, and scroll area primitives while preserving period selection,
+  custom ranges, export scope/format/date controls, drawer close behavior,
+  task selection, failure summaries, token summaries, duration summaries, and
+  per-agent breakdowns.
 
 ### Phase 4: QA, Cleanup, and Dependency Removal
 

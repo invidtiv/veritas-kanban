@@ -1,6 +1,5 @@
+import { Badge, Group, Paper, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core';
 import { useDurationMetrics, formatDuration, type MetricsPeriod } from '@/hooks/useMetrics';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { Clock, Bot, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,32 +34,32 @@ export function DurationDrillDown({ period, project, from, to }: DurationDrillDo
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-24 w-full" />
+      <Stack gap="md">
+        <Skeleton h={96} radius="md" />
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
+          <Skeleton key={i} h={64} radius="md" />
         ))}
-      </div>
+      </Stack>
     );
   }
 
   if (!metrics) {
     return (
-      <div className="text-center py-8">
+      <Stack align="center" gap="xs" py="xl">
         <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <p className="text-muted-foreground">No duration data available</p>
-      </div>
+        <Text c="dimmed">No duration data available</Text>
+      </Stack>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Summary Card */}
-      <div className="rounded-lg border bg-card p-4">
-        <h4 className="text-sm font-medium text-muted-foreground mb-3">
+      <Paper withBorder p="md" radius="md">
+        <Text size="sm" fw={500} c="dimmed" mb="sm">
           Run Duration Summary ({getPeriodLabel(period)})
-        </h4>
-        <div className="grid grid-cols-4 gap-4">
+        </Text>
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
           <div>
             <div className="text-2xl font-bold text-primary">{metrics.runs}</div>
             <div className="text-xs text-muted-foreground">Total Runs</div>
@@ -79,20 +78,24 @@ export function DurationDrillDown({ period, project, from, to }: DurationDrillDo
             </div>
             <div className="text-xs text-muted-foreground">95th Percentile</div>
           </div>
-        </div>
-      </div>
+        </SimpleGrid>
+      </Paper>
 
       {/* Per-Agent Breakdown */}
-      <div>
-        <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+      <Stack gap="sm">
+        <Group gap="xs">
           <Bot className="h-4 w-4" />
-          Breakdown by Agent
-        </h4>
+          <Text size="sm" fw={500} c="dimmed">
+            Breakdown by Agent
+          </Text>
+        </Group>
 
         {metrics.byAgent.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">No agent data available</div>
+          <Text ta="center" c="dimmed" py="md">
+            No agent data available
+          </Text>
         ) : (
-          <div className="space-y-2">
+          <Stack gap="xs">
             {metrics.byAgent.map((agent, index) => {
               // Find fastest and slowest
               const isFastest =
@@ -113,10 +116,10 @@ export function DurationDrillDown({ period, project, from, to }: DurationDrillDo
                 />
               );
             })}
-          </div>
+          </Stack>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -139,36 +142,46 @@ function AgentDurationRow({ agent, overallAvg, isFastest, isSlowest }: AgentDura
   const isAboveAvg = diff > 0;
 
   return (
-    <div
+    <Paper
+      withBorder
+      p="sm"
+      radius="md"
       className={cn(
-        'rounded-lg border p-3',
         isFastest && 'border-green-500/30 bg-green-500/5',
         isSlowest && 'border-yellow-500/30 bg-yellow-500/5'
       )}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+      <Group align="center" justify="space-between" gap="sm" mb="xs" wrap="nowrap">
+        <Group gap="xs" wrap="wrap">
           <Bot className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{agent.agent}</span>
           {isFastest && (
-            <Badge variant="secondary" className="text-xs flex items-center gap-1 text-green-500">
-              <TrendingDown className="h-3 w-3" />
+            <Badge
+              variant="light"
+              color="green"
+              size="xs"
+              leftSection={<TrendingDown className="h-3 w-3" />}
+            >
               Fastest
             </Badge>
           )}
           {isSlowest && (
-            <Badge variant="secondary" className="text-xs flex items-center gap-1 text-yellow-500">
-              <TrendingUp className="h-3 w-3" />
+            <Badge
+              variant="light"
+              color="yellow"
+              size="xs"
+              leftSection={<TrendingUp className="h-3 w-3" />}
+            >
               Slowest
             </Badge>
           )}
-        </div>
-        <Badge variant="outline" className="text-xs">
+        </Group>
+        <Badge variant="outline" color="gray" size="xs">
           {agent.runs} runs
         </Badge>
-      </div>
+      </Group>
 
-      <div className="grid grid-cols-4 gap-4 text-sm">
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" className="text-sm">
         <div>
           <span className="text-muted-foreground text-xs block">Average</span>
           <span className="font-medium">{formatDuration(agent.avgMs)}</span>
@@ -188,7 +201,7 @@ function AgentDurationRow({ agent, overallAvg, isFastest, isSlowest }: AgentDura
             {diffPercent.toFixed(1)}%
           </span>
         </div>
-      </div>
-    </div>
+      </SimpleGrid>
+    </Paper>
   );
 }

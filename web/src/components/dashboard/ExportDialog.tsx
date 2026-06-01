@@ -1,24 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Button, Group, Loader, Modal, Select, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Download } from 'lucide-react';
 import { API_BASE } from '@/lib/config';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Download, Loader2 } from 'lucide-react';
 
 export type ExportScope = 'full' | 'project' | 'task';
 export type ExportFormat = 'csv' | 'json';
@@ -56,38 +39,45 @@ export function ExportDialog({
   const [toDate, setToDate] = useState('');
   const [isExporting, setIsExporting] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+
+    setFormat('csv');
+    setScope(initialTaskId ? 'task' : initialProject ? 'project' : 'full');
+    setTaskId(initialTaskId || '');
+    setProject(initialProject || '');
+    setFromDate('');
+    setToDate('');
+  }, [open, initialTaskId, initialProject]);
+
   const handleExport = async () => {
     setIsExporting(true);
-    
+
     try {
-      // Build query params
       const params = new URLSearchParams();
       params.set('format', format);
-      
+
       if (scope === 'task' && taskId) {
         params.set('taskId', taskId);
       } else if (scope === 'project' && project) {
         params.set('project', project);
       }
-      
+
       if (fromDate) {
         params.set('from', new Date(fromDate).toISOString());
       }
       if (toDate) {
-        // Set to end of day
         const toDateTime = new Date(toDate);
         toDateTime.setHours(23, 59, 59, 999);
         params.set('to', toDateTime.toISOString());
       }
-      
-      // Fetch the export
+
       const response = await fetch(`${API_BASE}/telemetry/export?${params}`);
-      
+
       if (!response.ok) {
         throw new Error('Export failed');
       }
-      
-      // Get filename from Content-Disposition header or generate one
+
       const disposition = response.headers.get('Content-Disposition');
       let filename = `telemetry-export.${format}`;
       if (disposition) {
@@ -96,8 +86,7 @@ export function ExportDialog({
           filename = match[1];
         }
       }
-      
-      // Create blob and download
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -107,171 +96,114 @@ export function ExportDialog({
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       onOpenChange(false);
     } catch (error) {
       console.error('Export error:', error);
-      // Could add toast notification here
     } finally {
       setIsExporting(false);
     }
   };
 
-  // Reset form when dialog opens
-  const handleOpenChange = (open: boolean) => {
-    if (open) {
-      setFormat('csv');
-      setScope(initialTaskId ? 'task' : initialProject ? 'project' : 'full');
-      setTaskId(initialTaskId || '');
-      setProject(initialProject || '');
-      setFromDate('');
-      setToDate('');
-    }
-    onOpenChange(open);
-  };
+  const handleClose = () => onOpenChange(false);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
+    <Modal
+      opened={open}
+      onClose={handleClose}
+      size="md"
+      centered
+      title={
+        <Group gap="sm">
+          <Download className="h-5 w-5" />
+          <Title order={2} className="text-lg">
             Export Metrics
-          </DialogTitle>
-          <DialogDescription>
-            Export telemetry data as CSV or JSON for reporting and analysis.
-          </DialogDescription>
-        </DialogHeader>
+          </Title>
+        </Group>
+      }
+    >
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">
+          Export telemetry data as CSV or JSON for reporting and analysis.
+        </Text>
 
-        <div className="grid gap-4 py-4">
-          {/* Format Selection */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="format" className="text-right">
-              Format
-            </Label>
-            <Select value={format} onValueChange={(v) => setFormat(v as ExportFormat)}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="csv">CSV (Spreadsheets)</SelectItem>
-                <SelectItem value="json">JSON (Programmatic)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <Select
+          label="Format"
+          value={format}
+          onChange={(value) => setFormat((value ?? 'csv') as ExportFormat)}
+          data={[
+            { value: 'csv', label: 'CSV (Spreadsheets)' },
+            { value: 'json', label: 'JSON (Programmatic)' },
+          ]}
+        />
 
-          {/* Scope Selection */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="scope" className="text-right">
-              Scope
-            </Label>
-            <Select value={scope} onValueChange={(v) => setScope(v as ExportScope)}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="full">All Data</SelectItem>
-                <SelectItem value="project">By Project</SelectItem>
-                <SelectItem value="task">By Task</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <Select
+          label="Scope"
+          value={scope}
+          onChange={(value) => setScope((value ?? 'full') as ExportScope)}
+          data={[
+            { value: 'full', label: 'All Data' },
+            { value: 'project', label: 'By Project' },
+            { value: 'task', label: 'By Task' },
+          ]}
+        />
 
-          {/* Project Selection (conditional) */}
-          {scope === 'project' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="project" className="text-right">
-                Project
-              </Label>
-              {projects.length > 0 ? (
-                <Select value={project} onValueChange={setProject}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select project..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id="project"
-                  value={project}
-                  onChange={(e) => setProject(e.target.value)}
-                  placeholder="Project name"
-                  className="col-span-3"
-                />
-              )}
-            </div>
-          )}
-
-          {/* Task ID (conditional) */}
-          {scope === 'task' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="taskId" className="text-right">
-                Task ID
-              </Label>
-              <Input
-                id="taskId"
-                value={taskId}
-                onChange={(e) => setTaskId(e.target.value)}
-                placeholder="task_..."
-                className="col-span-3"
-              />
-            </div>
-          )}
-
-          {/* Date Range */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="from" className="text-right">
-              From
-            </Label>
-            <Input
-              id="from"
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="col-span-3"
+        {scope === 'project' &&
+          (projects.length > 0 ? (
+            <Select
+              label="Project"
+              value={project}
+              onChange={(value) => setProject(value ?? '')}
+              placeholder="Select project..."
+              data={projects.map((p) => ({ value: p.id, label: p.label }))}
             />
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="to" className="text-right">
-              To
-            </Label>
-            <Input
-              id="to"
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="col-span-3"
+          ) : (
+            <TextInput
+              label="Project"
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              placeholder="Project name"
             />
-          </div>
-        </div>
+          ))}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        {scope === 'task' && (
+          <TextInput
+            label="Task ID"
+            value={taskId}
+            onChange={(e) => setTaskId(e.target.value)}
+            placeholder="task_..."
+          />
+        )}
+
+        <TextInput
+          label="From"
+          type="date"
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+        />
+
+        <TextInput
+          label="To"
+          type="date"
+          value={toDate}
+          onChange={(e) => setToDate(e.target.value)}
+        />
+
+        <Group justify="flex-end" mt="sm">
+          <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleExport} 
-            disabled={isExporting || (scope === 'task' && !taskId) || (scope === 'project' && !project)}
+          <Button
+            onClick={handleExport}
+            disabled={
+              isExporting || (scope === 'task' && !taskId) || (scope === 'project' && !project)
+            }
+            leftSection={isExporting ? <Loader size={14} /> : <Download className="h-4 w-4" />}
           >
-            {isExporting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Exporting...
-              </>
-            ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </>
-            )}
+            {isExporting ? 'Exporting...' : 'Export'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }
