@@ -1,6 +1,15 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  Button,
+  Center,
+  Group,
+  Loader,
+  Paper,
+  Stack,
+  Text,
+  Textarea,
+  ThemeIcon,
+} from '@mantine/core';
 import { MarkdownText } from '@/components/shared/MarkdownText';
 import { useTaskProgress, useUpdateProgress } from '@/hooks/useTaskProgress';
 import { Pencil, Save, X, FileText } from 'lucide-react';
@@ -37,36 +46,42 @@ export function ProgressTab({ task }: ProgressTabProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-32 text-muted-foreground">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
+      <Center h={128} className="text-muted-foreground">
+        <Loader size="sm" />
+      </Center>
     );
   }
 
   const isEmpty = !progress || progress.trim() === '';
 
   return (
-    <div className="space-y-4">
+    <Stack gap="md">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <Group justify="space-between" align="center">
+        <Group gap="xs">
           <FileText className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-medium">Progress Notes</h3>
-        </div>
+          <Text size="sm" fw={500}>
+            Progress Notes
+          </Text>
+        </Group>
         {!isEditing && (
-          <Button variant="outline" size="sm" onClick={handleEdit}>
-            <Pencil className="h-3 w-3 mr-1" />
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={handleEdit}
+            leftSection={<Pencil className="h-3 w-3" />}
+          >
             Edit
           </Button>
         )}
-      </div>
+      </Group>
 
       {/* Edit Mode */}
       {isEditing && (
-        <div className="space-y-3">
+        <Stack gap="sm">
           <Textarea
             value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
+            onChange={(e) => setEditContent(e.currentTarget.value)}
             placeholder="# Progress Notes
 
 ## Learnings
@@ -80,46 +95,58 @@ export function ProgressTab({ task }: ProgressTabProps) {
             className="font-mono text-sm min-h-[400px]"
             autoFocus
           />
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleSave} disabled={updateProgress.isPending}>
-              <Save className="h-3 w-3 mr-1" />
+          <Group gap="xs">
+            <Button
+              size="xs"
+              onClick={handleSave}
+              disabled={updateProgress.isPending}
+              leftSection={<Save className="h-3 w-3" />}
+            >
               {updateProgress.isPending ? 'Saving...' : 'Save'}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleCancel}>
-              <X className="h-3 w-3 mr-1" />
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={handleCancel}
+              leftSection={<X className="h-3 w-3" />}
+            >
               Cancel
             </Button>
-          </div>
-        </div>
+          </Group>
+        </Stack>
       )}
 
       {/* View Mode */}
       {!isEditing && (
-        <div className="rounded-lg border bg-card p-4 min-h-[200px]">
+        <Paper className="min-h-[200px] border bg-card p-4" radius="lg">
           {isEmpty ? (
-            <div className="text-center text-muted-foreground py-8">
-              <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm mb-1">No progress notes yet</p>
-              <p className="text-xs">
+            <Stack align="center" gap={4} className="py-8 text-center text-muted-foreground">
+              <ThemeIcon color="gray" variant="subtle" size={48}>
+                <FileText className="h-8 w-8 opacity-50" />
+              </ThemeIcon>
+              <Text size="sm">No progress notes yet</Text>
+              <Text size="xs">
                 Click Edit to add learnings, issues, and next steps for future sessions
-              </p>
-            </div>
+              </Text>
+            </Stack>
           ) : (
             <MarkdownText>{progress}</MarkdownText>
           )}
-        </div>
+        </Paper>
       )}
 
       {/* Help Text */}
-      <div className="text-xs text-muted-foreground border-t pt-3">
-        <p className="font-medium mb-1">💡 Progress Notes Best Practices:</p>
+      <Stack gap={4} className="border-t pt-3 text-xs text-muted-foreground">
+        <Text size="xs" fw={500}>
+          Progress Notes Best Practices:
+        </Text>
         <ul className="list-disc list-inside space-y-1 ml-2">
           <li>Document key learnings and insights discovered during work</li>
           <li>Track issues encountered and their solutions</li>
           <li>List next steps for future sessions to pick up where you left off</li>
           <li>Use markdown sections (##) to organize by category</li>
         </ul>
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }

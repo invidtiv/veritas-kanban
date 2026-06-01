@@ -1,20 +1,8 @@
+import { useState } from 'react';
+import { Badge, Box, Button, Group, Modal, Paper, Stack, Text, Textarea } from '@mantine/core';
 import { API_BASE } from '@/lib/config';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
-import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { TaskMetadataSection } from './TaskMetadataSection';
 import { SubtasksSection } from '../SubtasksSection';
 import { VerificationSection } from '../VerificationSection';
@@ -50,6 +38,7 @@ export function TaskDetailsTab({
   const taskSettings = featureSettings.tasks;
   const markdownSettings = featureSettings.markdown;
   const markdownEnabled = markdownSettings?.enableMarkdown ?? true;
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const handleDelete = async () => {
     await deleteTask.mutateAsync(task.id);
@@ -72,12 +61,14 @@ export function TaskDetailsTab({
   };
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Description */}
-      <div className="space-y-2">
-        <Label className="text-muted-foreground">Description</Label>
+      <Stack gap={6}>
+        <Text size="sm" c="dimmed" fw={500}>
+          Description
+        </Text>
         {readOnly ? (
-          <div className="text-sm text-foreground/80 bg-muted/30 rounded-md p-3 min-h-[60px]">
+          <Paper className="min-h-[60px] bg-muted/30 p-3 text-sm text-foreground/80" radius="md">
             {task.description ? (
               markdownEnabled ? (
                 <MarkdownRenderer content={task.description} />
@@ -87,7 +78,7 @@ export function TaskDetailsTab({
             ) : (
               <span className="text-muted-foreground italic">No description</span>
             )}
-          </div>
+          </Paper>
         ) : markdownEnabled ? (
           <MarkdownEditor
             value={task.description}
@@ -98,13 +89,13 @@ export function TaskDetailsTab({
         ) : (
           <Textarea
             value={task.description}
-            onChange={(e) => onUpdate('description', e.target.value)}
+            onChange={(e) => onUpdate('description', e.currentTarget.value)}
             placeholder="Add a description..."
             rows={4}
             className="resize-none"
           />
         )}
-      </div>
+      </Stack>
 
       {/* Plan section removed (GH-66 cleanup — planning was agent-internal, not board-level) */}
 
@@ -113,7 +104,7 @@ export function TaskDetailsTab({
 
       {/* Blocked Reason (shown when status is blocked) */}
       {task.status === 'blocked' && (
-        <div className="border-t pt-4">
+        <Box className="border-t pt-4">
           <BlockedReasonSection
             task={task}
             onUpdate={(blockedReason: BlockedReason | undefined) =>
@@ -121,19 +112,21 @@ export function TaskDetailsTab({
             }
             readOnly={readOnly}
           />
-        </div>
+        </Box>
       )}
 
       {/* Checkpoint Status (shown when checkpoint exists) */}
       {task.checkpoint && (
-        <div className="border-t pt-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-muted-foreground">Checkpoint</Label>
+        <Box className="border-t pt-4">
+          <Stack gap="sm">
+            <Group justify="space-between" align="center">
+              <Text size="sm" c="dimmed" fw={500}>
+                Checkpoint
+              </Text>
               {!readOnly && (
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  variant="subtle"
+                  size="xs"
                   aria-label="Clear checkpoint and discard saved progress"
                   onClick={async () => {
                     try {
@@ -147,137 +140,139 @@ export function TaskDetailsTab({
                   Clear Checkpoint
                 </Button>
               )}
-            </div>
-            <div
+            </Group>
+            <Paper
               role="status"
               aria-live="polite"
               className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 space-y-2"
             >
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 text-xs font-medium">
-                  💾 CHECKPOINT SAVED
-                </span>
-                <span className="text-xs text-muted-foreground">Step {task.checkpoint.step}</span>
-              </div>
-              <div className="text-xs text-muted-foreground">
+              <Group gap="xs">
+                <Badge color="yellow" variant="light">
+                  Checkpoint saved
+                </Badge>
+                <Text size="xs" c="dimmed">
+                  Step {task.checkpoint.step}
+                </Text>
+              </Group>
+              <Text size="xs" c="dimmed">
                 Saved: {formatDate(task.checkpoint.timestamp)}
-              </div>
+              </Text>
               {task.checkpoint.resumeCount && task.checkpoint.resumeCount > 0 && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Group gap={6} className="text-muted-foreground">
                   <RotateCcw className="h-3 w-3" />
-                  <span>Resumed {task.checkpoint.resumeCount} time(s)</span>
-                </div>
+                  <Text size="xs">Resumed {task.checkpoint.resumeCount} time(s)</Text>
+                </Group>
               )}
-            </div>
-          </div>
-        </div>
+            </Paper>
+          </Stack>
+        </Box>
       )}
 
       {/* Subtasks */}
-      <div className="border-t pt-4">
+      <Box className="border-t pt-4">
         <SubtasksSection
           task={task}
           onAutoCompleteChange={(value) => onUpdate('autoCompleteOnSubtasks', value || undefined)}
         />
-      </div>
+      </Box>
 
       {/* Verification / Done Criteria */}
-      <div className="border-t pt-4">
+      <Box className="border-t pt-4">
         <VerificationSection task={task} />
-      </div>
+      </Box>
 
       {/* Dependencies */}
       {taskSettings.enableDependencies && (
-        <div className="border-t pt-4">
+        <Box className="border-t pt-4">
           <DependenciesSection
             task={task}
             onBlockedByChange={(blockedBy) => onUpdate('blockedBy', blockedBy)}
           />
-        </div>
+        </Box>
       )}
 
       {/* Time Tracking */}
       {taskSettings.enableTimeTracking && (
-        <div className="border-t pt-4">
+        <Box className="border-t pt-4">
           <TimeTrackingSection task={task} />
-        </div>
+        </Box>
       )}
 
       {/* Deliverables */}
-      <div className="border-t pt-4">
+      <Box className="border-t pt-4">
         <DeliverablesSection task={task} />
-      </div>
+      </Box>
 
       {/* Comments */}
       {taskSettings.enableComments && (
-        <div className="border-t pt-4">
+        <Box className="border-t pt-4">
           <CommentsSection task={task} />
-        </div>
+        </Box>
       )}
 
       {/* Lessons Learned (only shown for completed tasks) */}
       {task.status === 'done' && (
-        <div className="border-t pt-4">
+        <Box className="border-t pt-4">
           <LessonsLearnedSection task={task} onUpdate={onUpdate} readOnly={readOnly} />
-        </div>
+        </Box>
       )}
 
       {/* Metadata Footer */}
-      <div className="border-t pt-4 space-y-2 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
+      <Stack gap={6} className="border-t pt-4 text-muted-foreground">
+        <Group gap="xs">
           <Calendar className="h-4 w-4" />
-          <span>Created: {formatDate(task.created)}</span>
-        </div>
-        <div className="flex items-center gap-2">
+          <Text size="sm">Created: {formatDate(task.created)}</Text>
+        </Group>
+        <Group gap="xs">
           <Clock className="h-4 w-4" />
-          <span>Updated: {formatDate(task.updated)}</span>
-        </div>
-        <div className="text-xs font-mono opacity-50">ID: {task.id}</div>
-      </div>
+          <Text size="sm">Updated: {formatDate(task.updated)}</Text>
+        </Group>
+        <Text size="xs" ff="monospace" opacity={0.5}>
+          ID: {task.id}
+        </Text>
+      </Stack>
 
       {/* Delete/Restore Button */}
-      <div className="border-t pt-4">
+      <Box className="border-t pt-4">
         {readOnly && onRestore ? (
           <Button variant="default" className="w-full" onClick={() => onRestore(task.id)}>
-            <RotateCcw className="h-4 w-4 mr-2" />
+            <RotateCcw className="mr-2 h-4 w-4" />
             Restore to Board
           </Button>
         ) : (
           !readOnly && (
-            <div className="flex gap-2">
+            <Group gap="xs" grow>
               <Button variant="outline" className="flex-1" onClick={handleArchive}>
-                <Archive className="h-4 w-4 mr-2" />
+                <Archive className="mr-2 h-4 w-4" />
                 Archive
               </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="flex-1">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this task?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete "{task.title}".
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+              <Button color="red" className="flex-1" onClick={() => setDeleteConfirmOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </Group>
           )
         )}
-      </div>
-    </div>
+      </Box>
+
+      <Modal
+        opened={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="Delete this task?"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm">This will permanently delete "{task.title}".</Text>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="default" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleDelete}>
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Stack>
   );
 }

@@ -1,19 +1,11 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Box, Button, Group, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 import { useTaskTypes, getTypeIcon } from '@/hooks/useTaskTypes';
 import { useProjects } from '@/hooks/useProjects';
 import { useSprints } from '@/hooks/useSprints';
 import { useConfig } from '@/hooks/useConfig';
 import type { Task, TaskStatus, TaskPriority, AgentType } from '@veritas-kanban/shared';
+import type { ReactNode } from 'react';
 
 interface TaskMetadataSectionProps {
   task: Task;
@@ -36,6 +28,14 @@ const priorityLabels: Record<TaskPriority, string> = {
   critical: 'Critical',
 };
 
+function ReadOnlyValue({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <Box className={`rounded-md bg-muted/30 px-3 py-2 text-sm font-medium ${className}`}>
+      {children}
+    </Box>
+  );
+}
+
 export function TaskMetadataSection({
   task,
   onUpdate,
@@ -54,126 +54,118 @@ export function TaskMetadataSection({
   const typeLabel = currentType ? currentType.label : task.type;
 
   return (
-    <div className="space-y-4">
+    <Stack gap="md">
       {/* Status, Type, Priority */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">Status</Label>
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+        <Stack gap={6}>
+          <Text size="sm" c="dimmed" fw={500}>
+            Status
+          </Text>
           {readOnly ? (
-            <div className="text-sm font-medium px-3 py-2 bg-muted/30 rounded-md">
-              {statusLabels[task.status]}
-            </div>
-          ) : (
-            <Select value={task.status} onValueChange={(v) => onUpdate('status', v as TaskStatus)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">Type</Label>
-          {readOnly ? (
-            <div className="text-sm font-medium px-3 py-2 bg-muted/30 rounded-md">{typeLabel}</div>
-          ) : (
-            <Select value={task.type} onValueChange={(v) => onUpdate('type', v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {taskTypes.map((type) => {
-                  const IconComponent = getTypeIcon(type.icon);
-                  return (
-                    <SelectItem key={type.id} value={type.id}>
-                      <div className="flex items-center gap-2">
-                        {IconComponent && <IconComponent className="h-4 w-4" />}
-                        {type.label}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">Priority</Label>
-          {readOnly ? (
-            <div className="text-sm font-medium px-3 py-2 bg-muted/30 rounded-md capitalize">
-              {task.priority}
-            </div>
+            <ReadOnlyValue>{statusLabels[task.status]}</ReadOnlyValue>
           ) : (
             <Select
-              value={task.priority}
-              onValueChange={(v) => onUpdate('priority', v as TaskPriority)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(priorityLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              aria-label="Status"
+              allowDeselect={false}
+              data={Object.entries(statusLabels).map(([value, label]) => ({ value, label }))}
+              value={task.status}
+              onChange={(value) => {
+                if (value) onUpdate('status', value as TaskStatus);
+              }}
+            />
           )}
-        </div>
-      </div>
+        </Stack>
+
+        <Stack gap={6}>
+          <Text size="sm" c="dimmed" fw={500}>
+            Type
+          </Text>
+          {readOnly ? (
+            <ReadOnlyValue>{typeLabel}</ReadOnlyValue>
+          ) : (
+            <Select
+              aria-label="Type"
+              allowDeselect={false}
+              data={taskTypes.map((type) => ({ value: type.id, label: type.label }))}
+              renderOption={({ option }) => {
+                const type = taskTypes.find((item) => item.id === option.value);
+                if (!type) return option.label;
+                const IconComponent = getTypeIcon(type.icon);
+                return (
+                  <Group gap="xs">
+                    {IconComponent && <IconComponent className="h-4 w-4" />}
+                    <Text size="sm">{type.label}</Text>
+                  </Group>
+                );
+              }}
+              value={task.type}
+              onChange={(value) => {
+                if (value) onUpdate('type', value);
+              }}
+            />
+          )}
+        </Stack>
+
+        <Stack gap={6}>
+          <Text size="sm" c="dimmed" fw={500}>
+            Priority
+          </Text>
+          {readOnly ? (
+            <ReadOnlyValue className="capitalize">{task.priority}</ReadOnlyValue>
+          ) : (
+            <Select
+              aria-label="Priority"
+              allowDeselect={false}
+              data={Object.entries(priorityLabels).map(([value, label]) => ({ value, label }))}
+              value={task.priority}
+              onChange={(value) => {
+                if (value) onUpdate('priority', value as TaskPriority);
+              }}
+            />
+          )}
+        </Stack>
+      </SimpleGrid>
 
       {/* Project */}
-      <div className="space-y-2">
-        <Label className="text-muted-foreground">Project</Label>
+      <Stack gap={6}>
+        <Text size="sm" c="dimmed" fw={500}>
+          Project
+        </Text>
         {readOnly ? (
-          <div className="text-sm font-medium px-3 py-2 bg-muted/30 rounded-md">
+          <ReadOnlyValue>
             {projects.find((p) => p.id === task.project)?.label || task.project || 'No project'}
-          </div>
+          </ReadOnlyValue>
         ) : !showNewProject ? (
           <Select
+            aria-label="Project"
+            allowDeselect={false}
+            data={[
+              { value: '__none__', label: 'No project' },
+              ...projects.map((proj) => ({ value: proj.id, label: proj.label })),
+              { value: '__new__', label: '+ New Project' },
+            ]}
+            placeholder="Select project..."
             value={task.project || '__none__'}
-            onValueChange={(value) => {
+            onChange={(value) => {
               if (value === '__new__') {
                 setShowNewProject(true);
                 setNewProjectName('');
               } else if (value === '__none__') {
                 onUpdate('project', undefined);
-              } else {
+              } else if (value) {
                 onUpdate('project', value);
               }
             }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select project..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">No project</SelectItem>
-              {projects.map((proj) => (
-                <SelectItem key={proj.id} value={proj.id}>
-                  {proj.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="__new__" className="text-primary">
-                + New Project
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          />
         ) : (
-          <div className="flex gap-2">
-            <Input
+          <Group gap="xs" align="flex-start" wrap="nowrap">
+            <TextInput
+              aria-label="New project name"
               value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
+              onChange={(e) => setNewProjectName(e.currentTarget.value)}
               placeholder="Enter project name..."
               autoFocus
+              className="flex-1"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newProjectName.trim()) {
                   e.preventDefault();
@@ -188,7 +180,7 @@ export function TaskMetadataSection({
             />
             <Button
               type="button"
-              size="sm"
+              size="xs"
               onClick={() => {
                 if (newProjectName.trim()) {
                   onUpdate('project', newProjectName.trim());
@@ -200,7 +192,7 @@ export function TaskMetadataSection({
             </Button>
             <Button
               type="button"
-              size="sm"
+              size="xs"
               variant="outline"
               onClick={() => {
                 setShowNewProject(false);
@@ -209,70 +201,63 @@ export function TaskMetadataSection({
             >
               Cancel
             </Button>
-          </div>
+          </Group>
         )}
-      </div>
+      </Stack>
 
       {/* Sprint & Agent */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">Sprint</Label>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+        <Stack gap={6}>
+          <Text size="sm" c="dimmed" fw={500}>
+            Sprint
+          </Text>
           {readOnly ? (
-            <div className="text-sm font-medium px-3 py-2 bg-muted/30 rounded-md">
+            <ReadOnlyValue>
               {sprints.find((s) => s.id === task.sprint)?.label || task.sprint || 'No sprint'}
-            </div>
+            </ReadOnlyValue>
           ) : (
             <Select
+              aria-label="Sprint"
+              allowDeselect={false}
+              data={[
+                { value: '__none__', label: 'No Sprint' },
+                ...sprints.map((s) => ({ value: s.id, label: s.label })),
+              ]}
+              placeholder="No sprint"
               value={task.sprint || '__none__'}
-              onValueChange={(value) =>
-                onUpdate('sprint', value === '__none__' ? undefined : value)
+              onChange={(value) =>
+                onUpdate('sprint', value === '__none__' ? undefined : value || undefined)
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="No sprint" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">No Sprint</SelectItem>
-                {sprints.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           )}
-        </div>
+        </Stack>
 
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">Agent</Label>
+        <Stack gap={6}>
+          <Text size="sm" c="dimmed" fw={500}>
+            Agent
+          </Text>
           {readOnly ? (
-            <div className="text-sm font-medium px-3 py-2 bg-muted/30 rounded-md">
+            <ReadOnlyValue>
               {task.agent === 'auto' || !task.agent
                 ? 'Auto (routing)'
                 : enabledAgents.find((a) => a.type === task.agent)?.name || task.agent}
-            </div>
+            </ReadOnlyValue>
           ) : (
             <Select
+              aria-label="Agent"
+              allowDeselect={false}
+              data={[
+                { value: 'auto', label: 'Auto (routing)' },
+                ...enabledAgents.map((a) => ({ value: a.type, label: a.name })),
+              ]}
               value={task.agent || 'auto'}
-              onValueChange={(value) =>
-                onUpdate('agent', value === 'auto' ? undefined : (value as AgentType))
+              onChange={(value) =>
+                onUpdate('agent', value === 'auto' ? undefined : ((value || 'auto') as AgentType))
               }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Auto (routing)</SelectItem>
-                {enabledAgents.map((a) => (
-                  <SelectItem key={a.type} value={a.type}>
-                    {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           )}
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </SimpleGrid>
+    </Stack>
   );
 }
