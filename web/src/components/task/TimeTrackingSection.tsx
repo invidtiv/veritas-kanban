@@ -1,18 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  ActionIcon,
+  Box,
+  Button,
+  Group,
+  Modal,
+  Paper,
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { formatDuration, parseDuration } from '@/hooks/useTimeTracking';
 import { api } from '@/lib/api';
 import { Play, Square, Plus, Trash2, Clock, Loader2, Timer } from 'lucide-react';
@@ -38,9 +37,13 @@ function RunningTimer({ startTime }: { startTime: string }) {
   }, [startTime]);
 
   return (
-    <span className="font-mono tabular-nums text-green-600 dark:text-green-400">
+    <Text
+      component="span"
+      ff="monospace"
+      className="tabular-nums text-green-600 dark:text-green-400"
+    >
       {formatDuration(elapsed)}
-    </span>
+    </Text>
   );
 }
 
@@ -162,22 +165,33 @@ export function TimeTrackingSection({ task }: TimeTrackingSectionProps) {
   // ── Render ──
 
   return (
-    <div className="space-y-4">
+    <Stack gap="md">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <Label className="text-muted-foreground flex items-center gap-2">
+      <Group justify="space-between" align="center">
+        <Group gap="xs">
           <Clock className="h-4 w-4" />
-          Time Tracking
-        </Label>
-        <span className="text-sm font-medium">Total: {formatDuration(totalSeconds)}</span>
-      </div>
+          <Text size="sm" c="dimmed" fw={500}>
+            Time Tracking
+          </Text>
+        </Group>
+        <Text size="sm" fw={500}>
+          Total: {formatDuration(totalSeconds)}
+        </Text>
+      </Group>
 
-      <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+      <Paper className="space-y-4 bg-muted/30 p-4" radius="lg" withBorder>
         {/* Timer Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <Group justify="space-between" align="center">
+          <Group gap="sm">
             {isRunning ? (
-              <Button variant="destructive" size="sm" onClick={handleStartStop} disabled={busy}>
+              <Button
+                color="red"
+                size="sm"
+                onClick={() => {
+                  void handleStartStop();
+                }}
+                disabled={busy}
+              >
                 {busy ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -188,7 +202,14 @@ export function TimeTrackingSection({ task }: TimeTrackingSectionProps) {
                 )}
               </Button>
             ) : (
-              <Button variant="default" size="sm" onClick={handleStartStop} disabled={busy}>
+              <Button
+                variant="filled"
+                size="sm"
+                onClick={() => {
+                  void handleStartStop();
+                }}
+                disabled={busy}
+              >
                 {busy ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -201,90 +222,102 @@ export function TimeTrackingSection({ task }: TimeTrackingSectionProps) {
             )}
 
             {isRunning && activeEntry && (
-              <div className="flex items-center gap-2">
+              <Group gap="xs">
                 <Timer className="h-4 w-4 text-green-500 animate-pulse" />
                 <RunningTimer startTime={activeEntry.startTime} />
-              </div>
+              </Group>
             )}
-          </div>
+          </Group>
 
           {/* Add Manual Entry */}
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Time
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAddDialogOpen(true)}
+            leftSection={<Plus className="h-4 w-4" />}
+          >
+            Add Time
+          </Button>
+        </Group>
+
+        <Modal
+          opened={addDialogOpen}
+          onClose={() => setAddDialogOpen(false)}
+          title="Add Time Entry"
+          centered
+        >
+          <Stack gap="md">
+            <Text size="sm" c="dimmed">
+              Manually add time spent on this task.
+            </Text>
+            <Stack gap="xs">
+              <Text component="label" htmlFor="duration" size="sm" fw={500}>
+                Duration
+              </Text>
+              <TextInput
+                id="duration"
+                value={durationInput}
+                onChange={(e) => setDurationInput(e.currentTarget.value)}
+                placeholder="e.g., 1h 30m or 45m or 30"
+              />
+              <Text size="xs" c="dimmed">
+                Enter as &quot;1h 30m&quot;, &quot;45m&quot;, or just minutes (e.g., &quot;30&quot;)
+              </Text>
+            </Stack>
+            <Stack gap="xs">
+              <Text component="label" htmlFor="description" size="sm" fw={500}>
+                Description (optional)
+              </Text>
+              <TextInput
+                id="description"
+                value={descriptionInput}
+                onChange={(e) => setDescriptionInput(e.currentTarget.value)}
+                placeholder="What did you work on?"
+              />
+            </Stack>
+            <Group justify="flex-end" gap="xs">
+              <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+                Cancel
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Time Entry</DialogTitle>
-                <DialogDescription>Manually add time spent on this task.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="duration">Duration</Label>
-                  <Input
-                    id="duration"
-                    value={durationInput}
-                    onChange={(e) => setDurationInput(e.target.value)}
-                    placeholder="e.g., 1h 30m or 45m or 30"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter as &quot;1h 30m&quot;, &quot;45m&quot;, or just minutes (e.g.,
-                    &quot;30&quot;)
-                  </p>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description (optional)</Label>
-                  <Input
-                    id="description"
-                    value={descriptionInput}
-                    onChange={(e) => setDescriptionInput(e.target.value)}
-                    placeholder="What did you work on?"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddEntry} disabled={!parseDuration(durationInput) || busy}>
-                  {busy ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-2" />
-                  )}
-                  Add Entry
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+              <Button
+                onClick={() => {
+                  void handleAddEntry();
+                }}
+                disabled={!parseDuration(durationInput) || busy}
+                leftSection={
+                  busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />
+                }
+              >
+                Add Entry
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
 
         {/* Time Entries List */}
         {entries.length > 0 && (
-          <div className="border-t pt-3">
-            <Label className="text-xs text-muted-foreground mb-2 block">
+          <Box className="border-t pt-3">
+            <Text size="xs" c="dimmed" className="mb-2 block">
               Time Entries ({entries.length})
-            </Label>
-            <ScrollArea className="max-h-48">
-              <div className="space-y-2">
+            </Text>
+            <ScrollArea.Autosize mah={192}>
+              <Stack gap="xs">
                 {entries
                   .slice()
                   .reverse()
                   .map((entry) => {
                     const isActive = entry.id === timeTracking?.activeEntryId;
                     return (
-                      <div
+                      <Paper
                         key={entry.id}
                         className={cn(
-                          'flex items-center justify-between p-2 rounded text-sm',
+                          'flex items-center justify-between p-2 text-sm',
                           isActive ? 'bg-green-500/10 border border-green-500/20' : 'bg-muted/50'
                         )}
+                        radius="sm"
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                        <Box className="min-w-0 flex-1">
+                          <Group gap="xs">
                             {isActive ? (
                               <Timer className="h-3 w-3 text-green-500 animate-pulse flex-shrink-0" />
                             ) : (
@@ -298,34 +331,39 @@ export function TimeTrackingSection({ task }: TimeTrackingSectionProps) {
                               )}
                             </span>
                             {entry.manual && (
-                              <span className="text-xs text-muted-foreground">(manual)</span>
+                              <Text component="span" size="xs" c="dimmed">
+                                (manual)
+                              </Text>
                             )}
-                          </div>
-                          <div className="text-xs text-muted-foreground pl-5 truncate">
+                          </Group>
+                          <Text size="xs" c="dimmed" className="truncate pl-5">
                             {entry.description
                               ? sanitizeText(entry.description)
                               : formatEntryTime(entry)}
-                          </div>
-                        </div>
+                          </Text>
+                        </Box>
                         {!isActive && (
-                          <Button
-                            variant="ghost"
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
                             size="sm"
-                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleDeleteEntry(entry.id)}
+                            onClick={() => {
+                              void handleDeleteEntry(entry.id);
+                            }}
                             disabled={busy}
+                            aria-label="Delete time entry"
                           >
                             <Trash2 className="h-3 w-3" />
-                          </Button>
+                          </ActionIcon>
                         )}
-                      </div>
+                      </Paper>
                     );
                   })}
-              </div>
-            </ScrollArea>
-          </div>
+              </Stack>
+            </ScrollArea.Autosize>
+          </Box>
         )}
-      </div>
-    </div>
+      </Paper>
+    </Stack>
   );
 }
