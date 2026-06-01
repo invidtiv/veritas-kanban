@@ -29,13 +29,16 @@ test.describe('Task Detail Panel', () => {
     await page.goto('/');
 
     // Click the task card
-    const taskCard = page.locator('text=E2E Detail Test Task');
+    const taskCard = page.locator('text=E2E Detail Test Task').first();
     await expect(taskCard).toBeVisible({ timeout: 10_000 });
     await taskCard.click();
 
-    // The detail panel (Sheet) should open
+    // The detail panel drawer should open
     const detailPanel = page.locator('[role="dialog"]');
     await expect(detailPanel).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('.mantine-Drawer-content')).toBeVisible();
+    await expect(detailPanel.locator('.mantine-Tabs-root').first()).toBeVisible();
+    await expect(page.locator('[data-slot="sheet-content"]')).toHaveCount(0);
 
     // Verify the task title is shown in the panel — it's an input field
     const titleInput = detailPanel.locator('input').first();
@@ -54,7 +57,7 @@ test.describe('Task Detail Panel', () => {
     await page.goto('/');
 
     // Click the task to open the detail panel
-    const taskCard = page.locator('text=E2E Info Panel Task');
+    const taskCard = page.locator('text=E2E Info Panel Task').first();
     await expect(taskCard).toBeVisible({ timeout: 10_000 });
     await taskCard.click();
 
@@ -62,7 +65,8 @@ test.describe('Task Detail Panel', () => {
     await expect(detailPanel).toBeVisible({ timeout: 5_000 });
 
     // The details tab should be active by default and show task info
-    await expect(detailPanel.locator('text=Details')).toBeVisible();
+    await expect(detailPanel.getByRole('tab', { name: 'Details' })).toBeVisible();
+    await expect(detailPanel.locator('.mantine-Select-root').first()).toBeVisible();
 
     // The task title should be editable (it's an input in non-readOnly mode)
     const titleInput = detailPanel.locator('input').first();
@@ -79,7 +83,7 @@ test.describe('Task Detail Panel', () => {
     await page.goto('/');
 
     // Open the detail panel
-    const taskCard = page.locator('text=E2E Close Panel Task');
+    const taskCard = page.locator('text=E2E Close Panel Task').first();
     await expect(taskCard).toBeVisible({ timeout: 10_000 });
     await taskCard.click();
 

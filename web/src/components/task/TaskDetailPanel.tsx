@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import {
+  ActionIcon,
+  Badge,
+  Button,
+  Drawer,
+  Group,
+  SimpleGrid,
+  Stack,
+  Tabs,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { useTaskTypes, getTypeIcon } from '@/hooks/useTaskTypes';
 import { useFeatureSettings } from '@/hooks/useFeatureSettings';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
@@ -35,6 +42,7 @@ import {
   NotebookPen,
   Workflow,
   Eye,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import type { Task, ReviewComment, ReviewState } from '@veritas-kanban/shared';
@@ -258,128 +266,172 @@ export function TaskDetailPanel({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        className="w-[700px] sm:max-w-[700px] overflow-hidden flex flex-col p-0"
-        aria-label={`Task details: ${localTask.title}`}
+    <>
+      <Drawer.Root
+        closeOnEscape
+        lockScroll
+        onClose={() => onOpenChange(false)}
+        opened={open}
+        position="right"
+        returnFocus
+        size="auto"
+        trapFocus
       >
-        <SheetHeader className="space-y-1 flex-shrink-0 border-b px-6 py-4 pr-12">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            {TypeIconComponent && <TypeIconComponent className="h-4 w-4" />}
-            <span className="text-xs uppercase tracking-wide">{typeLabel} Task</span>
-            {readOnly && (
-              <Badge variant="secondary" className="flex items-center gap-1 ml-auto">
-                <Archive className="h-3 w-3" />
-                Archived
-              </Badge>
-            )}
-            {!readOnly && isDirty && (
-              <span className="text-xs text-amber-500 ml-auto">Saving...</span>
-            )}
-          </div>
-          <SheetTitle className="pr-8">
-            {readOnly ? (
-              <span className="text-xl font-semibold">{localTask.title}</span>
-            ) : (
-              <Input
-                value={localTask.title}
-                onChange={(e) => updateField('title', e.target.value)}
-                className="text-xl font-semibold border-0 px-0 focus-visible:ring-0 bg-transparent"
-                placeholder="Task title..."
-                aria-label="Task title"
-              />
-            )}
-          </SheetTitle>
-        </SheetHeader>
-
-        {/* Action buttons above tabs */}
-        <div className="grid grid-cols-3 gap-2 px-6 pt-4 flex-shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setTaskChatOpen(true)}
-            className="flex items-center justify-center gap-1 w-full"
-          >
-            <MessageSquare className="h-3 w-3" />
-            Chat
-          </Button>
-          {!readOnly ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setApplyTemplateOpen(true)}
-                className="flex items-center justify-center gap-1 w-full"
-              >
-                <FileCode className="h-3 w-3" />
-                Template
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setWorkflowOpen(true)}
-                className="flex items-center justify-center gap-1 w-full"
-              >
-                <Workflow className="h-3 w-3" />
-                Workflow
-              </Button>
-            </>
-          ) : (
-            <>
-              <div />
-              <div />
-            </>
-          )}
-          {!readOnly && isCodeTask && localTask.git?.repo && agentSettings.enablePreview && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPreviewOpen(true)}
-              className="flex items-center justify-center gap-1 w-full col-span-2"
-            >
-              <Monitor className="h-3 w-3" />
-              Preview
-            </Button>
-          )}
-        </div>
-
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex-1 flex flex-col overflow-hidden px-6 pt-3 pb-6"
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/10 supports-backdrop-filter:backdrop-blur-xs" />
+        <Drawer.Content
+          aria-label={`Task details: ${localTask.title}`}
+          className="flex h-full w-[700px] flex-col overflow-hidden border-l bg-background bg-clip-padding text-sm shadow-lg sm:max-w-[700px]"
         >
-          <TabsList className="w-full flex-shrink-0 justify-start overflow-x-auto">
-            {visibleTabs.map((tab) => {
-              const Icon = tab.Icon;
-              return (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  disabled={tab.disabled}
-                  className="flex-none px-3"
+          <Drawer.Body className="contents">
+            <Stack gap={0} className="h-full overflow-hidden">
+              <header className="flex-shrink-0 border-b px-6 py-4 pr-12">
+                <Group
+                  gap="xs"
+                  justify="space-between"
+                  wrap="nowrap"
+                  className="text-muted-foreground"
                 >
-                  {Icon && <Icon className="h-3 w-3" />}
-                  {tab.label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+                  <Group gap="xs" wrap="nowrap">
+                    {TypeIconComponent && <TypeIconComponent className="h-4 w-4" />}
+                    <Text size="xs" tt="uppercase" className="tracking-wide">
+                      {typeLabel} Task
+                    </Text>
+                  </Group>
+                  <Group gap="xs" wrap="nowrap">
+                    {readOnly && (
+                      <Badge
+                        color="gray"
+                        variant="light"
+                        leftSection={<Archive className="h-3 w-3" />}
+                      >
+                        Archived
+                      </Badge>
+                    )}
+                    {!readOnly && isDirty && (
+                      <Text size="xs" c="yellow.5">
+                        Saving...
+                      </Text>
+                    )}
+                    <ActionIcon
+                      aria-label="Close task details"
+                      variant="subtle"
+                      color="gray"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </ActionIcon>
+                  </Group>
+                </Group>
+                <Drawer.Title className="mt-1 pr-8 text-xl font-semibold text-foreground">
+                  {readOnly ? (
+                    <Text component="span" size="xl" fw={600}>
+                      {localTask.title}
+                    </Text>
+                  ) : (
+                    <TextInput
+                      value={localTask.title}
+                      onChange={(e) => updateField('title', e.currentTarget.value)}
+                      variant="unstyled"
+                      placeholder="Task title..."
+                      aria-label="Task title"
+                      classNames={{
+                        input: 'text-xl font-semibold text-foreground',
+                      }}
+                    />
+                  )}
+                </Drawer.Title>
+              </header>
 
-          <div className="flex-1 overflow-y-auto mt-4 pr-1">
-            {visibleTabs.map((tab) => (
-              <TabsContent key={tab.id} value={tab.id} className="mt-0">
-                {tab.fallbackTitle ? (
-                  <FeatureErrorBoundary fallbackTitle={tab.fallbackTitle}>
-                    {renderTabContent(tab.id)}
-                  </FeatureErrorBoundary>
+              {/* Action buttons above tabs */}
+              <SimpleGrid cols={3} spacing="xs" className="flex-shrink-0 px-6 pt-4">
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => setTaskChatOpen(true)}
+                  leftSection={<MessageSquare className="h-3 w-3" />}
+                >
+                  Chat
+                </Button>
+                {!readOnly ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => setApplyTemplateOpen(true)}
+                      leftSection={<FileCode className="h-3 w-3" />}
+                    >
+                      Template
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => setWorkflowOpen(true)}
+                      leftSection={<Workflow className="h-3 w-3" />}
+                    >
+                      Workflow
+                    </Button>
+                  </>
                 ) : (
-                  renderTabContent(tab.id)
+                  <>
+                    <div />
+                    <div />
+                  </>
                 )}
-              </TabsContent>
-            ))}
-          </div>
-        </Tabs>
-      </SheetContent>
+                {!readOnly && isCodeTask && localTask.git?.repo && agentSettings.enablePreview && (
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => setPreviewOpen(true)}
+                    className="col-span-2"
+                    leftSection={<Monitor className="h-3 w-3" />}
+                  >
+                    Preview
+                  </Button>
+                )}
+              </SimpleGrid>
+
+              <Tabs
+                value={activeTab}
+                onChange={(value) => {
+                  if (value) setActiveTab(value);
+                }}
+                className="flex flex-1 flex-col overflow-hidden px-6 pt-3 pb-6"
+              >
+                <Tabs.List className="w-full flex-shrink-0 justify-start overflow-x-auto">
+                  {visibleTabs.map((tab) => {
+                    const Icon = tab.Icon;
+                    return (
+                      <Tabs.Tab
+                        key={tab.id}
+                        value={tab.id}
+                        disabled={tab.disabled}
+                        className="flex-none px-3"
+                        leftSection={Icon ? <Icon className="h-3 w-3" /> : undefined}
+                      >
+                        {tab.label}
+                      </Tabs.Tab>
+                    );
+                  })}
+                </Tabs.List>
+
+                <div className="mt-4 flex-1 overflow-y-auto pr-1">
+                  {visibleTabs.map((tab) => (
+                    <Tabs.Panel key={tab.id} value={tab.id} className="mt-0">
+                      {tab.fallbackTitle ? (
+                        <FeatureErrorBoundary fallbackTitle={tab.fallbackTitle}>
+                          {renderTabContent(tab.id)}
+                        </FeatureErrorBoundary>
+                      ) : (
+                        renderTabContent(tab.id)
+                      )}
+                    </Tabs.Panel>
+                  ))}
+                </div>
+              </Tabs>
+            </Stack>
+          </Drawer.Body>
+        </Drawer.Content>
+      </Drawer.Root>
 
       {/* Preview Panel */}
       {localTask && (
@@ -404,6 +456,6 @@ export function TaskDetailPanel({
       {localTask && (
         <WorkflowSection task={localTask} open={workflowOpen} onOpenChange={setWorkflowOpen} />
       )}
-    </Sheet>
+    </>
   );
 }

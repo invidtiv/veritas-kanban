@@ -334,6 +334,11 @@ Phase 3 progress:
   now use direct Mantine button, action icon, select, badge, popover, and key
   badge primitives while preserving navigation, theme switching, workspace
   switching, settings shortcuts, session actions, and status popover behavior.
+- Task detail shell, core tabs, task title editing, metadata selectors,
+  description fallback editing, progress notes, checkpoint status, archive, and
+  delete confirmation now use direct Mantine drawer, tabs, text input, textarea,
+  select, badge, button, paper, loader, and modal primitives while preserving
+  task update, progress, archive, restore, and delete behavior.
 
 ### Phase 4: QA, Cleanup, and Dependency Removal
 
