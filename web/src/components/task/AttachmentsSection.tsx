@@ -14,8 +14,18 @@ import {
   ChevronUp,
   AlertTriangle,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import {
+  ActionIcon,
+  Alert,
+  Box,
+  Button,
+  Group,
+  Modal,
+  Paper,
+  Stack,
+  Text,
+  ThemeIcon,
+} from '@mantine/core';
 import { useUploadAttachment, useDeleteAttachment } from '@/hooks/useAttachments';
 import { cn } from '@/lib/utils';
 import type { Task, Attachment } from '@veritas-kanban/shared';
@@ -53,15 +63,15 @@ function AttachmentItem({ taskId, attachment }: { taskId: string; attachment: At
   const [expanded, setExpanded] = useState(false);
   const [extractedText, setExtractedText] = useState<string | null>(null);
   const [loadingText, setLoadingText] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const deleteAttachment = useDeleteAttachment();
 
   const isImage = attachment.mimeType.startsWith('image/');
   const isDocument = !isImage;
 
   const handleDelete = async () => {
-    if (confirm(`Delete attachment "${attachment.originalName}"?`)) {
-      await deleteAttachment.mutateAsync({ taskId, attachmentId: attachment.id });
-    }
+    await deleteAttachment.mutateAsync({ taskId, attachmentId: attachment.id });
+    setDeleteDialogOpen(false);
   };
 
   const handleToggleExpand = async () => {
@@ -86,71 +96,108 @@ function AttachmentItem({ taskId, attachment }: { taskId: string; attachment: At
   const downloadUrl = `${API_BASE}/tasks/${taskId}/attachments/${attachment.id}/download`;
 
   return (
-    <div className="border rounded-md p-3 space-y-2">
-      <div className="flex items-start gap-2">
-        <div className="text-muted-foreground mt-0.5">{getFileIcon(attachment.mimeType)}</div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate">{attachment.originalName}</div>
-          <div className="text-xs text-muted-foreground">
-            {formatFileSize(attachment.size)} • {new Date(attachment.uploaded).toLocaleDateString()}
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          {isDocument && (
-            <Button
+    <>
+      <Paper className="space-y-2 p-3" radius="md" withBorder>
+        <Group align="flex-start" gap="xs" wrap="nowrap">
+          <Box className="mt-0.5 text-muted-foreground">{getFileIcon(attachment.mimeType)}</Box>
+          <Box className="min-w-0 flex-1">
+            <Text size="sm" fw={500} className="truncate">
+              {attachment.originalName}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {formatFileSize(attachment.size)} •{' '}
+              {new Date(attachment.uploaded).toLocaleDateString()}
+            </Text>
+          </Box>
+          <Group gap={4}>
+            {isDocument && (
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                color="gray"
+                onClick={() => {
+                  void handleToggleExpand();
+                }}
+                disabled={loadingText}
+                aria-label={expanded ? 'Collapse text preview' : 'Expand text preview'}
+              >
+                {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </ActionIcon>
+            )}
+            <ActionIcon
               size="sm"
-              variant="ghost"
-              onClick={handleToggleExpand}
-              disabled={loadingText}
-              className="h-7 w-7 p-0"
-              aria-label={expanded ? 'Collapse text preview' : 'Expand text preview'}
+              variant="subtle"
+              color="gray"
+              component="a"
+              href={downloadUrl}
+              download={attachment.originalName}
+              aria-label="Download attachment"
             >
-              {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            asChild
-            className="h-7 w-7 p-0"
-            aria-label="Download attachment"
-          >
-            <a href={downloadUrl} download={attachment.originalName}>
               <Download className="h-3 w-3" />
-            </a>
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleDelete}
-            disabled={deleteAttachment.isPending}
-            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-            aria-label="Delete attachment"
+            </ActionIcon>
+            <ActionIcon
+              size="sm"
+              variant="subtle"
+              color="red"
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={deleteAttachment.isPending}
+              aria-label="Delete attachment"
+            >
+              <Trash2 className="h-3 w-3" />
+            </ActionIcon>
+          </Group>
+        </Group>
+
+        {/* Image thumbnail */}
+        {isImage && (
+          <Box className="mt-2">
+            <img
+              src={downloadUrl}
+              alt={attachment.originalName}
+              className="max-w-full h-auto rounded border"
+              style={{ maxHeight: '300px' }}
+            />
+          </Box>
+        )}
+
+        {/* Expanded text preview */}
+        {expanded && isDocument && (
+          <Paper
+            className="mt-2 max-h-[300px] overflow-y-auto whitespace-pre-wrap bg-muted/30 p-2 text-xs"
+            ff="monospace"
+            radius="sm"
           >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Image thumbnail */}
-      {isImage && (
-        <div className="mt-2">
-          <img
-            src={downloadUrl}
-            alt={attachment.originalName}
-            className="max-w-full h-auto rounded border"
-            style={{ maxHeight: '300px' }}
-          />
-        </div>
-      )}
-
-      {/* Expanded text preview */}
-      {expanded && isDocument && (
-        <div className="mt-2 p-2 bg-muted/30 rounded text-xs font-mono whitespace-pre-wrap max-h-[300px] overflow-y-auto">
-          {loadingText ? 'Loading...' : extractedText}
-        </div>
-      )}
-    </div>
+            {loadingText ? 'Loading...' : extractedText}
+          </Paper>
+        )}
+      </Paper>
+      <Modal
+        opened={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        title="Delete attachment?"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            This will permanently delete "{attachment.originalName}". This action cannot be undone.
+          </Text>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="default" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                void handleDelete();
+              }}
+              loading={deleteAttachment.isPending}
+            >
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </>
   );
 }
 
@@ -199,38 +246,47 @@ export function AttachmentsSection({ task }: AttachmentsSectionProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <Stack gap="md">
+      <Group gap="xs">
         <Paperclip className="h-4 w-4 text-muted-foreground" />
-        <Label className="text-muted-foreground">Attachments</Label>
+        <Text size="sm" c="dimmed" fw={500}>
+          Attachments
+        </Text>
         {attachments.length > 0 && (
-          <span className="text-xs text-muted-foreground">({attachments.length})</span>
+          <Text size="xs" c="dimmed">
+            ({attachments.length})
+          </Text>
         )}
-      </div>
+      </Group>
 
       {/* Token cost warning */}
       {showWarning && (
-        <div className="flex items-start gap-3 p-3 rounded-md border border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-amber-900 dark:text-amber-200">
-            ⚠️ Each attachment adds to agent token costs. Only include files essential for task
-            context.
-          </p>
-        </div>
+        <Alert color="yellow" variant="light" icon={<AlertTriangle className="h-4 w-4" />}>
+          Each attachment adds to agent token costs. Only include files essential for task context.
+        </Alert>
       )}
 
       {/* Upload zone */}
-      <div
+      <Paper
+        role="button"
+        tabIndex={0}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleClick();
+          }
+        }}
         className={cn(
           'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
           isDragging && 'border-primary bg-primary/5',
           !isDragging && 'border-muted-foreground/25 hover:border-muted-foreground/50',
           uploadAttachment.isPending && 'opacity-50 pointer-events-none'
         )}
+        radius="lg"
       >
         <input
           ref={fileInputRef}
@@ -239,25 +295,31 @@ export function AttachmentsSection({ task }: AttachmentsSectionProps) {
           onChange={(e) => handleFileSelect(e.target.files)}
           className="hidden"
         />
-        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground mb-1">
+        <ThemeIcon variant="transparent" color="gray" size="xl" className="mx-auto mb-2">
+          <Upload className="h-8 w-8 text-muted-foreground" />
+        </ThemeIcon>
+        <Text size="sm" c="dimmed" className="mb-1">
           {uploadAttachment.isPending ? 'Uploading...' : 'Drop files here or click to browse'}
-        </p>
-        <p className="text-xs text-muted-foreground">Max 10MB per file, 20 files total</p>
-      </div>
+        </Text>
+        <Text size="xs" c="dimmed">
+          Max 10MB per file, 20 files total
+        </Text>
+      </Paper>
 
       {/* Attachments list */}
       {attachments.length === 0 ? (
-        <div className="text-sm text-muted-foreground italic py-4 text-center border rounded-md">
-          No attachments yet
-        </div>
+        <Paper className="py-4 text-center" radius="md" withBorder>
+          <Text size="sm" c="dimmed" fs="italic">
+            No attachments yet
+          </Text>
+        </Paper>
       ) : (
-        <div className="space-y-2">
+        <Stack gap="xs">
           {attachments.map((attachment) => (
             <AttachmentItem key={attachment.id} taskId={task.id} attachment={attachment} />
           ))}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

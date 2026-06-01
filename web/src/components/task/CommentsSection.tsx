@@ -1,21 +1,20 @@
 import { useState } from 'react';
 import { MessageSquare, Pencil, Trash2, X, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  ActionIcon,
+  Avatar,
+  Box,
+  Button,
+  Group,
+  Modal,
+  Paper,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
-import { Label } from '@/components/ui/label';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { useAddComment, useEditComment, useDeleteComment } from '@/hooks/useTasks';
 import { useFeatureSettings } from '@/hooks/useFeatureSettings';
 import type { Task, Comment } from '@veritas-kanban/shared';
@@ -87,22 +86,24 @@ function CommentItem({
 
   return (
     <>
-      <div className="group flex gap-3 p-3 rounded-md bg-muted/30">
-        <div className="h-8 w-8 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
+      <Paper className="group flex gap-3 bg-muted/30 p-3" radius="md">
+        <Avatar color="violet" radius="xl" size="sm" className="flex-shrink-0">
           {getInitials(comment.author)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="font-medium text-sm">{comment.author}</span>
-            <span className="text-xs text-muted-foreground">
+        </Avatar>
+        <Box className="min-w-0 flex-1">
+          <Group align="baseline" gap="xs" className="mb-1">
+            <Text size="sm" fw={500}>
+              {comment.author}
+            </Text>
+            <Text size="xs" c="dimmed">
               {formatRelativeTime(comment.timestamp)}
-            </span>
+            </Text>
             {/* Edit/Delete buttons - visible on hover */}
-            <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="ghost"
+            <Group gap={4} className="ml-auto opacity-0 transition-opacity group-hover:opacity-100">
+              <ActionIcon
+                variant="subtle"
+                color="gray"
                 size="sm"
-                className="h-6 w-6 p-0"
                 aria-label="Edit comment"
                 onClick={() => {
                   setEditText(comment.text);
@@ -110,20 +111,20 @@ function CommentItem({
                 }}
               >
                 <Pencil className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-              </Button>
-              <Button
-                variant="ghost"
+              </ActionIcon>
+              <ActionIcon
+                variant="subtle"
+                color="red"
                 size="sm"
-                className="h-6 w-6 p-0"
                 aria-label="Delete comment"
                 onClick={() => setDeleteDialogOpen(true)}
               >
-                <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-              </Button>
-            </div>
-          </div>
+                <Trash2 className="h-3 w-3" />
+              </ActionIcon>
+            </Group>
+          </Group>
           {isEditing ? (
-            <div className="space-y-2">
+            <Stack gap="xs">
               {markdownEnabled ? (
                 <MarkdownEditor
                   value={editText}
@@ -140,9 +141,10 @@ function CommentItem({
               ) : (
                 <Textarea
                   value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
+                  onChange={(e) => setEditText(e.currentTarget.value)}
                   className="text-sm min-h-[60px] resize-none"
                   autoFocus
+                  aria-label="Edit comment text"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                       e.preventDefault();
@@ -152,54 +154,65 @@ function CommentItem({
                   }}
                 />
               )}
-              <div className="flex items-center gap-2">
+              <Group gap="xs">
                 <Button
-                  size="sm"
-                  className="h-7"
-                  onClick={handleSaveEdit}
+                  size="xs"
+                  onClick={() => {
+                    void handleSaveEdit();
+                  }}
                   disabled={!editText.trim() || editComment.isPending}
+                  leftSection={<Check className="h-3 w-3" />}
                 >
-                  <Check className="h-3 w-3 mr-1" />
                   Save
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7" onClick={handleCancelEdit}>
-                  <X className="h-3 w-3 mr-1" />
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  onClick={handleCancelEdit}
+                  leftSection={<X className="h-3 w-3" />}
+                >
                   Cancel
                 </Button>
-              </div>
-            </div>
+              </Group>
+            </Stack>
           ) : (
-            <div className="text-sm text-foreground break-words">
+            <Box className="break-words text-sm text-foreground">
               {markdownEnabled ? (
                 <MarkdownRenderer content={comment.text} className="break-words" />
               ) : (
                 <p className="whitespace-pre-wrap">{comment.text}</p>
               )}
-            </div>
+            </Box>
           )}
-        </div>
-      </div>
+        </Box>
+      </Paper>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete comment?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this comment by {comment.author}. This action cannot be
-              undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      <Modal
+        opened={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        title="Delete comment?"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            This will permanently delete this comment by {comment.author}. This action cannot be
+            undone.
+          </Text>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="default" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                void handleDelete();
+              }}
             >
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   );
 }
@@ -239,22 +252,28 @@ export function CommentsSection({ task }: CommentsSectionProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <Stack gap="md">
+      <Group gap="xs">
         <MessageSquare className="h-4 w-4 text-muted-foreground" />
-        <Label className="text-muted-foreground">Comments</Label>
+        <Text size="sm" c="dimmed" fw={500}>
+          Comments
+        </Text>
         {comments.length > 0 && (
-          <span className="text-xs text-muted-foreground">({comments.length})</span>
+          <Text size="xs" c="dimmed">
+            ({comments.length})
+          </Text>
         )}
-      </div>
+      </Group>
 
       {/* Comments list */}
       {comments.length === 0 ? (
-        <div className="text-sm text-muted-foreground italic py-4 text-center border rounded-md">
-          No comments yet
-        </div>
+        <Paper className="py-4 text-center" radius="md" withBorder>
+          <Text size="sm" c="dimmed" fs="italic">
+            No comments yet
+          </Text>
+        </Paper>
       ) : (
-        <div className="space-y-3">
+        <Stack gap="sm">
           {comments.map((comment) => (
             <CommentItem
               key={comment.id}
@@ -263,21 +282,22 @@ export function CommentsSection({ task }: CommentsSectionProps) {
               markdownEnabled={markdownEnabled}
             />
           ))}
-        </div>
+        </Stack>
       )}
 
       {/* Add comment form */}
-      <div className="space-y-2 pt-2 border-t">
-        <div className="flex gap-2">
-          <Input
+      <Stack gap="xs" className="border-t pt-2">
+        <Group gap="xs">
+          <TextInput
             value={author}
-            onChange={(e) => setAuthor(e.target.value)}
+            onChange={(e) => setAuthor(e.currentTarget.value)}
             placeholder="Your name"
             className="text-sm max-w-[150px]"
             disabled={isAdding}
+            aria-label="Comment author"
           />
-        </div>
-        <div className="flex gap-2">
+        </Group>
+        <Box>
           {markdownEnabled ? (
             <MarkdownEditor
               value={text}
@@ -291,24 +311,27 @@ export function CommentsSection({ task }: CommentsSectionProps) {
           ) : (
             <Textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => setText(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
               placeholder="Add a comment... (Cmd/Ctrl+Enter to submit)"
               className="text-sm min-h-[80px] resize-none"
               disabled={isAdding}
+              aria-label="Comment text"
             />
           )}
-        </div>
-        <div className="flex justify-end">
+        </Box>
+        <Group justify="flex-end">
           <Button
             size="sm"
-            onClick={handleAddComment}
+            onClick={() => {
+              void handleAddComment();
+            }}
             disabled={!text.trim() || !author.trim() || isAdding}
           >
             Add Comment
           </Button>
-        </div>
-      </div>
-    </div>
+        </Group>
+      </Stack>
+    </Stack>
   );
 }

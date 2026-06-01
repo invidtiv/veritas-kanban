@@ -349,6 +349,12 @@ Phase 3 progress:
   badge, button, action icon, paper, theme icon, and modal primitives while
   preserving subtask and criterion mutations, auto-complete toggling,
   deliverable add/edit/delete flows, and lessons-note/tag updates.
+- Task detail comments, attachments, observations, and time tracking now use
+  direct Mantine text input, textarea, select, slider, badge, button, action
+  icon, alert, paper, scroll area, modal, stack, group, text, avatar, and theme
+  icon primitives while preserving comment add/edit/delete, attachment upload,
+  text preview, download and delete confirmation, observation add/delete, and
+  manual time-entry add/delete behavior.
 
 ### Phase 4: QA, Cleanup, and Dependency Removal
 

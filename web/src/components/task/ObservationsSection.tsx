@@ -1,25 +1,19 @@
 import { useState } from 'react';
 import { Eye, Trash2, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import {
+  ActionIcon,
+  Badge,
+  Button,
+  Group,
+  Modal,
+  Paper,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  SimpleGrid,
+  Slider,
+  Stack,
+  Text,
+  Textarea,
+} from '@mantine/core';
 import type { Task, Observation, ObservationType } from '@veritas-kanban/shared';
 
 interface ObservationsSectionProps {
@@ -50,11 +44,18 @@ function formatRelativeTime(timestamp: string): string {
 }
 
 const TYPE_COLORS: Record<ObservationType, string> = {
-  decision: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  blocker: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  insight: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  context: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+  decision: 'violet',
+  blocker: 'red',
+  insight: 'blue',
+  context: 'gray',
 };
+
+const OBSERVATION_TYPES: { value: ObservationType; label: string }[] = [
+  { value: 'context', label: 'Context' },
+  { value: 'decision', label: 'Decision' },
+  { value: 'insight', label: 'Insight' },
+  { value: 'blocker', label: 'Blocker' },
+];
 
 function ObservationItem({
   observation,
@@ -72,59 +73,73 @@ function ObservationItem({
 
   return (
     <>
-      <div className="group flex gap-3 p-3 rounded-md border bg-card hover:bg-muted/30 transition-colors">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${TYPE_COLORS[observation.type]}`}
-            >
+      <Paper
+        className="group bg-card p-3 transition-colors hover:bg-muted/30"
+        radius="md"
+        withBorder
+      >
+        <Stack gap="xs">
+          <Group gap="xs" align="center">
+            <Badge color={TYPE_COLORS[observation.type]} variant="light" size="sm">
               {observation.type}
-            </span>
-            <span className="text-xs font-medium text-muted-foreground">
+            </Badge>
+            <Text size="xs" fw={500} c="dimmed">
               Score: {observation.score}/10
-            </span>
-            <span className="text-xs text-muted-foreground">
+            </Text>
+            <Text size="xs" c="dimmed">
               {formatRelativeTime(observation.timestamp)}
-            </span>
+            </Text>
             {observation.agent && (
-              <span className="text-xs text-muted-foreground">by {observation.agent}</span>
+              <Text size="xs" c="dimmed">
+                by {observation.agent}
+              </Text>
             )}
             {/* Delete button - visible on hover */}
-            <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                aria-label="Delete observation"
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Trash2
-                  className="h-3 w-3 text-muted-foreground hover:text-destructive"
-                  aria-hidden="true"
-                />
-              </Button>
-            </div>
-          </div>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{observation.content}</p>
-        </div>
-      </div>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              size="sm"
+              className="ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+              aria-label="Delete observation"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2
+                className="h-3 w-3 text-muted-foreground hover:text-destructive"
+                aria-hidden="true"
+              />
+            </ActionIcon>
+          </Group>
+          <Text size="sm" className="whitespace-pre-wrap text-foreground">
+            {observation.content}
+          </Text>
+        </Stack>
+      </Paper>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Observation</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this observation? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
+      <Modal
+        opened={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        title="Delete Observation"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            Are you sure you want to delete this observation? This action cannot be undone.
+          </Text>
+          <Group justify="flex-end" gap="xs">
+            <Button variant="default" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                void handleDelete();
+              }}
+            >
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   );
 }
@@ -162,94 +177,109 @@ export function ObservationsSection({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <Stack gap="md">
+      <Group justify="space-between" align="center">
+        <Group gap="xs">
           <Eye className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-          <h3 className="text-lg font-semibold">Observations</h3>
-          <span className="text-sm text-muted-foreground">({observations.length})</span>
-        </div>
+          <Text size="lg" fw={600}>
+            Observations
+          </Text>
+          <Text size="sm" c="dimmed">
+            ({observations.length})
+          </Text>
+        </Group>
         {!isAdding && (
-          <Button variant="outline" size="sm" onClick={() => setIsAdding(true)}>
-            <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAdding(true)}
+            leftSection={<Plus className="h-4 w-4" aria-hidden="true" />}
+          >
             Add Observation
           </Button>
         )}
-      </div>
+      </Group>
 
       {isAdding && (
-        <div className="border rounded-lg p-4 bg-card space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="obs-type">Type</Label>
-              <Select value={newObsType} onValueChange={(v) => setNewObsType(v as ObservationType)}>
-                <SelectTrigger id="obs-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="context">Context</SelectItem>
-                  <SelectItem value="decision">Decision</SelectItem>
-                  <SelectItem value="insight">Insight</SelectItem>
-                  <SelectItem value="blocker">Blocker</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="obs-score">Importance: {newObsScore}/10</Label>
-              <input
-                type="range"
-                id="obs-score"
-                min="1"
-                max="10"
-                value={newObsScore}
-                onChange={(e) => setNewObsScore(parseInt(e.target.value))}
-                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                aria-label={`Importance score: ${newObsScore} out of 10`}
-                aria-valuenow={newObsScore}
-                aria-valuemin={1}
-                aria-valuemax={10}
-                aria-valuetext={`${newObsScore} out of 10`}
+        <Paper className="bg-card p-4" radius="lg" withBorder>
+          <Stack gap="sm">
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <Stack gap="xs">
+                <Text component="label" htmlFor="obs-type" size="sm" fw={500}>
+                  Type
+                </Text>
+                <Select
+                  id="obs-type"
+                  aria-label="Observation type"
+                  allowDeselect={false}
+                  data={OBSERVATION_TYPES}
+                  value={newObsType}
+                  onChange={(value) => {
+                    if (value) setNewObsType(value as ObservationType);
+                  }}
+                />
+              </Stack>
+              <Stack gap="xs">
+                <Text component="label" htmlFor="obs-score" size="sm" fw={500}>
+                  Importance: {newObsScore}/10
+                </Text>
+                <Slider
+                  id="obs-score"
+                  min={1}
+                  max={10}
+                  value={newObsScore}
+                  onChange={setNewObsScore}
+                  aria-label={`Importance score: ${newObsScore} out of 10`}
+                />
+              </Stack>
+            </SimpleGrid>
+            <Stack gap="xs">
+              <Text component="label" htmlFor="obs-content" size="sm" fw={500}>
+                Content
+              </Text>
+              <Textarea
+                id="obs-content"
+                value={newObsContent}
+                onChange={(e) => setNewObsContent(e.currentTarget.value)}
+                placeholder="Record a decision, blocker, insight, or context..."
+                className="min-h-[100px] resize-none"
+                autoFocus
               />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="obs-content">Content</Label>
-            <Textarea
-              id="obs-content"
-              value={newObsContent}
-              onChange={(e) => setNewObsContent(e.target.value)}
-              placeholder="Record a decision, blocker, insight, or context..."
-              className="min-h-[100px] resize-none"
-              autoFocus
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsAdding(false);
-                setNewObsContent('');
-                setNewObsScore(5);
-                setNewObsType('context');
-              }}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleAdd} disabled={!newObsContent.trim() || isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Observation'}
-            </Button>
-          </div>
-        </div>
+            </Stack>
+            <Group gap="xs" justify="flex-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsAdding(false);
+                  setNewObsContent('');
+                  setNewObsScore(5);
+                  setNewObsType('context');
+                }}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  void handleAdd();
+                }}
+                disabled={!newObsContent.trim() || isSubmitting}
+              >
+                {isSubmitting ? 'Adding...' : 'Add Observation'}
+              </Button>
+            </Group>
+          </Stack>
+        </Paper>
       )}
 
-      <div className="space-y-2">
+      <Stack gap="xs">
         {observations.length === 0 && !isAdding && (
-          <p className="text-sm text-muted-foreground text-center py-8">
+          <Text size="sm" c="dimmed" ta="center" className="py-8">
             No observations yet. Add context, decisions, insights, or blockers as you work on this
             task.
-          </p>
+          </Text>
         )}
         {observations
           .slice()
@@ -257,7 +287,7 @@ export function ObservationsSection({
           .map((obs) => (
             <ObservationItem key={obs.id} observation={obs} onDelete={onDeleteObservation} />
           ))}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
