@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Box, Group, Kbd, ScrollArea, Stack, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useView } from '@/contexts/ViewContext';
@@ -284,10 +285,8 @@ export function CommandPalette() {
             Search and run board actions, navigation commands, and shortcuts.
           </DialogDescription>
 
-          {/* Search input */}
-          <div className="flex items-center gap-3 px-4 border-b">
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-            <input
+          <Group gap="sm" px="md" className="border-b" wrap="nowrap">
+            <TextInput
               ref={inputRef}
               value={query}
               onChange={(e) => {
@@ -296,62 +295,76 @@ export function CommandPalette() {
               }}
               placeholder="Type a command or search..."
               aria-label="Search commands"
-              className="flex-1 h-12 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              variant="unstyled"
+              leftSection={<Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+              className="min-w-0 flex-1"
+              classNames={{
+                input: 'h-12 bg-transparent text-sm placeholder:text-muted-foreground',
+              }}
             />
-            <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
+            <Kbd className="hidden h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground sm:inline-flex">
               ESC
-            </kbd>
-          </div>
+            </Kbd>
+          </Group>
 
-          {/* Results */}
-          <div ref={listRef} className="max-h-[320px] overflow-y-auto p-2">
+          <ScrollArea viewportRef={listRef} mah={320} p="xs">
             {filtered.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
+              <Text ta="center" py="xl" size="sm" c="dimmed">
                 No commands found
-              </div>
+              </Text>
             ) : (
               grouped.map((group) => (
-                <div key={group.category}>
-                  <div className="px-2 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                <Box key={group.category}>
+                  <Text
+                    px="xs"
+                    py={6}
+                    size="xs"
+                    fw={600}
+                    c="dimmed"
+                    tt="uppercase"
+                    className="tracking-wider"
+                  >
                     {group.category}
-                  </div>
-                  {group.items.map((cmd) => {
-                    flatIndex++;
-                    const idx = flatIndex;
-                    return (
-                      <button
-                        key={cmd.id}
-                        data-index={idx}
-                        className={cn(
-                          'flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors',
-                          idx === selectedIndex
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-foreground hover:bg-muted/50'
-                        )}
-                        onClick={() => runCommand(cmd)}
-                        onMouseEnter={() => setSelectedIndex(idx)}
-                      >
-                        <span
+                  </Text>
+                  <Stack gap={2}>
+                    {group.items.map((cmd) => {
+                      flatIndex++;
+                      const idx = flatIndex;
+                      return (
+                        <UnstyledButton
+                          key={cmd.id}
+                          data-index={idx}
                           className={cn(
-                            'shrink-0',
-                            idx === selectedIndex ? 'text-primary' : 'text-muted-foreground'
+                            'flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors',
+                            idx === selectedIndex
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-foreground hover:bg-muted/50'
                           )}
+                          onClick={() => runCommand(cmd)}
+                          onMouseEnter={() => setSelectedIndex(idx)}
                         >
-                          {cmd.icon}
-                        </span>
-                        <span className="flex-1 text-left">{cmd.label}</span>
-                        {cmd.shortcut && (
-                          <kbd className="ml-auto hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
-                            {cmd.shortcut}
-                          </kbd>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                          <span
+                            className={cn(
+                              'shrink-0',
+                              idx === selectedIndex ? 'text-primary' : 'text-muted-foreground'
+                            )}
+                          >
+                            {cmd.icon}
+                          </span>
+                          <span className="flex-1 text-left">{cmd.label}</span>
+                          {cmd.shortcut && (
+                            <Kbd className="ml-auto hidden h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground sm:inline-flex">
+                              {cmd.shortcut}
+                            </Kbd>
+                          )}
+                        </UnstyledButton>
+                      );
+                    })}
+                  </Stack>
+                </Box>
               ))
             )}
-          </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
       {searchMounted && (

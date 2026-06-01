@@ -1,3 +1,4 @@
+import { Box, Container, Divider, Group, Kbd, Text } from '@mantine/core';
 import {
   Plus,
   Settings,
@@ -147,28 +148,44 @@ export function Header() {
   setOpenChatPanel(openChatPanel);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card" role="banner">
-      <nav aria-label="Main navigation" className="container mx-auto px-4">
-        <div className="flex h-14 items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
+    <Box
+      component="header"
+      className="sticky top-0 z-50 border-b border-border bg-card"
+      role="banner"
+    >
+      <Container fluid px="md">
+        <Group
+          component="nav"
+          aria-label="Main navigation"
+          h={56}
+          justify="space-between"
+          wrap="nowrap"
+        >
+          <Group gap="md" wrap="nowrap" miw={0}>
+            <Box
+              component="button"
+              type="button"
               className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
               onClick={() => window.location.reload()}
               aria-label="Refresh page"
               title="Refresh page"
             >
-              <span className="text-xl" aria-hidden="true">
-                ⚖️
-              </span>
-              <h1 className="text-lg font-semibold">Veritas Kanban</h1>
-            </button>
-            <div className="h-4 w-px bg-border" aria-hidden="true" />
+              <Scale className="h-5 w-5 text-primary" aria-hidden="true" />
+              <Text component="h1" size="lg" fw={650} lh={1} m={0}>
+                Veritas Kanban
+              </Text>
+            </Box>
+            <Divider orientation="vertical" className="h-4 border-border" aria-hidden="true" />
             <WorkspaceSwitcher />
-            <div className="hidden md:block h-4 w-px bg-border" aria-hidden="true" />
+            <Divider
+              orientation="vertical"
+              className="hidden h-4 border-border md:block"
+              aria-hidden="true"
+            />
             <WebSocketIndicator />
-          </div>
+          </Group>
 
-          <div className="flex items-center gap-2" role="toolbar" aria-label="Board actions">
+          <Group gap="xs" wrap="nowrap" role="toolbar" aria-label="Board actions">
             <Button
               variant="default"
               size="sm"
@@ -261,13 +278,13 @@ export function Header() {
               className="gap-1.5 text-muted-foreground"
             >
               <Search className="h-4 w-4" aria-hidden="true" />
-              <kbd className="hidden sm:inline-flex h-5 items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px]">
+              <Kbd className="hidden h-5 items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] sm:inline-flex">
                 ⌘K
-              </kbd>
+              </Kbd>
             </Button>
-          </div>
-        </div>
-      </nav>
+          </Group>
+        </Group>
+      </Container>
 
       <Suspense fallback={null}>
         {loadedPanels.has('create') && (
@@ -295,6 +312,6 @@ export function Header() {
           />
         )}
       </Suspense>
-    </header>
+    </Box>
   );
 }

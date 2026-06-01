@@ -11,13 +11,30 @@ import { cn } from '@/lib/utils';
 function ScrollArea({
   className,
   children,
+  onScroll,
+  onScrollCapture,
+  viewportProps,
   ...props
 }: React.ComponentProps<'div'> & MantineScrollAreaProps) {
+  const mergedViewportProps = {
+    ...viewportProps,
+    'data-slot': 'scroll-area-viewport',
+    onScroll: (event: React.UIEvent<HTMLDivElement>) => {
+      viewportProps?.onScroll?.(event);
+      onScroll?.(event);
+    },
+    onScrollCapture: (event: React.UIEvent<HTMLDivElement>) => {
+      viewportProps?.onScrollCapture?.(event);
+      onScrollCapture?.(event);
+    },
+  };
+
   return (
     <MantineScrollArea
       data-slot="scroll-area"
       type="auto"
       className={cn('relative', className)}
+      viewportProps={mergedViewportProps}
       {...props}
     >
       {children}

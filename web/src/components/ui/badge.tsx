@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Badge as MantineBadge, type BadgeProps as MantineBadgeProps } from '@mantine/core';
-import { Slot as SlotRoot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 
+import { SlotRoot } from '@/components/ui/slot';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(

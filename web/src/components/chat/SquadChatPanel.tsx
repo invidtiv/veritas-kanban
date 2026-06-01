@@ -98,8 +98,8 @@ export function SquadChatPanel({ open, onOpenChange }: SquadChatPanelProps) {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior });
     }
-    // Fallback: find Radix ScrollArea viewport and scroll it directly
-    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    // Fallback: find the Mantine-backed ScrollArea viewport and scroll it directly.
+    const viewport = scrollAreaRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
     if (viewport) {
       viewport.scrollTop = viewport.scrollHeight;
     }
