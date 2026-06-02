@@ -3,15 +3,29 @@ import { api } from '@/lib/api';
 import { apiFetch } from '@/lib/api/helpers';
 import type { AnyTelemetryEvent } from '@veritas-kanban/shared';
 
-export function useAgentRunTraces(taskId: string | undefined) {
+interface AgentRunTimelineQueryOptions {
+  live?: boolean;
+}
+
+const LIVE_RUN_REFETCH_MS = 2000;
+
+export function useAgentRunTraces(
+  taskId: string | undefined,
+  options: AgentRunTimelineQueryOptions = {}
+) {
   return useQuery({
     queryKey: ['traces', 'task', taskId],
     queryFn: () => (taskId ? api.traces.listForTask(taskId) : Promise.resolve([])),
     enabled: Boolean(taskId),
+    refetchInterval: options.live ? LIVE_RUN_REFETCH_MS : false,
+    staleTime: options.live ? 0 : 30000,
   });
 }
 
-export function useTaskTelemetryEvents(taskId: string | undefined) {
+export function useTaskTelemetryEvents(
+  taskId: string | undefined,
+  options: AgentRunTimelineQueryOptions = {}
+) {
   return useQuery({
     queryKey: ['telemetry', 'task', taskId],
     queryFn: () =>
@@ -19,6 +33,7 @@ export function useTaskTelemetryEvents(taskId: string | undefined) {
         ? apiFetch<AnyTelemetryEvent[]>(`/api/telemetry/events/task/${encodeURIComponent(taskId)}`)
         : Promise.resolve([]),
     enabled: Boolean(taskId),
-    staleTime: 30000,
+    refetchInterval: options.live ? LIVE_RUN_REFETCH_MS : false,
+    staleTime: options.live ? 0 : 30000,
   });
 }

@@ -66,7 +66,7 @@ const EVENT_TYPES: AgentRunTimelineEventType[] = [
   'result',
 ];
 
-const MAX_RENDERED_EVENTS = 120;
+const TIMELINE_PAGE_SIZE = 80;
 
 const EVENT_LABELS: Record<AgentRunTimelineEventType, string> = {
   approval: 'Approval',
@@ -271,6 +271,15 @@ function telemetryEventType(event: AnyTelemetryEvent): AgentRunTimelineEventType
   return 'tool';
 }
 
+function logLinkForEvent(
+  type: AgentRunTimelineEventType
+): AgentRunTimelineEvent['link'] | undefined {
+  if (type === 'command' || type === 'error' || type === 'result' || type === 'tool') {
+    return { label: 'Agent logs', href: '#agent', target: 'agent' };
+  }
+  return undefined;
+}
+
 function metadataForTaskPrompt(task: Task, trace?: AgentRunTrace): Record<string, unknown> {
   return {
     taskId: task.id,
@@ -360,6 +369,7 @@ export function buildAgentRunTimelineEvents({
           traceSequence: step.sequence,
           ...step.metadata,
         },
+        link: logLinkForEvent(eventType),
       });
       nextSequence += 1;
     }
@@ -394,6 +404,7 @@ export function buildAgentRunTimelineEvents({
         totalTokens: run?.totalTokens,
         cost: run?.cost,
       },
+      link: logLinkForEvent(type),
     });
   }
 
@@ -412,6 +423,7 @@ export function buildAgentRunTimelineEvents({
         title: 'Task attempt started',
         detail: currentAttempt.agent,
         metadata: currentAttempt as unknown as Record<string, unknown>,
+        link: { label: 'Agent logs', href: '#agent', target: 'agent' },
       });
     }
     if (currentAttempt.ended) {
@@ -424,6 +436,7 @@ export function buildAgentRunTimelineEvents({
         title: currentAttempt.status === 'failed' ? 'Task attempt failed' : 'Task attempt finished',
         detail: currentAttempt.agent,
         metadata: currentAttempt as unknown as Record<string, unknown>,
+        link: { label: 'Agent logs', href: '#agent', target: 'agent' },
       });
     }
   }
@@ -612,15 +625,20 @@ export function AgentRunTimelinePanel({
   initialAttemptId,
   onOpenTab,
 }: AgentRunTimelinePanelProps) {
-  const { data: traces = [], isLoading: tracesLoading } = useAgentRunTraces(task.id);
+  const hasLiveAttempt = task.attempt?.status === 'running';
+  const { data: traces = [], isLoading: tracesLoading } = useAgentRunTraces(task.id, {
+    live: hasLiveAttempt,
+  });
   const { data: telemetryEvents = [], isLoading: telemetryLoading } = useTaskTelemetryEvents(
-    task.id
+    task.id,
+    { live: hasLiveAttempt }
   );
   const { data: workProducts = [], isLoading: workProductsLoading } = useTaskWorkProducts(task.id);
   const [selectedAttemptId, setSelectedAttemptId] = useState<string | null>(
     initialAttemptId ?? task.attempt?.id ?? null
   );
   const [filter, setFilter] = useState<AgentRunTimelineEventType | 'all'>('all');
+  const [visibleCount, setVisibleCount] = useState(TIMELINE_PAGE_SIZE);
 
   useEffect(() => {
     if (initialAttemptId) {
@@ -664,12 +682,17 @@ export function AgentRunTimelinePanel({
     () => (filter === 'all' ? events : events.filter((event) => event.type === filter)),
     [events, filter]
   );
-  const visibleEvents = filteredEvents.slice(0, MAX_RENDERED_EVENTS);
+  const visibleEvents = filteredEvents.slice(0, visibleCount);
+  const canLoadMore = filteredEvents.length > visibleEvents.length;
   const isLoading = tracesLoading || telemetryLoading || workProductsLoading;
   const source = sourceForTrace(selectedTrace);
   const linkedWorkProducts = workProducts.filter(
     (product) => !selectedAttemptId || product.sourceRunId === selectedAttemptId
   );
+
+  useEffect(() => {
+    setVisibleCount(TIMELINE_PAGE_SIZE);
+  }, [filter, selectedAttemptId, events.length]);
 
   return (
     <Stack gap="md">
@@ -696,6 +719,7 @@ export function AgentRunTimelinePanel({
               </Group>
               <Text size="sm" c="dimmed" mt={6}>
                 {selectedAttemptId || 'No attempt selected'} | {events.length} events
+                {hasLiveAttempt ? ' | live polling' : ''}
               </Text>
             </div>
             {isLoading && (
@@ -877,10 +901,29 @@ export function AgentRunTimelinePanel({
               </Group>
             </Paper>
           )}
-          {filteredEvents.length > visibleEvents.length && (
-            <Text size="xs" c="dimmed" ta="center" py="xs">
-              Showing {visibleEvents.length} of {filteredEvents.length} filtered events.
-            </Text>
+          {filteredEvents.length > TIMELINE_PAGE_SIZE && (
+            <Paper withBorder p="sm" radius="md">
+              <Group justify="space-between" gap="sm">
+                <Text size="xs" c="dimmed">
+                  Showing {visibleEvents.length} of {filteredEvents.length} filtered events.
+                </Text>
+                {canLoadMore && (
+                  <Button
+                    size="compact-xs"
+                    variant="subtle"
+                    onClick={() =>
+                      setVisibleCount((count) =>
+                        Math.min(count + TIMELINE_PAGE_SIZE, filteredEvents.length)
+                      )
+                    }
+                  >
+                    Load{' '}
+                    {Math.min(TIMELINE_PAGE_SIZE, filteredEvents.length - visibleEvents.length)}{' '}
+                    more
+                  </Button>
+                )}
+              </Group>
+            </Paper>
           )}
         </Stack>
       </ScrollArea.Autosize>
