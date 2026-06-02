@@ -200,6 +200,7 @@ describe('agent run timeline Mantine surface', () => {
     expect(screen.getByText('command.completed')).toBeDefined();
     expect(screen.getByText('Run replay report')).toBeDefined();
     expect(screen.queryByText('super-secret-token')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Agent logs' }).length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole('button', { name: 'Usage' }));
 
@@ -209,5 +210,35 @@ describe('agent run timeline Mantine surface', () => {
     await user.click(screen.getByRole('button', { name: 'Work Products' }));
 
     expect(mocks.onOpenTab).toHaveBeenCalledWith('work-products');
+  });
+
+  it('pages long timelines so replay rendering stays bounded', async () => {
+    const user = userEvent.setup();
+    const longTrace: AgentRunTrace = {
+      ...trace,
+      steps: Array.from({ length: 140 }, (_, index) => ({
+        type: 'execute',
+        sequence: index + 1,
+        startedAt: new Date(Date.UTC(2026, 5, 1, 10, index)).toISOString(),
+        metadata: {
+          eventType: `tool.progress.${index + 1}`,
+          summary: `Progress event ${index + 1}`,
+        },
+      })),
+    };
+    mocks.useAgentRunTraces.mockReturnValue({ data: [longTrace], isLoading: false });
+    mocks.useTaskTelemetryEvents.mockReturnValue({ data: [], isLoading: false });
+    mocks.useTaskWorkProducts.mockReturnValue({ data: [], isLoading: false });
+
+    renderWithProviders(<AgentRunTimelinePanel task={task} onOpenTab={mocks.onOpenTab} />);
+
+    expect(screen.getByText('Showing 80 of 146 filtered events.')).toBeDefined();
+    expect(screen.getByText('Progress event 1')).toBeDefined();
+    expect(screen.queryByText('Progress event 140')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Load 66 more' }));
+
+    expect(screen.getByText('Showing 146 of 146 filtered events.')).toBeDefined();
+    expect(screen.getByText('Progress event 140')).toBeDefined();
   });
 });
