@@ -70,6 +70,11 @@ vi.mock('@/hooks/useConfig', () => ({
   }),
 }));
 
+vi.mock('@/hooks/useWorkProducts', () => ({
+  useTaskWorkProducts: () => ({ data: [], isLoading: false }),
+  useWorkProductVersions: () => ({ data: [], isLoading: false }),
+}));
+
 vi.mock('@/hooks/useTasks', () => ({
   useAddObservation: () => ({ mutateAsync: vi.fn() }),
   useDeleteObservation: () => ({ mutateAsync: vi.fn() }),
@@ -176,6 +181,7 @@ describe('task detail Mantine migration', () => {
     expect((screen.getByLabelText('Task title') as HTMLInputElement).value).toBe(
       'Ship Mantine task detail'
     );
+    expect(screen.getByRole('tab', { name: 'Work' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Details' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Chat' })).toBeDefined();
     expect(container.querySelector('.mantine-Drawer-content')).toBeDefined();
@@ -220,5 +226,26 @@ describe('task detail Mantine migration', () => {
 
     await waitFor(() => expect(mocks.deleteTask).toHaveBeenCalledWith('task-1'));
     expect(mocks.onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('defaults code tasks with execution context to the Work tab', () => {
+    const task = createMockTask({
+      id: 'task-code-work',
+      title: 'Ship task work view',
+      description: 'Add a unified task work view with enough execution context.',
+      type: 'code',
+      git: {
+        repo: 'BradGroux/veritas-kanban',
+        branch: 'v5-task-work-view-readiness',
+        baseBranch: 'main',
+        worktreePath: '/tmp/veritas-worktree',
+      },
+      verificationSteps: [{ id: 'verify-1', description: 'Run focused test', checked: false }],
+    });
+
+    renderWithProviders(<TaskDetailPanel task={task} open onOpenChange={mocks.onOpenChange} />);
+
+    expect(screen.getByRole('tab', { name: 'Work' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByText('Work View')).toBeDefined();
   });
 });

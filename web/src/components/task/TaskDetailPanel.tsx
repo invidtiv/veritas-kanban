@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -28,8 +28,10 @@ import { ApplyTemplateDialog } from './ApplyTemplateDialog';
 import { TaskMetricsPanel } from './TaskMetricsPanel';
 import { WorkflowSection } from './WorkflowSection';
 import { WorkProductsSection } from './WorkProductsSection';
+import { shouldDefaultTaskDetailToWork, TaskWorkView } from './TaskWorkView';
 import FeatureErrorBoundary from '@/components/shared/FeatureErrorBoundary';
 import {
+  BriefcaseBusiness,
   GitBranch,
   Bot,
   FileDiff,
@@ -59,6 +61,7 @@ interface TaskDetailPanelProps {
 }
 
 type TaskDetailTabId =
+  | 'work'
   | 'details'
   | 'progress'
   | 'work-products'
@@ -81,6 +84,12 @@ interface TaskDetailTabDefinition {
 }
 
 const TASK_DETAIL_TABS: readonly TaskDetailTabDefinition[] = [
+  {
+    id: 'work',
+    label: 'Work',
+    Icon: BriefcaseBusiness,
+    fallbackTitle: 'Work view failed to load',
+  },
   { id: 'details', label: 'Details' },
   {
     id: 'progress',
@@ -156,11 +165,12 @@ export function TaskDetailPanel({
   const taskSettings = featureSettings.tasks;
   const agentSettings = featureSettings.agents;
   const { localTask, updateField, isDirty } = useDebouncedSave(task);
-  const [activeTab, setActiveTab] = useState('details');
+  const [activeTab, setActiveTab] = useState<TaskDetailTabId>('details');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [applyTemplateOpen, setApplyTemplateOpen] = useState(false);
   const [taskChatOpen, setTaskChatOpen] = useState(false);
   const [workflowOpen, setWorkflowOpen] = useState(false);
+  const lastDefaultedTaskIdRef = useRef<string | undefined>(undefined);
   const addObservation = useAddObservation();
   const deleteObservation = useDeleteObservation();
 
@@ -176,6 +186,8 @@ export function TaskDetailPanel({
 
   const isCodeTask = localTask?.type === 'code';
   const hasWorktree = !!localTask?.git?.worktreePath;
+  const activeTaskId = localTask?.id;
+  const defaultTab = localTask && shouldDefaultTaskDetailToWork(localTask) ? 'work' : 'details';
   const visibleTabs = useMemo(
     () =>
       TASK_DETAIL_TABS.filter((tab) => {
@@ -192,9 +204,19 @@ export function TaskDetailPanel({
   useEffect(() => {
     const activeTabAvailable = visibleTabs.some((tab) => tab.id === activeTab && !tab.disabled);
     if (!activeTabAvailable) {
-      setActiveTab('details');
+      setActiveTab(defaultTab);
     }
-  }, [activeTab, visibleTabs]);
+  }, [activeTab, defaultTab, visibleTabs]);
+
+  useEffect(() => {
+    if (!activeTaskId) {
+      lastDefaultedTaskIdRef.current = undefined;
+      return;
+    }
+    if (lastDefaultedTaskIdRef.current === activeTaskId) return;
+    lastDefaultedTaskIdRef.current = activeTaskId;
+    setActiveTab(defaultTab);
+  }, [activeTaskId, defaultTab]);
 
   if (!localTask) return null;
 
@@ -204,6 +226,17 @@ export function TaskDetailPanel({
   const typeLabel = currentType ? currentType.label : localTask.type;
   const renderTabContent = (tabId: TaskDetailTabId) => {
     switch (tabId) {
+      case 'work':
+        return (
+          <TaskWorkView
+            task={localTask}
+            isCodeTask={isCodeTask}
+            readOnly={readOnly}
+            onOpenTab={setActiveTab}
+            onOpenChat={() => setTaskChatOpen(true)}
+            onOpenWorkflow={() => setWorkflowOpen(true)}
+          />
+        );
       case 'details':
         return (
           <TaskDetailsTab
@@ -404,7 +437,7 @@ export function TaskDetailPanel({
               <Tabs
                 value={activeTab}
                 onChange={(value) => {
-                  if (value) setActiveTab(value);
+                  if (value) setActiveTab(value as TaskDetailTabId);
                 }}
                 className="flex flex-1 flex-col overflow-hidden px-6 pt-3 pb-6"
               >
