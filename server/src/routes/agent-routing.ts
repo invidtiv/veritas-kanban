@@ -9,6 +9,7 @@
 import { Router, type Router as RouterType } from 'express';
 import { z } from 'zod';
 import { getAgentRoutingService } from '../services/agent-routing-service.js';
+import { getGovernanceTraceService } from '../services/governance-trace-service.js';
 import { getTaskService } from '../services/task-service.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { NotFoundError, ValidationError } from '../middleware/error-handler.js';
@@ -79,15 +80,16 @@ router.post(
       if (!task) {
         throw new NotFoundError('Task not found');
       }
-      const result = await routing.resolveAgent(task);
-      return res.json(result);
+      const result = await routing.resolveAgentWithTrace(task, { taskId: taskIdParse.data.taskId });
+      const trace = await getGovernanceTraceService().record(result.trace);
+      return res.json({ ...result.result, traceId: trace.id });
     }
 
     // Fall back to metadata
     const metaParse = routeByMetadataSchema.safeParse(req.body);
     if (metaParse.success) {
       const { type, priority, project, subtaskCount } = metaParse.data;
-      const result = await routing.resolveAgent({
+      const result = await routing.resolveAgentWithTrace({
         type: type || 'feature',
         priority: priority || 'medium',
         project,
@@ -100,7 +102,8 @@ router.post(
             }))
           : undefined,
       });
-      return res.json(result);
+      const trace = await getGovernanceTraceService().record(result.trace);
+      return res.json({ ...result.result, traceId: trace.id });
     }
 
     throw new ValidationError('Provide either { taskId } or { type, priority, ... }');

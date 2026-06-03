@@ -16,6 +16,7 @@ import type {
 } from '../types/workflow.js';
 import { getWorkflowRunsDir } from '../utils/paths.js';
 import { createLogger } from '../lib/logger.js';
+import { getGovernanceTraceService } from './governance-trace-service.js';
 import { getToolPolicyService } from './tool-policy-service.js';
 
 const log = createLogger('workflow-step-executor');
@@ -693,6 +694,7 @@ export class WorkflowStepExecutor {
     if (!conditionResult) {
       // Condition not met — handle on_false policy
       const policy = step.on_false;
+      await this.recordWorkflowGateTrace(step, run, false, policy);
 
       if (policy?.escalate_to === 'human') {
         // Block the workflow (will be handled by workflow-run-service)
@@ -703,6 +705,7 @@ export class WorkflowStepExecutor {
     }
 
     // Gate passed
+    await this.recordWorkflowGateTrace(step, run, true, step.on_false);
     const output = `Gate ${step.id} passed: ${step.condition}`;
     const outputPath = await this.saveStepOutput(run.id, step.id, output);
 
@@ -909,6 +912,98 @@ export class WorkflowStepExecutor {
 
     // Default: resolve as variable access
     return this.getNestedValue(context, cleaned);
+  }
+
+  private async recordWorkflowGateTrace(
+    step: WorkflowStep,
+    run: WorkflowRun,
+    conditionResult: boolean,
+    policy?: WorkflowStep['on_false']
+  ): Promise<void> {
+    const outcome = conditionResult
+      ? 'allowed'
+      : policy?.escalate_to === 'human'
+        ? 'approval-required'
+        : 'blocked';
+    const message = conditionResult
+      ? `Gate condition passed: ${step.condition}`
+      : `Gate condition failed: ${step.condition}`;
+
+    await getGovernanceTraceService().record({
+      kind: 'workflow-gate',
+      outcome,
+      title: `Workflow gate: ${step.name || step.id}`,
+      summary: conditionResult
+        ? `Workflow run ${run.id} can continue past gate ${step.id}.`
+        : policy?.escalate_message || `Workflow run ${run.id} is blocked at gate ${step.id}.`,
+      remediation: conditionResult
+        ? undefined
+        : policy?.escalate_to === 'human'
+          ? 'Review the gate output and resume the workflow after human approval.'
+          : 'Update upstream step output or revise the gate condition before retrying the workflow.',
+      subject: {
+        workflowId: run.workflowId,
+        runId: run.id,
+        taskId: run.taskId,
+        stepId: step.id,
+        actionType: 'workflow.gate',
+      },
+      evaluatedRules: [
+        {
+          id: `workflow-gate:${step.id}`,
+          label: step.name || step.id,
+          type: 'workflow-gate',
+          status: conditionResult ? 'matched' : 'not-matched',
+          outcome,
+          message,
+          details: {
+            condition: step.condition,
+            onFalse: policy,
+          },
+        },
+      ],
+      matchedRules: conditionResult
+        ? [
+            {
+              id: `workflow-gate:${step.id}`,
+              label: step.name || step.id,
+              type: 'workflow-gate',
+              status: 'matched',
+              outcome,
+              message,
+            },
+          ]
+        : [],
+      steps: [
+        {
+          id: 'condition',
+          label: 'Condition',
+          status: conditionResult ? 'matched' : 'not-matched',
+          message,
+          details: { expression: step.condition },
+        },
+        {
+          id: 'on-false',
+          label: 'On false policy',
+          status: policy ? 'info' : 'skipped',
+          message: policy
+            ? `Gate failure policy escalates to ${policy.escalate_to}.`
+            : 'No gate failure policy configured.',
+        },
+      ],
+      raw: {
+        step,
+        run: {
+          id: run.id,
+          workflowId: run.workflowId,
+          workflowVersion: run.workflowVersion,
+          taskId: run.taskId,
+          status: run.status,
+          currentStep: run.currentStep,
+        },
+        result: conditionResult,
+      },
+    });
   }
 
   /**

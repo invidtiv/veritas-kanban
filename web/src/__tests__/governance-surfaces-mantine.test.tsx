@@ -28,6 +28,8 @@ const mocks = vi.hoisted(() => ({
   updateScoringProfile: vi.fn(),
   useDecision: vi.fn(),
   useDecisions: vi.fn(),
+  useGovernanceTrace: vi.fn(),
+  useGovernanceTraces: vi.fn(),
   useDriftAlerts: vi.fn(),
   useDriftBaselines: vi.fn(),
   useFeedbackAnalytics: vi.fn(),
@@ -118,6 +120,11 @@ vi.mock('@/hooks/useDecisions', () => ({
     mutateAsync: mocks.updateDecisionAssumption,
     isPending: false,
   }),
+}));
+
+vi.mock('@/hooks/useGovernanceTraces', () => ({
+  useGovernanceTrace: mocks.useGovernanceTrace,
+  useGovernanceTraces: mocks.useGovernanceTraces,
 }));
 
 vi.mock('@/hooks/useFeedback', () => ({
@@ -296,6 +303,102 @@ describe('governance surfaces Mantine migration', () => {
       },
       isLoading: false,
     });
+    mocks.useGovernanceTraces.mockReturnValue({
+      data: [
+        {
+          id: 'govtrace-1',
+          kind: 'policy',
+          outcome: 'blocked',
+          title: 'Production policy block',
+          summary: 'Production deploy requires approval.',
+          remediation: 'Request approval from a lead agent.',
+          subject: {
+            agentId: 'codex',
+            taskId: 'task-1',
+            actionType: 'git.push',
+          },
+          evaluatedRules: [
+            {
+              id: 'policy:risk-prod',
+              label: 'Production risk gate',
+              type: 'policy',
+              status: 'matched',
+              outcome: 'blocked',
+              message: 'Risk gate matched.',
+            },
+          ],
+          matchedRules: [
+            {
+              id: 'policy:risk-prod',
+              label: 'Production risk gate',
+              type: 'policy',
+              status: 'matched',
+              outcome: 'blocked',
+              message: 'Risk gate matched.',
+            },
+          ],
+          steps: [
+            {
+              id: 'condition',
+              label: 'Condition',
+              status: 'matched',
+              message: 'Action matched git.push.',
+            },
+          ],
+          raw: { actionType: 'git.push' },
+          redacted: true,
+          createdAt: now,
+        },
+      ],
+      isLoading: false,
+    });
+    mocks.useGovernanceTrace.mockReturnValue({
+      data: {
+        id: 'govtrace-1',
+        kind: 'policy',
+        outcome: 'blocked',
+        title: 'Production policy block',
+        summary: 'Production deploy requires approval.',
+        remediation: 'Request approval from a lead agent.',
+        subject: {
+          agentId: 'codex',
+          taskId: 'task-1',
+          actionType: 'git.push',
+        },
+        evaluatedRules: [
+          {
+            id: 'policy:risk-prod',
+            label: 'Production risk gate',
+            type: 'policy',
+            status: 'matched',
+            outcome: 'blocked',
+            message: 'Risk gate matched.',
+          },
+        ],
+        matchedRules: [
+          {
+            id: 'policy:risk-prod',
+            label: 'Production risk gate',
+            type: 'policy',
+            status: 'matched',
+            outcome: 'blocked',
+            message: 'Risk gate matched.',
+          },
+        ],
+        steps: [
+          {
+            id: 'condition',
+            label: 'Condition',
+            status: 'matched',
+            message: 'Action matched git.push.',
+          },
+        ],
+        raw: { actionType: 'git.push' },
+        redacted: true,
+        createdAt: now,
+      },
+      isLoading: false,
+    });
     mocks.useFeedbackList.mockReturnValue({
       data: [
         {
@@ -372,7 +475,8 @@ describe('governance surfaces Mantine migration', () => {
     expectNoLegacySlots(baseElement);
   });
 
-  it('renders drift and decision audit surfaces with direct Mantine primitives', () => {
+  it('renders drift and decision audit surfaces with direct Mantine primitives', async () => {
+    const user = userEvent.setup();
     const drift = renderWithProviders(<DriftMonitor onBack={vi.fn()} />);
 
     expect(screen.getByText('Behavioral Drift Monitor')).toBeDefined();
@@ -389,6 +493,12 @@ describe('governance surfaces Mantine migration', () => {
       1
     );
     expect(decisions.baseElement.querySelector('.mantine-TextInput-root')).toBeDefined();
+    expect(decisions.baseElement.querySelector('.mantine-SegmentedControl-root')).toBeDefined();
+    await user.click(screen.getByText('Governance Traces'));
+    expect(screen.getByText('Production policy block')).toBeDefined();
+    await user.click(screen.getByText('Production policy block'));
+    expect(screen.getByText('Evaluated Rules')).toBeDefined();
+    expect(screen.getByText('Raw Detail')).toBeDefined();
     expectNoLegacySlots(decisions.baseElement);
     cleanup();
 

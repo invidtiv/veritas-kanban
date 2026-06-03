@@ -262,6 +262,7 @@ const ROUTE_PERMISSIONS: RoutePermissionConfig[] = [
   },
   { prefix: '/api/system/health', read: 'workspace:read', write: 'admin:manage' },
   { prefix: '/api/decisions', read: 'task:read', write: 'task:write' },
+  { prefix: '/api/governance/traces', read: 'policy:read' },
   { prefix: '/api/feedback', read: 'report:read', write: 'comment:write' },
   {
     prefix: '/api/prompt-registry',

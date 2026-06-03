@@ -6,6 +6,7 @@ import path from 'path';
 const mockRunStreamed = vi.fn();
 const mockStartThread = vi.fn();
 const mockResumeThread = vi.fn();
+const mockRecordGovernanceTrace = vi.fn();
 
 vi.mock('@openai/codex-sdk', () => ({
   Codex: class {
@@ -17,6 +18,12 @@ vi.mock('@openai/codex-sdk', () => ({
 vi.mock('../services/tool-policy-service.js', () => ({
   getToolPolicyService: () => ({
     getToolFilterForRole: vi.fn().mockResolvedValue({ allowed: ['*'], denied: [] }),
+  }),
+}));
+
+vi.mock('../services/governance-trace-service.js', () => ({
+  getGovernanceTraceService: () => ({
+    record: mockRecordGovernanceTrace,
   }),
 }));
 
@@ -49,6 +56,7 @@ describe('WorkflowStepExecutor Codex integration', () => {
     mockRunStreamed.mockResolvedValue({ events: codexEvents() });
     mockStartThread.mockReturnValue({ runStreamed: mockRunStreamed });
     mockResumeThread.mockReturnValue({ runStreamed: mockRunStreamed });
+    mockRecordGovernanceTrace.mockResolvedValue({ id: 'govtrace_1' });
   });
 
   afterEach(async () => {
@@ -108,5 +116,46 @@ describe('WorkflowStepExecutor Codex integration', () => {
     expect(run.context._sessions).toMatchObject({ codex: 'thread_test_123' });
     expect(result.output).toContain('Implemented workflow Codex step.');
     expect(result.outputPath).toContain('implement.md');
+  });
+
+  it('records governance traces for workflow gate decisions', async () => {
+    const executor = new WorkflowStepExecutor(tmpDir);
+    const step: WorkflowStep = {
+      id: 'approval-gate',
+      name: 'Approval Gate',
+      type: 'gate',
+      condition: '{{review.decision == "approved"}}',
+      on_false: {
+        escalate_to: 'human',
+        escalate_message: 'Review approval is required',
+      },
+    };
+    const run: WorkflowRun = {
+      id: 'run_1234567890_gate',
+      workflowId: 'wf-gates',
+      workflowVersion: 1,
+      taskId: 'task_1',
+      status: 'running',
+      context: {
+        review: { decision: 'pending' },
+      },
+      startedAt: new Date().toISOString(),
+      steps: [{ stepId: 'approval-gate', status: 'running', retries: 0 }],
+    };
+
+    await expect(executor.executeStep(step, run)).rejects.toThrow('Review approval is required');
+    expect(mockRecordGovernanceTrace).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'workflow-gate',
+        outcome: 'approval-required',
+        subject: expect.objectContaining({
+          workflowId: 'wf-gates',
+          runId: 'run_1234567890_gate',
+          taskId: 'task_1',
+          stepId: 'approval-gate',
+          actionType: 'workflow.gate',
+        }),
+      })
+    );
   });
 });

@@ -11,6 +11,9 @@
 import { ConfigService } from './config-service.js';
 import {
   DEFAULT_ROUTING_CONFIG,
+  type CreateGovernanceTraceInput,
+  type GovernanceTraceRule,
+  type GovernanceTraceStep,
   type AgentRoutingConfig,
   type RoutingRule,
   type RoutingResult,
@@ -20,6 +23,12 @@ import type { Task, AgentType, TaskPriority } from '@veritas-kanban/shared';
 import { createLogger } from '../lib/logger.js';
 
 const log = createLogger('agent-routing');
+
+type RoutableTask = Pick<Task, 'type' | 'priority' | 'project' | 'subtasks'>;
+
+interface RoutingTraceContext {
+  taskId?: string;
+}
 
 export class AgentRoutingService {
   private configService: ConfigService;
@@ -34,24 +43,51 @@ export class AgentRoutingService {
    * @param task - Full task object (or partial with type/priority/project/subtasks)
    * @returns RoutingResult with the selected agent, optional model, fallback, and reasoning
    */
-  async resolveAgent(
-    task: Pick<Task, 'type' | 'priority' | 'project' | 'subtasks'>
-  ): Promise<RoutingResult> {
+  async resolveAgent(task: RoutableTask): Promise<RoutingResult> {
+    return (await this.resolveAgentWithTrace(task)).result;
+  }
+
+  async resolveAgentWithTrace(
+    task: RoutableTask,
+    context: RoutingTraceContext = {}
+  ): Promise<{ result: RoutingResult; trace: CreateGovernanceTraceInput }> {
     const config = await this.configService.getConfig();
     const routing: AgentRoutingConfig = config.agentRouting || DEFAULT_ROUTING_CONFIG;
+    const evaluatedRules: GovernanceTraceRule[] = [];
+    const steps: GovernanceTraceStep[] = [];
 
     // If routing is disabled, return the global default
     if (!routing.enabled) {
-      return {
+      const result: RoutingResult = {
         agent: routing.defaultAgent || config.defaultAgent,
         model: routing.defaultModel,
-        reason: 'Routing disabled — using default agent',
+        reason: 'Routing disabled, using default agent',
+      };
+      return {
+        result,
+        trace: this.buildRoutingTrace(task, context, result, {
+          outcome: 'skipped',
+          evaluatedRules,
+          matchedRules: [],
+          steps: [
+            {
+              id: 'routing-disabled',
+              label: 'Routing disabled',
+              status: 'skipped',
+              message: 'Agent routing is disabled in configuration.',
+            },
+          ],
+          routing,
+        }),
       };
     }
 
     // Evaluate rules in order (first match wins)
     for (const rule of routing.rules) {
-      if (!rule.enabled) continue;
+      if (!rule.enabled) {
+        evaluatedRules.push(this.routingRuleTrace(rule, 'skipped', 'Rule is disabled.'));
+        continue;
+      }
 
       if (this.matchesRule(task, rule.match)) {
         // Verify the agent is actually configured and enabled
@@ -60,31 +96,87 @@ export class AgentRoutingService {
             a.type === rule.agent
         );
         if (!agentConfig?.enabled) {
-          log.warn(`Rule "${rule.name}" matched but agent "${rule.agent}" is disabled — skipping`);
+          const message = `Rule "${rule.name}" matched but agent "${rule.agent}" is disabled, skipping.`;
+          log.warn(message);
+          const skippedRule = this.routingRuleTrace(rule, 'matched', message, 'skipped');
+          evaluatedRules.push(skippedRule);
+          steps.push({
+            id: `rule:${rule.id}`,
+            label: rule.name,
+            status: 'skipped',
+            message,
+          });
           continue;
         }
 
         log.info(
           `Task [type=${task.type}, priority=${task.priority}] matched rule "${rule.name}" → ${rule.agent}${rule.model ? ` (${rule.model})` : ''}`
         );
-        return {
+        const matchedRule = this.routingRuleTrace(
+          rule,
+          'matched',
+          `Matched rule: ${rule.name}`,
+          'routed'
+        );
+        evaluatedRules.push(matchedRule);
+        const result: RoutingResult = {
           agent: rule.agent,
           model: rule.model,
           fallback: rule.fallback,
           rule: rule.id,
           reason: `Matched rule: ${rule.name}`,
         };
+        return {
+          result,
+          trace: this.buildRoutingTrace(task, context, result, {
+            outcome: 'routed',
+            evaluatedRules,
+            matchedRules: [matchedRule],
+            steps: [
+              ...steps,
+              {
+                id: `rule:${rule.id}`,
+                label: rule.name,
+                status: 'matched',
+                message: `Selected ${rule.agent}.`,
+              },
+            ],
+            routing,
+          }),
+        };
       }
+
+      evaluatedRules.push(
+        this.routingRuleTrace(rule, 'not-matched', 'Rule criteria did not match.')
+      );
     }
 
     // No rule matched — use defaults
     log.info(
       `Task [type=${task.type}, priority=${task.priority}] — no rules matched, using default: ${routing.defaultAgent}`
     );
-    return {
+    const result: RoutingResult = {
       agent: routing.defaultAgent || config.defaultAgent,
       model: routing.defaultModel,
-      reason: 'No routing rules matched — using default agent',
+      reason: 'No routing rules matched, using default agent',
+    };
+    return {
+      result,
+      trace: this.buildRoutingTrace(task, context, result, {
+        outcome: 'fallback',
+        evaluatedRules,
+        matchedRules: [],
+        steps: [
+          ...steps,
+          {
+            id: 'default-agent',
+            label: 'Default agent',
+            status: 'info',
+            message: `Selected default agent ${result.agent}.`,
+          },
+        ],
+        routing,
+      }),
     };
   }
 
@@ -221,6 +313,65 @@ export class AgentRoutingService {
       return expected.includes(actual);
     }
     return actual === expected;
+  }
+
+  private routingRuleTrace(
+    rule: RoutingRule,
+    status: GovernanceTraceRule['status'],
+    message: string,
+    outcome?: CreateGovernanceTraceInput['outcome']
+  ): GovernanceTraceRule {
+    return {
+      id: `routing:${rule.id}`,
+      label: rule.name,
+      type: 'routing',
+      status,
+      outcome,
+      message,
+      details: {
+        match: rule.match,
+        agent: rule.agent,
+        model: rule.model,
+        fallback: rule.fallback,
+        enabled: rule.enabled,
+      },
+    };
+  }
+
+  private buildRoutingTrace(
+    task: RoutableTask,
+    context: RoutingTraceContext,
+    result: RoutingResult,
+    input: {
+      outcome: CreateGovernanceTraceInput['outcome'];
+      evaluatedRules: GovernanceTraceRule[];
+      matchedRules: GovernanceTraceRule[];
+      steps: GovernanceTraceStep[];
+      routing: AgentRoutingConfig;
+    }
+  ): CreateGovernanceTraceInput {
+    return {
+      kind: 'routing',
+      outcome: input.outcome,
+      title: `Agent routing: ${result.agent}`,
+      summary: result.reason,
+      remediation:
+        input.outcome === 'fallback'
+          ? 'Add or reorder routing rules if the default agent should not handle this task.'
+          : input.outcome === 'skipped'
+            ? 'Enable agent routing to evaluate task-aware routing rules.'
+            : undefined,
+      subject: {
+        agentId: result.agent,
+        taskId: context.taskId,
+        actionType: 'agent.route',
+        project: task.project,
+      },
+      evaluatedRules: input.evaluatedRules,
+      matchedRules: input.matchedRules,
+      steps: input.steps,
+      raw: { task, routing: input.routing, result },
+    };
   }
 }
 

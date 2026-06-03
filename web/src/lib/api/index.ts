@@ -13,6 +13,7 @@ import { templatesApi, taskTypesApi, sprintsApi, activityApi, attachmentsApi } f
 import { timeApi, statusHistoryApi } from './time';
 import { chatApi } from './chat';
 import { decisionsApi } from './decisions';
+import { governanceTracesApi } from './governance-traces';
 import { scoringApi } from './scoring';
 import { searchApi } from './search';
 import { identityApi } from './identity';
@@ -42,6 +43,7 @@ export const api = {
   statusHistory: statusHistoryApi,
   chat: chatApi,
   decisions: decisionsApi,
+  governanceTraces: governanceTracesApi,
   scoring: scoringApi,
   search: searchApi,
   identity: identityApi,

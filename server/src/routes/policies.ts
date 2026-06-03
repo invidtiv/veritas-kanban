@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { AgentPolicy, PolicyEvaluationRequest } from '@veritas-kanban/shared';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { getPolicyService } from '../services/policy-service.js';
+import { getGovernanceTraceService } from '../services/governance-trace-service.js';
 import {
   policyEvaluationSchema,
   policyParamsSchema,
@@ -57,10 +58,11 @@ router.post(
   '/evaluate',
   validate({ body: policyEvaluationSchema }),
   asyncHandler(async (req: ValidatedRequest<unknown, unknown, PolicyEvaluationRequest>, res) => {
-    const result = await policyService.evaluatePolicies(
+    const evaluation = await policyService.evaluatePoliciesWithTrace(
       req.validated.body as PolicyEvaluationRequest
     );
-    res.json(result);
+    const trace = await getGovernanceTraceService().record(evaluation.trace);
+    res.json({ ...evaluation.result, traceId: trace.id });
   })
 );
 

@@ -1011,19 +1011,21 @@ telemetry NDJSON files.
 
 ## Governance Repository Implementation
 
-The first governance repository pass moves JSON-backed decisions, feedback,
-scoring, and drift data into SQLite document tables with indexed query columns.
-The domain services keep their existing APIs, validation, and analytics logic;
-only the persistence backend switches when `VERITAS_STORAGE=sqlite`.
+The first governance repository pass moves JSON-backed decisions, governance
+decision traces, feedback, scoring, and drift data into SQLite document tables
+with indexed query columns. The domain services keep their existing APIs,
+validation, and analytics logic; only the persistence backend switches when
+`VERITAS_STORAGE=sqlite`.
 
-| Runtime table         | Stored data                                                                            |
-| --------------------- | -------------------------------------------------------------------------------------- |
-| `decision_records`    | Complete `DecisionRecord` JSON plus agent, task, parent, confidence, and risk columns. |
-| `feedback_records`    | Complete `Feedback` JSON plus task, agent, rating, sentiment, and resolved columns.    |
-| `scoring_profiles`    | Complete `ScoringProfile` JSON plus name and built-in metadata.                        |
-| `scoring_evaluations` | Complete `EvaluationResult` JSON plus profile, agent, task, and score columns.         |
-| `drift_alerts`        | Complete `DriftAlert` JSON plus agent, metric, severity, and acknowledged columns.     |
-| `drift_baselines`     | Complete `DriftBaseline` JSON plus agent and metric columns.                           |
+| Runtime table                | Stored data                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `decision_records`           | Complete `DecisionRecord` JSON plus agent, task, parent, confidence, and risk columns.       |
+| `governance_decision_traces` | Complete redacted governance trace JSON plus kind, outcome, agent, task, and action columns. |
+| `feedback_records`           | Complete `Feedback` JSON plus task, agent, rating, sentiment, and resolved columns.          |
+| `scoring_profiles`           | Complete `ScoringProfile` JSON plus name and built-in metadata.                              |
+| `scoring_evaluations`        | Complete `EvaluationResult` JSON plus profile, agent, task, and score columns.               |
+| `drift_alerts`               | Complete `DriftAlert` JSON plus agent, metric, severity, and acknowledged columns.           |
+| `drift_baselines`            | Complete `DriftBaseline` JSON plus agent and metric columns.                                 |
 
 ## Audit And Policy Repository Implementation
 
@@ -1244,6 +1246,7 @@ Manual recovery is intentionally boring:
 | `.veritas-kanban/workflow-runs/*/progress.md`    | `workflow_run_outputs` or retained file path                                           | Store text content when reasonably sized; otherwise keep file path.                                                      |
 | `.veritas-kanban/workflow-runs/*/step-outputs/*` | `workflow_run_outputs`                                                                 | Preserve output filename and content type.                                                                               |
 | `.veritas-kanban/tool-policies/*.json`           | `tool_policies`                                                                        | Role remains the natural unique key per workspace.                                                                       |
+| `.veritas-kanban/governance-traces/*.json`       | `governance_decision_traces`                                                           | Preserve redacted policy, permission, routing, and workflow gate explanations.                                           |
 | `.veritas-kanban/storage/policies/*.json`        | `policy_profiles`                                                                      | Keep full rules JSON until policy schema is formalized.                                                                  |
 | `.veritas-kanban/storage/drift/alerts/*`         | `drift_alerts`                                                                         | Preserve raw payload.                                                                                                    |
 | `.veritas-kanban/storage/drift/baselines/*`      | `drift_baselines`                                                                      | Preserve raw payload.                                                                                                    |

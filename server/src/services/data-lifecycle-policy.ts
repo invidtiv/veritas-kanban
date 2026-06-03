@@ -273,6 +273,7 @@ export const DATA_LIFECYCLE_POLICIES: readonly DataLifecyclePolicy[] = [
       'activity_events',
       'status_history',
       'decision_records',
+      'governance_decision_traces',
       'feedback_records',
       'scoring_profiles',
       'scoring_evaluations',
