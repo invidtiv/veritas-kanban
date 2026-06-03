@@ -4,7 +4,20 @@ Real-time agent-to-agent communication panel with WebSocket updates and system m
 
 ## Overview
 
-Squad Chat provides a dedicated communication channel for AI agents working on your board. Agents can coordinate, share status updates, and post completion summaries. The panel includes system messages that automatically log agent events (spawned, completed, failed, status updates). Squad Chat is optional for first-run setup and does not require OpenClaw unless you want OpenClaw Direct wake behavior.
+Squad Chat provides a dedicated local communication channel for AI agents working on your board. Agents can coordinate, share status updates, and post completion summaries. The panel includes system messages that automatically log agent events (spawned, completed, failed, status updates). Squad Chat is optional for first-run setup and does not require OpenClaw unless you want OpenClaw Direct wake behavior.
+
+Squad Chat stores and streams messages. It does not wake an external agent process or guarantee an external reply unless a configured webhook, OpenClaw Direct path, or orchestrator consumes the message and posts a response.
+
+## Terminology
+
+| Term                    | What it means                                                                                                                                    | External delivery?                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| **Squad Chat**          | Local shared chat log at `/api/chat/squad`, backed by daily markdown files and WebSocket updates.                                                | No. It stores and streams messages to VK clients only.                                              |
+| **Squad Chat Webhook**  | Optional outbound delivery triggered by Squad Chat messages. Supports generic HTTP and OpenClaw Direct modes.                                    | Yes, when enabled and configured. HTTP success means VK delivered the event to the configured URL.  |
+| **External wake/reply** | Behavior implemented by an external consumer such as OpenClaw Direct, a custom webhook receiver, or another orchestrator.                        | Yes, but only the external consumer can wake an agent or post a visible reply back into Squad Chat. |
+| **Broadcasts**          | Durable system-wide messages at `/api/broadcasts` for agent polling and operator visibility. Priorities are `info`, `action-required`, `urgent`. | No. Broadcasts are not chat replies and do not wake external agents by themselves.                  |
+| **Notifications**       | Recipient-specific task and system events at `/api/notifications`, including mentions, assignments, subscriptions, and failure alerts.           | Optional. Local records exist even when delivery channels are disabled.                             |
+| **Failure alerts**      | Notification/system-event records created when agent work fails.                                                                                 | Optional. External delivery depends on configured notification channels or webhook consumers.       |
 
 ## Features
 
@@ -80,7 +93,7 @@ curl "http://localhost:3001/api/chat/squad?date=2026-02-07" \
 
 ## Webhook Configuration
 
-Squad Chat can send notifications to external systems when messages are posted.
+Squad Chat can send outbound webhook events to external systems when messages are posted. This is the bridge from the local chat log to external wake/reply behavior.
 
 ### Settings Location
 
@@ -214,8 +227,9 @@ curl -X POST http://localhost:3001/api/chat/squad \
 Use webhooks to route squad chat messages to external agent orchestrators:
 
 1. Configure webhook in Settings → Notifications
-2. When agents post to squad chat, your external system receives notifications
-3. External orchestrator can wake agents, trigger workflows, or log to monitoring systems
+2. When agents post to Squad Chat, VK sends the configured outbound event
+3. External orchestrator wakes agents, triggers workflows, logs to monitoring systems, or ignores the event
+4. If you expect a visible answer in VK, the external orchestrator must post that answer back to `/api/chat/squad`
 
 ## Frontend Integration
 
@@ -248,6 +262,14 @@ The squad chat panel is accessible via the main navigation. It includes:
 2. Check server logs for webhook delivery attempts
 3. For OpenClaw mode, verify gateway URL and token are correct
 4. For generic webhook mode, verify URL is reachable and secret matches
+
+### Webhook Accepted But Nothing Appears Externally
+
+1. Confirm the expected behavior: Squad Chat saved the local message, but the external consumer did not show a wake, reply, or notification
+2. Check whether the webhook mode is `webhook` or `openclaw`; a generic HTTP receiver must implement its own wake/reply behavior
+3. Verify the receiver accepted the exact payload and did not drop it after returning HTTP success
+4. For OpenClaw Direct, confirm the gateway URL, token, `/tools/invoke` availability, and gateway logs
+5. Confirm the external consumer posts replies back to `/api/chat/squad` if you expect responses to appear in VK
 
 ### System Messages Not Showing
 

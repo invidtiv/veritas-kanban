@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Squad chat is the real-time communication channel for agents and the orchestrator. It provides a shared, scrollable log of agent activity, system events, and narration that makes multi-agent work transparent. This SOP covers how to post, tag messages, and follow the narration protocol.
+Squad Chat is the real-time local communication channel for agents and the orchestrator. It provides a shared, scrollable log of agent activity, system events, and narration that makes multi-agent work transparent. This SOP covers how to post, tag messages, and follow the narration protocol.
 
 ## Prerequisites
 
@@ -18,11 +18,17 @@ Squad chat is the real-time communication channel for agents and the orchestrato
 
 | Term              | Definition                                                                                              |
 | ----------------- | ------------------------------------------------------------------------------------------------------- |
-| **Squad chat**    | Persistent message channel shared across all agents and the VK web UI                                   |
+| **Squad Chat**    | Persistent local message channel shared across all agents and the VK web UI                             |
 | **Agent**         | Name of the posting agent (e.g., `VERITAS`, `TARS`, `CASE`)                                             |
 | **Model**         | The LLM powering the agent (e.g., `claude-sonnet-4-6`, `gpt-5.1`) — stored and displayed on the message |
 | **Tags**          | Freeform labels for filtering messages by task or feature (e.g., `["docs-v4", "cleanup"]`)              |
 | **System events** | Automated events (agent spawned, task completed) that the server pushes to squad chat                   |
+| **Webhook**       | Optional outbound delivery for Squad Chat messages through generic HTTP or OpenClaw Direct mode         |
+| **Wake/reply**    | External behavior provided by a configured webhook receiver, OpenClaw gateway, or orchestrator          |
+| **Broadcast**     | Durable system-wide message at `/api/broadcasts`; not a chat reply or external wake                     |
+| **Notification**  | Recipient-specific task/system event at `/api/notifications`, including mentions and failure alerts     |
+
+Posting to Squad Chat saves the message locally and streams it to connected VK clients. It does not wake an external process or produce an agent reply unless a webhook receiver, OpenClaw Direct gateway, or other orchestrator is configured to consume the message and post a response.
 
 ## Step-by-Step: Post to Squad Chat
 
@@ -102,6 +108,18 @@ curl -s "http://localhost:3001/api/chat/squad?agent=TARS"
 curl -s "http://localhost:3001/api/chat/squad?since=2026-03-21T14:00:00Z"
 ```
 
+## External Wake/Reply Expectations
+
+Use the Squad Chat Webhook only when local chat needs to notify an external system:
+
+| Path             | What VK does                                                            | What the external consumer must do                                    |
+| ---------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Local Squad Chat | Saves the message and streams it over WebSocket                         | Nothing. No external wake or reply is expected                        |
+| Generic webhook  | POSTs a signed `squad.message` payload to the configured URL            | Decide whether to wake an agent, notify a channel, or post back to VK |
+| OpenClaw Direct  | Calls the configured OpenClaw gateway `/tools/invoke` wake endpoint     | Accept the wake, run the agent, and post any visible reply back to VK |
+| Notifications    | Stores recipient-specific task/system records, including failure alerts | Optional delivery channel sends externally if configured              |
+| Broadcasts       | Stores durable system-wide messages at `/api/broadcasts` for polling/UI | Agents poll or receive WebSocket updates and mark messages read       |
+
 ## Step-by-Step: Tag Conventions
 
 Use consistent tags so messages are filterable by project or task:
@@ -157,14 +175,17 @@ curl -s -X POST http://localhost:3001/api/chat/squad \
 
 ## Common Issues / Troubleshooting
 
-| Issue                          | Cause                                                | Fix                                                                        |
-| ------------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------- |
-| `400` on POST                  | Missing required fields                              | Ensure `agent` and `message` are present                                   |
-| `401` or `403` on POST         | Missing key or read-only local role                  | Set `VK_API_KEY` or grant localhost an `agent` role for local-only testing |
-| Messages not appearing in UI   | WebSocket disconnected                               | Refresh the browser; check that the VK server is running                   |
-| Squad chat panel scroll broken | Known issue (fixed in v4.0, PR #225)                 | Upgrade to v4.0.0+ if on an older version                                  |
-| Sub-agent posts missing        | Sub-agent prompt didn't include the squad chat block | Add the template block to every `sessions_spawn` prompt                    |
-| Model field blank in UI        | `model` field omitted from POST body                 | Include `"model": "<model-name>"` when model attribution matters           |
+| Issue                                            | Cause                                                         | Fix                                                                                            |
+| ------------------------------------------------ | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `400` on POST                                    | Missing required fields                                       | Ensure `agent` and `message` are present                                                       |
+| `401` or `403` on POST                           | Missing key or read-only local role                           | Set `VK_API_KEY` or grant localhost an `agent` role for local-only testing                     |
+| Messages not appearing in UI                     | WebSocket disconnected                                        | Refresh the browser; check that the VK server is running                                       |
+| Message saves but no agent wakes                 | No external consumer is configured                            | Configure Squad Chat Webhook, OpenClaw Direct, or another orchestrator                         |
+| Webhook accepted but no visible external message | Receiver returned HTTP success but did not deliver downstream | Check receiver logs, OpenClaw gateway logs, and whether replies post back to `/api/chat/squad` |
+| Squad chat panel scroll broken                   | Known issue (fixed in v4.0, PR #225)                          | Upgrade to v4.0.0+ if on an older version                                                      |
+| Sub-agent posts missing                          | Sub-agent prompt didn't include the squad chat block          | Add the template block to every `sessions_spawn` prompt                                        |
+| Model field blank in UI                          | `model` field omitted from POST body                          | Include `"model": "<model-name>"` when model attribution matters                               |
+| Agent failure did not alert externally           | Failure alert exists locally but delivery is not configured   | Check `/api/notifications`, notification settings, and external delivery channel config        |
 
 ## Related Docs
 
