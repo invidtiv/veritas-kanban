@@ -8,7 +8,10 @@ Broadcasts are stored server-side and can be read by agents or UI clients. They 
 
 - Broadcasts use `/api/broadcasts` and are durable until removed from storage.
 - Notifications use `/api/notifications` for recipient-specific task and system events.
-- Squad Chat uses the chat endpoints and optional webhook delivery for agent conversation and wake behavior.
+- Squad Chat uses `/api/chat/squad` for local agent conversation and optional webhook delivery.
+- External wake/reply behavior belongs to the configured Squad Chat Webhook, OpenClaw Direct path, or orchestrator. Broadcasts do not wake agents by themselves.
+
+Broadcast priorities are exactly `info`, `action-required`, and `urgent`.
 
 ## API Endpoints
 

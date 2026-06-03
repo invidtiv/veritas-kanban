@@ -435,11 +435,12 @@ Automated staleness detection for project documentation with real-time tracking 
 Real-time agent-to-agent communication channel for multi-agent collaboration. Shipped in v2.0. Optional for first-run setup.
 
 - **WebSocket-powered chat** — Messages broadcast in real time to all connected clients
+- **Local shared log** — Squad Chat stores and streams messages; it does not wake or reply through an external agent unless a webhook, OpenClaw Direct path, or orchestrator is configured
 - **System lifecycle events** — Automatic events for agent spawned, completed, and failed transitions
 - **Model attribution** — Messages can include the sending agent's model for provenance tracking
 - **Configurable display names** — Agents set custom display names for chat identity
-- **Squad Chat Webhook** — Optional webhooks for external integration; supports generic HTTP and OpenClaw Direct modes
-- **OpenClaw Direct gateway wake** — Optional real-time squad chat notifications pushed to OpenClaw gateway for agent orchestration
+- **Squad Chat Webhook** — Optional outbound delivery for chat messages; supports generic HTTP and OpenClaw Direct modes
+- **OpenClaw Direct gateway wake** — Optional real-time Squad Chat events pushed to OpenClaw gateway for agent orchestration
 - **Searchable history** — Browse and search past squad chat messages
 
 ### API Endpoints
@@ -1071,13 +1072,14 @@ Added in v3.3.3. At-a-glance enforcement status visible on the dashboard.
 
 Notification and broadcast features provide local visibility and optional delivery channels. Shipped in v2.0.
 
-- **Priority levels** — Notifications carry priority (low, normal, high, urgent) for triage
-- **Agent-specific delivery** — Target notifications to specific agents or broadcast to all
-- **Read receipts** — Track which agents have acknowledged notifications
-- **Persistent storage** — Notifications persisted to disk, survive server restarts
-- **Notification queue** — Unsent notifications queued for batch delivery
+- **Notifications** — Recipient-specific task and system events at `/api/notifications`, including mentions, assignments, subscriptions, and failure alerts
+- **Agent-specific delivery** — Target notifications to specific agents
+- **Delivery tracking** — Track whether notifications have been delivered/read
+- **Persistent storage** — Notifications persist to disk and survive server restarts
+- **Notification queue** — Undelivered notifications queue for batch delivery
 - **Per-event toggles** — Enable/disable notification types in Settings → Notifications
 - **Broadcast messages** — Durable system-wide messages at `/api/broadcasts` with `info`, `action-required`, and `urgent` priorities
+- **External delivery boundary** — Local notifications, broadcasts, and Squad Chat can work while external webhook delivery is disabled
 
 ### API Endpoints
 

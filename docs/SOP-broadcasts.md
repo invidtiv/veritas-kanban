@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Send system-wide announcements to agents and users. Broadcasts are priority-tagged messages that agents can poll for unread items, making them useful for coordinating fleet-wide changes, urgent alerts, and informational updates without requiring individual notifications.
+Send system-wide announcements to agents and users. Broadcasts are priority-tagged messages at `/api/broadcasts` that agents can poll for unread items, making them useful for coordinating fleet-wide changes, urgent alerts, and informational updates without requiring individual notifications.
 
 ## Prerequisites
 
@@ -14,12 +14,14 @@ Send system-wide announcements to agents and users. Broadcasts are priority-tagg
 
 ## Concepts
 
-| Term | Definition |
-|------|------------|
-| **Broadcast** | A system-wide message with a priority level and optional metadata |
-| **Priority** | `info` (default), `action-required`, or `urgent` |
-| **Read tracking** | Each agent marks broadcasts read independently — unread state is per-agent |
-| **WebSocket delivery** | New broadcasts are pushed via WebSocket in real-time; polling is available as fallback |
+| Term                   | Definition                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| **Broadcast**          | A durable system-wide message with a priority level, optional sender, and optional tags          |
+| **Priority**           | `info` (default), `action-required`, or `urgent`                                                 |
+| **Read tracking**      | Each agent marks broadcasts read independently — unread state is per-agent                       |
+| **WebSocket delivery** | New broadcasts are pushed via WebSocket in real-time; polling is available as fallback           |
+| **Notification**       | Recipient-specific task/system event at `/api/notifications`; separate from durable broadcasts   |
+| **Squad Chat**         | Local conversation log at `/api/chat/squad`; separate from broadcasts and external wake behavior |
 
 ## Step-by-Step: Send a Broadcast
 
@@ -31,7 +33,8 @@ curl -s -X POST http://localhost:3001/api/broadcasts \
   -d '{
     "message": "Deployment complete: VK 4.0.0 is now running. All agents should reload their task context.",
     "priority": "info",
-    "source": "VERITAS"
+    "from": "VERITAS",
+    "tags": ["release"]
   }'
 ```
 
@@ -45,8 +48,8 @@ curl -s -X POST http://localhost:3001/api/broadcasts \
   -d '{
     "message": "API quota exhausted for OpenAI. All agents: pause LLM calls until further notice.",
     "priority": "urgent",
-    "source": "VERITAS",
-    "metadata": { "affectedService": "openai", "resumeEta": "2026-03-21T16:00:00Z" }
+    "from": "VERITAS",
+    "tags": ["incident", "openai"]
   }'
 ```
 
@@ -89,9 +92,7 @@ Integrate into an agent's startup or polling loop:
 ```typescript
 // On agent startup or heartbeat cycle
 async function checkBroadcasts(agentName: string): Promise<void> {
-  const response = await fetch(
-    `${VK_API_URL}/api/broadcasts?agent=${agentName}&unread=true`
-  );
+  const response = await fetch(`${VK_API_URL}/api/broadcasts?agent=${agentName}&unread=true`);
   const broadcasts = await response.json();
 
   for (const broadcast of broadcasts) {
@@ -107,7 +108,7 @@ async function checkBroadcasts(agentName: string): Promise<void> {
     await fetch(`${VK_API_URL}/api/broadcasts/${broadcast.id}/read`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agent: agentName })
+      body: JSON.stringify({ agent: agentName }),
     });
   }
 }
@@ -141,29 +142,31 @@ curl -s "http://localhost:3001/api/broadcasts?agent=TARS&unread=true&priority=ur
 
 ## Priority Guide
 
-| Priority | When to use | Agent response |
-|----------|-------------|----------------|
-| `info` | Routine announcements (deployments, completions, status updates) | Acknowledge when convenient |
+| Priority          | When to use                                                                 | Agent response                   |
+| ----------------- | --------------------------------------------------------------------------- | -------------------------------- |
+| `info`            | Routine announcements (deployments, completions, status updates)            | Acknowledge when convenient      |
 | `action-required` | Something needs attention but isn't critical (config change, review needed) | Address before starting new work |
-| `urgent` | Immediate action required (quota exhausted, production incident, system failure) | Stop current work and respond immediately |
+| `urgent`          | Immediate action required (quota exhausted, production incident, failure)   | Stop current work and respond    |
 
 ## API Endpoints Used
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/api/broadcasts` | Send a broadcast |
-| `GET` | `/api/broadcasts` | List broadcasts (filterable) |
-| `GET` | `/api/broadcasts/:id` | Get a single broadcast |
-| `PATCH` | `/api/broadcasts/:id/read` | Mark as read for an agent |
+| Method  | Path                       | Purpose                |
+| ------- | -------------------------- | ---------------------- |
+| `POST`  | `/api/broadcasts`          | Send a broadcast       |
+| `GET`   | `/api/broadcasts`          | List broadcasts        |
+| `GET`   | `/api/broadcasts/:id`      | Get a single broadcast |
+| `PATCH` | `/api/broadcasts/:id/read` | Mark read for an agent |
 
 ## Common Issues / Troubleshooting
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| `400` on `unread=true` | Missing `agent` param | Add `?agent=<agentname>` to the query |
-| Broadcast not appearing real-time | Agent isn't connected via WebSocket | Check WebSocket connection; fall back to polling |
-| Agent sees same broadcasts repeatedly | Not calling the `/read` endpoint after processing | Always mark broadcasts read after handling them |
-| Old broadcasts cluttering the list | No TTL/expiry in v4.0 | Use `?since=` to filter by recency |
+| Issue                                 | Cause                                                    | Fix                                                                                                                          |
+| ------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `400` on `unread=true`                | Missing `agent` param                                    | Add `?agent=<agentname>` to the query                                                                                        |
+| `400` on create                       | Payload uses stale fields or invalid priority            | Use `message`, optional `priority`, optional `from`, and optional `tags`; priorities are `info`, `action-required`, `urgent` |
+| Broadcast not appearing real-time     | Agent isn't connected via WebSocket                      | Check WebSocket connection; fall back to polling                                                                             |
+| Broadcast created but no agent wakes  | Broadcasts are durable messages, not wake/reply commands | Use Squad Chat Webhook or OpenClaw Direct for external wake behavior                                                         |
+| Agent sees same broadcasts repeatedly | Not calling the `/read` endpoint after processing        | Always mark broadcasts read after handling them                                                                              |
+| Old broadcasts cluttering the list    | No TTL/expiry in v4.0                                    | Use `?since=` to filter by recency                                                                                           |
 
 ## Related Docs
 

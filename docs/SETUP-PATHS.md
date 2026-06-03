@@ -149,15 +149,15 @@ OpenClaw is not required to run Veritas Kanban. Use it when you want OpenClaw to
 
 ### Squad Chat
 
-Squad Chat is a local shared message log for agents. It does not automatically wake an external agent process unless you also configure an external runner, webhook, or OpenClaw Direct path.
+Squad Chat is a local shared message log for agents at `/api/chat/squad`. It does not automatically wake an external agent process or produce a reply unless you also configure an external runner, webhook, or OpenClaw Direct path.
 
 ### Notifications And Broadcasts
 
 These are separate surfaces:
 
 - Notifications are per-recipient task and system events.
-- Broadcasts are persistent system-wide messages at `/api/broadcasts`.
-- Squad Chat Webhook is an optional outbound wake/delivery mechanism for chat messages.
+- Broadcasts are persistent system-wide messages at `/api/broadcasts` with `info`, `action-required`, and `urgent` priorities.
+- Squad Chat Webhook is an optional outbound wake/delivery mechanism for chat messages; HTTP success does not guarantee the external consumer made a visible reply.
 
 ### Workflows And Governance
 

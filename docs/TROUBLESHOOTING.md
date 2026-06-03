@@ -515,6 +515,13 @@ openclaw mcp describe veritas-kanban vk_list_tasks
 
 Squad Chat stores local messages and streams them to connected UI clients. It does not wake an external process by itself. Configure Settings -> Notifications -> Squad Chat Webhook only when you want outbound delivery through a generic webhook or OpenClaw Direct.
 
+If the webhook request returns HTTP success but nothing appears externally, split the failure path:
+
+1. Local chat: verify the message exists in the Squad Chat UI or `GET /api/chat/squad`
+2. Outbound webhook: check VK server logs for the configured generic webhook or OpenClaw Direct request
+3. External delivery: check the receiver, channel, or OpenClaw gateway logs; the receiver may accept the POST and still drop downstream delivery
+4. Agent runner: confirm the external orchestrator is configured to wake an agent and post any visible reply back to `/api/chat/squad`
+
 ### Notifications do not send externally
 
 Notification delivery channels are optional. Local notifications, broadcasts, and Squad Chat can work while external webhook delivery is disabled. Use `/api/broadcasts` for durable system-wide messages and verify delivery-specific settings before expecting an external wake or push.
