@@ -10,12 +10,18 @@ import type {
   EvaluationResult,
   Feedback,
   FeedbackQuery,
+  GovernanceTraceListFilters,
+  GovernanceTraceRecord,
   ScoringProfile,
 } from '@veritas-kanban/shared';
 import type { SqliteDatabase } from './database.js';
 
 interface DecisionRow {
   decision_json: string;
+}
+
+interface GovernanceTraceRow {
+  trace_json: string;
 }
 
 interface FeedbackRow {
@@ -142,6 +148,115 @@ export class SqliteDecisionRepository {
       .all(...params) as unknown as DecisionRow[];
 
     return rows.map((row) => JSON.parse(row.decision_json) as DecisionRecord);
+  }
+}
+
+export class SqliteGovernanceTraceRepository {
+  constructor(private readonly database: SqliteDatabase) {}
+
+  save(trace: GovernanceTraceRecord): void {
+    this.database
+      .getConnection()
+      .prepare(
+        `
+          INSERT INTO governance_decision_traces (
+            id,
+            workspace_id,
+            kind,
+            outcome,
+            agent_id,
+            task_id,
+            action_type,
+            trace_json,
+            created_at
+          )
+          VALUES (?, 'local', ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            kind = excluded.kind,
+            outcome = excluded.outcome,
+            agent_id = excluded.agent_id,
+            task_id = excluded.task_id,
+            action_type = excluded.action_type,
+            trace_json = excluded.trace_json,
+            created_at = excluded.created_at
+        `
+      )
+      .run(
+        trace.id,
+        trace.kind,
+        trace.outcome,
+        trace.subject.agentId ?? trace.subject.actorId ?? trace.subject.role ?? null,
+        trace.subject.taskId ?? null,
+        trace.subject.actionType ?? null,
+        JSON.stringify(trace),
+        trace.createdAt
+      );
+  }
+
+  get(id: string): GovernanceTraceRecord | null {
+    const row = this.database
+      .getConnection()
+      .prepare(
+        `
+          SELECT trace_json
+          FROM governance_decision_traces
+          WHERE workspace_id = 'local'
+            AND id = ?
+        `
+      )
+      .get(id) as GovernanceTraceRow | undefined;
+
+    return row ? (JSON.parse(row.trace_json) as GovernanceTraceRecord) : null;
+  }
+
+  list(filters: GovernanceTraceListFilters = {}): GovernanceTraceRecord[] {
+    const clauses = ["workspace_id = 'local'"];
+    const params: SQLInputValue[] = [];
+
+    if (filters.kind) {
+      clauses.push('kind = ?');
+      params.push(filters.kind);
+    }
+    if (filters.outcome) {
+      clauses.push('outcome = ?');
+      params.push(filters.outcome);
+    }
+    if (filters.agent) {
+      clauses.push('agent_id = ?');
+      params.push(filters.agent);
+    }
+    if (filters.taskId) {
+      clauses.push('task_id = ?');
+      params.push(filters.taskId);
+    }
+    if (filters.actionType) {
+      clauses.push('action_type = ?');
+      params.push(filters.actionType);
+    }
+    if (filters.startTime) {
+      clauses.push('created_at >= ?');
+      params.push(filters.startTime);
+    }
+    if (filters.endTime) {
+      clauses.push('created_at <= ?');
+      params.push(filters.endTime);
+    }
+
+    const limit = Math.min(Math.max(filters.limit ?? 100, 1), 500);
+    const rows = this.database
+      .getConnection()
+      .prepare(
+        `
+          SELECT trace_json
+          FROM governance_decision_traces
+          WHERE ${clauses.join(' AND ')}
+          ORDER BY datetime(created_at) DESC, id DESC
+          LIMIT ?
+        `
+      )
+      .all(...params, limit) as unknown as GovernanceTraceRow[];
+
+    return rows.map((row) => JSON.parse(row.trace_json) as GovernanceTraceRecord);
   }
 }
 

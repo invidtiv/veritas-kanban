@@ -11,6 +11,7 @@
 import express from 'express';
 import { z } from 'zod';
 import { getToolPolicyService } from '../services/tool-policy-service.js';
+import { getGovernanceTraceService } from '../services/governance-trace-service.js';
 import { createLogger } from '../lib/logger.js';
 import { authorize } from '../middleware/auth.js';
 
@@ -143,8 +144,9 @@ router.post(
   asyncHandler(async (req, res) => {
     const { role } = RoleParamSchema.parse(req.params);
     const { tool } = z.object({ tool: z.string().min(1) }).parse(req.body);
-    const allowed = await toolPolicyService.validateToolAccess(role, tool);
-    res.json({ role, tool, allowed });
+    const result = await toolPolicyService.validateToolAccessWithTrace(role, tool);
+    const trace = await getGovernanceTraceService().record(result.trace);
+    res.json({ role, tool, allowed: result.allowed, traceId: trace.id });
   })
 );
 

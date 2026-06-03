@@ -31,6 +31,10 @@ operator checklist for final release verification.
       password sessions must become persisted per-user sessions before
       multi-user/server-mode GA, or the release must explicitly limit password
       sessions to single-owner local deployments.
+- [ ] Governance decision traces verify policy, tool-policy, agent-permission,
+      routing, and workflow-gate decisions include matched rules, remediation,
+      redacted raw detail, API access through `/api/governance/traces`, and UI
+      drilldown from the Decision Audit Trail.
 - [ ] Performance/load review covers SQLite read/write paths, dashboard queries,
       WebSocket fan-out, workflow run updates, and remote/mobile clients. Track
       evidence and limits in

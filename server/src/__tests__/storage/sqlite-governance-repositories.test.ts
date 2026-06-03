@@ -6,6 +6,7 @@ import type { AnyTelemetryEvent } from '@veritas-kanban/shared';
 import { DecisionService } from '../../services/decision-service.js';
 import { DriftService } from '../../services/drift-service.js';
 import { FeedbackService } from '../../services/feedback-service.js';
+import { GovernanceTraceService } from '../../services/governance-trace-service.js';
 import { ScoringService } from '../../services/scoring-service.js';
 import {
   createTestSqliteDatabase,
@@ -307,5 +308,43 @@ describe('SQLite governance repositories', () => {
 
     await expect(fs.access(alertsDir)).rejects.toThrow();
     await expect(fs.access(baselinesDir)).rejects.toThrow();
+  });
+
+  it('stores governance decision traces in SQLite', async () => {
+    const tracesDir = path.join(testRoot, 'storage', 'governance-traces');
+    const service = new GovernanceTraceService({
+      tracesDir,
+      storageType: 'sqlite',
+      sqliteDatabase: fixture.database,
+    });
+
+    const allowed = await service.record({
+      kind: 'agent-permission',
+      outcome: 'allowed',
+      title: 'Agent permission',
+      summary: 'Specialist can complete task.',
+      subject: { agentId: 'codex', taskId: 'task_1', actionType: 'complete_task' },
+      createdAt: '2026-06-01T12:00:00.000Z',
+    });
+    const blocked = await service.record({
+      kind: 'policy',
+      outcome: 'blocked',
+      title: 'Policy block',
+      summary: 'Production deploy requires approval.',
+      subject: { agentId: 'codex', taskId: 'task_2', actionType: 'git.push' },
+      createdAt: '2026-06-01T13:00:00.000Z',
+    });
+
+    expect((await service.list({ agent: 'codex' })).map((trace) => trace.id)).toEqual([
+      blocked.id,
+      allowed.id,
+    ]);
+    expect((await service.list({ kind: 'policy' })).map((trace) => trace.id)).toEqual([blocked.id]);
+    await expect(service.get(blocked.id)).resolves.toMatchObject({
+      id: blocked.id,
+      outcome: 'blocked',
+      subject: { taskId: 'task_2' },
+    });
+    await expect(fs.access(tracesDir)).rejects.toThrow();
   });
 });

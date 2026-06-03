@@ -13,6 +13,7 @@
 import { createLogger } from '../lib/logger.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import type { CreateGovernanceTraceInput } from '@veritas-kanban/shared';
 import { getRuntimeDir } from '../utils/paths.js';
 import { migrateLegacyFiles } from '../utils/migrate-legacy-files.js';
 const DATA_DIR = getRuntimeDir();
@@ -231,46 +232,82 @@ class AgentPermissionService {
     reason?: string;
     requiresApproval?: boolean;
   }> {
+    return (await this.checkPermissionWithTrace(agentId, action)).result;
+  }
+
+  async checkPermissionWithTrace(
+    agentId: string,
+    action: string
+  ): Promise<{
+    result: {
+      allowed: boolean;
+      reason?: string;
+      requiresApproval?: boolean;
+    };
+    trace: CreateGovernanceTraceInput;
+  }> {
     const config = await this.getPermissions(agentId);
+    let result: {
+      allowed: boolean;
+      reason?: string;
+      requiresApproval?: boolean;
+    };
 
     switch (action) {
       case 'create_task':
-        return config.canCreateTasks
+        result = config.canCreateTasks
           ? { allowed: true }
           : { allowed: false, reason: 'Intern agents cannot create tasks', requiresApproval: true };
+        break;
 
       case 'delegate':
-        return config.canDelegate
+        result = config.canDelegate
           ? { allowed: true }
           : { allowed: false, reason: 'Only lead agents can delegate', requiresApproval: true };
+        break;
 
       case 'approve':
-        return config.canApprove
+        result = config.canApprove
           ? { allowed: true }
           : { allowed: false, reason: 'Only lead agents can approve work' };
+        break;
 
       case 'complete_task':
         if (config.autoComplete) {
-          return { allowed: true };
+          result = { allowed: true };
+        } else {
+          result = {
+            allowed: true,
+            reason: 'Task will go to review instead of done',
+            requiresApproval: false,
+          };
         }
-        return {
-          allowed: true,
-          reason: 'Task will go to review instead of done',
-          requiresApproval: false,
-        };
+        break;
 
       case 'delete_task':
-        return config.level === 'lead'
-          ? { allowed: true }
-          : { allowed: false, reason: 'Only lead agents can delete tasks', requiresApproval: true };
+        result =
+          config.level === 'lead'
+            ? { allowed: true }
+            : {
+                allowed: false,
+                reason: 'Only lead agents can delete tasks',
+                requiresApproval: true,
+              };
+        break;
 
       default:
         // Check custom restrictions
         if (config.restrictions?.some((r) => action.includes(r))) {
-          return { allowed: false, reason: `Action restricted for ${config.level} agents` };
+          result = { allowed: false, reason: `Action restricted for ${config.level} agents` };
+        } else {
+          result = { allowed: true };
         }
-        return { allowed: true };
     }
+
+    return {
+      result,
+      trace: this.buildPermissionTrace(config, action, result),
+    };
   }
 
   /**
@@ -339,6 +376,78 @@ class AgentPermissionService {
     return results.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+  }
+
+  private buildPermissionTrace(
+    config: AgentPermissionConfig,
+    action: string,
+    result: { allowed: boolean; reason?: string; requiresApproval?: boolean }
+  ): CreateGovernanceTraceInput {
+    const outcome: CreateGovernanceTraceInput['outcome'] = result.allowed
+      ? result.requiresApproval
+        ? 'approval-required'
+        : 'allowed'
+      : result.requiresApproval
+        ? 'approval-required'
+        : 'blocked';
+
+    return {
+      kind: 'agent-permission',
+      outcome,
+      title: `Agent permission: ${config.agentId} -> ${action}`,
+      summary: result.allowed
+        ? result.reason || `${config.agentId} can perform ${action}.`
+        : result.reason || `${config.agentId} cannot perform ${action}.`,
+      remediation: result.allowed
+        ? undefined
+        : result.requiresApproval
+          ? 'Request approval from a lead agent or promote the agent permission level.'
+          : 'Change the agent level, remove a restriction, or delegate the action to an authorized agent.',
+      subject: { agentId: config.agentId, actionType: action },
+      evaluatedRules: [
+        {
+          id: `agent-permission:${config.level}`,
+          label: `${config.level} permissions`,
+          type: 'agent-permission',
+          status: 'matched',
+          outcome,
+          message: result.reason || `${config.level} permissions evaluated for ${action}.`,
+          details: {
+            level: config.level,
+            canCreateTasks: config.canCreateTasks,
+            canDelegate: config.canDelegate,
+            canApprove: config.canApprove,
+            autoComplete: config.autoComplete,
+            restrictions: config.restrictions ?? [],
+          },
+        },
+      ],
+      matchedRules: [
+        {
+          id: `agent-permission:${config.level}`,
+          label: `${config.level} permissions`,
+          type: 'agent-permission',
+          status: 'matched',
+          outcome,
+          message: result.reason || `${config.level} permissions evaluated for ${action}.`,
+        },
+      ],
+      steps: [
+        {
+          id: 'level',
+          label: 'Permission level',
+          status: 'info',
+          message: `${config.agentId} is configured as ${config.level}.`,
+        },
+        {
+          id: 'outcome',
+          label: 'Outcome',
+          status: result.allowed ? 'matched' : 'not-matched',
+          message: result.reason || (result.allowed ? 'Action allowed.' : 'Action blocked.'),
+        },
+      ],
+      raw: { config, action, result },
+    };
   }
 }
 

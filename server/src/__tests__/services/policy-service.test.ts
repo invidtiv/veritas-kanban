@@ -56,6 +56,44 @@ describe('PolicyService', () => {
     expect(result.blockedBy).toContain('block-force-push');
   });
 
+  it('explains policy evaluations with a redacted governance trace payload', async () => {
+    await service.createPolicy({
+      id: 'block-deploy',
+      name: 'Block Deploy',
+      type: 'block-action-type',
+      enabled: true,
+      scope: {
+        agents: ['codex'],
+        projects: ['core'],
+        actionTypes: [],
+      },
+      responseAction: 'block',
+      config: {
+        actionTypes: ['deploy.production'],
+      },
+    });
+
+    const evaluation = await service.evaluatePoliciesWithTrace({
+      agent: 'codex',
+      project: 'core',
+      actionType: 'deploy.production',
+      metadata: { path: '/Users/bradgroux/Projects/veritas-kanban/.env' },
+    });
+
+    expect(evaluation.result.decision).toBe('block');
+    expect(evaluation.trace).toMatchObject({
+      kind: 'policy',
+      outcome: 'blocked',
+      subject: {
+        agentId: 'codex',
+        project: 'core',
+        actionType: 'deploy.production',
+      },
+    });
+    expect(evaluation.trace.matchedRules?.map((rule) => rule.id)).toContain('block-deploy');
+    expect(evaluation.trace.remediation).toContain('Change the action');
+  });
+
   it('updates and deletes a policy', async () => {
     const created = await service.createPolicy({
       id: 'manual-approval',

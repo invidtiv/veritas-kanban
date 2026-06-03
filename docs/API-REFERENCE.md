@@ -42,12 +42,13 @@
 29. [Error Learning](#error-learning)
 30. [Tool Policies](#tool-policies)
 31. [Traces](#traces)
-32. [Audit](#audit)
-33. [Maintenance Center](#maintenance-center-apiv1maintenance)
-34. [Common Workflows](#common-workflows)
-35. [Versioning & Deprecation](#versioning--deprecation)
-36. [Rate Limits](#rate-limits)
-37. [Additional Endpoint Groups](#additional-endpoint-groups)
+32. [Governance Decision Traces](#governance-decision-traces-apigovernancetraces)
+33. [Audit](#audit)
+34. [Maintenance Center](#maintenance-center-apiv1maintenance)
+35. [Common Workflows](#common-workflows)
+36. [Versioning & Deprecation](#versioning--deprecation)
+37. [Rate Limits](#rate-limits)
+38. [Additional Endpoint Groups](#additional-endpoint-groups)
 
 ---
 
@@ -1249,8 +1250,8 @@ POST /api/agents/permissions/check
 ```json
 {
   "allowed": true,
-  "level": "specialist",
-  "requiresApproval": false
+  "requiresApproval": false,
+  "traceId": "govtrace_1760000000000_ab12cd"
 }
 ```
 
@@ -1336,7 +1337,8 @@ Accepts either a task ID or ad-hoc metadata:
   "agent": "codex-1",
   "model": "claude-sonnet-4.5",
   "rule": "high-priority-bugs",
-  "confidence": 0.95
+  "confidence": 0.95,
+  "traceId": "govtrace_1760000000000_ab12cd"
 }
 ```
 
@@ -1758,7 +1760,8 @@ POST /api/tool-policies/:role/validate
 {
   "role": "intern",
   "tool": "deploy",
-  "allowed": false
+  "allowed": false,
+  "traceId": "govtrace_1760000000000_ab12cd"
 }
 ```
 
@@ -2185,6 +2188,66 @@ Update a specific assumption by its zero-based index.
 
 ---
 
+### Governance Decision Traces (`/api/governance/traces`)
+
+Inspect policy, tool-policy, agent-permission, routing, and workflow-gate decisions with evaluated rules, matched rules, remediation, and redacted raw detail.
+
+#### List Governance Traces
+
+```
+GET /api/governance/traces
+```
+
+Query params: `kind`, `outcome`, `agent`, `taskId`, `actionType`, `startTime`, `endTime`, `limit`.
+
+`kind` values: `policy`, `tool-policy`, `agent-permission`, `routing`, `workflow-gate`.
+
+`outcome` values: `allowed`, `warned`, `blocked`, `approval-required`, `routed`, `fallback`, `skipped`.
+
+**Response:** Array of trace records.
+
+```json
+[
+  {
+    "id": "govtrace_1760000000000_ab12cd",
+    "kind": "policy",
+    "outcome": "blocked",
+    "title": "Policy evaluation: git.push",
+    "summary": "Production deploy requires approval.",
+    "remediation": "Request approval from a lead agent.",
+    "subject": {
+      "agentId": "codex",
+      "taskId": "task_123",
+      "actionType": "git.push"
+    },
+    "evaluatedRules": [
+      {
+        "id": "policy:prod-risk",
+        "label": "Production risk gate",
+        "type": "policy",
+        "status": "matched",
+        "outcome": "blocked",
+        "message": "Risk score exceeded the blocking threshold."
+      }
+    ],
+    "matchedRules": [],
+    "steps": [],
+    "redacted": true,
+    "createdAt": "2026-06-01T12:00:00.000Z"
+  }
+]
+```
+
+#### Get Governance Trace
+
+```
+GET /api/governance/traces/:id
+```
+
+Returns one trace record including `raw` detail when present. All persisted trace values are redacted before write.
+
+---
+
 ### Behavioral Drift Detection (`/api/drift`)
 
 Track agent metric baselines and detect behavioral deviations.
@@ -2355,14 +2418,15 @@ DELETE /api/policies/:id
 #### Evaluate Policy
 
 ```
-POST /api/policies/:id/evaluate
+POST /api/policies/evaluate
 ```
 
 ```json
 {
   "agent": "TARS",
-  "tool": "browser",
-  "action": "navigate",
+  "project": "core",
+  "actionType": "tool.browser.navigate",
+  "riskScore": 72,
   "metadata": { "url": "https://example.com" }
 }
 ```
@@ -2371,11 +2435,20 @@ POST /api/policies/:id/evaluate
 
 ```json
 {
-  "allowed": false,
-  "effect": "deny",
-  "matchedRule": { "tool": "browser", "action": "*", "effect": "deny" },
-  "policyId": "pol_abc123",
-  "auditId": "audit_xyz789"
+  "decision": "require-approval",
+  "matches": [
+    {
+      "policyId": "pol_abc123",
+      "policyName": "Production risk gate",
+      "policyType": "risk-threshold",
+      "responseAction": "require-approval",
+      "message": "Risk score requires approval."
+    }
+  ],
+  "warnings": [],
+  "blockedBy": [],
+  "approvalRequiredBy": ["pol_abc123"],
+  "traceId": "govtrace_1760000000000_ab12cd"
 }
 ```
 

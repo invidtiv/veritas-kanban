@@ -62,6 +62,7 @@ const SQLITE_BACKUP_TABLES = [
   'status_history',
   'telemetry_events',
   'decision_records',
+  'governance_decision_traces',
   'feedback_records',
   'scoring_profiles',
   'scoring_evaluations',

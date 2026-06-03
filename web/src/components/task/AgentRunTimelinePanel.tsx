@@ -52,6 +52,8 @@ import { sanitizeText } from '@/lib/sanitize';
 
 type TimelineTabTarget = 'agent' | 'changes' | 'details' | 'review' | 'work-products';
 
+const BASE_PATH = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+
 interface AgentRunTimelinePanelProps {
   task: Task;
   initialAttemptId?: string | null;
@@ -897,6 +899,18 @@ function typeFilterLabel(type: AgentRunTimelineEventType): string {
   return EVENT_LABELS[type];
 }
 
+function governanceTraceHrefForEvent(event: AgentRunTimelineEvent): string | null {
+  if (event.type !== 'policy' && event.type !== 'approval') return null;
+
+  const query =
+    safeString(event.metadata?.taskId) ??
+    safeString(event.metadata?.task_id) ??
+    safeString(event.metadata?.actionType) ??
+    event.title;
+
+  return `${BASE_PATH}/decisions?mode=governance&q=${encodeURIComponent(query)}`;
+}
+
 function EventRow({
   event,
   onOpenTab,
@@ -913,6 +927,7 @@ function EventRow({
     linkTarget && linkTarget !== 'external' && linkTarget !== 'workflow' && onOpenTab;
   const canOpenWorkflow = linkTarget === 'workflow' && onOpenWorkflow;
   const canOpenExternal = linkTarget === 'external' && event.link?.href;
+  const governanceTraceHref = governanceTraceHrefForEvent(event);
 
   return (
     <Paper withBorder p="sm" radius="md">
@@ -954,9 +969,9 @@ function EventRow({
             {metadata}
           </Code>
         )}
-        {(canOpenInternal || canOpenWorkflow || canOpenExternal) && event.link && (
+        {(canOpenInternal || canOpenWorkflow || canOpenExternal || governanceTraceHref) && (
           <Group gap="xs">
-            {canOpenInternal && linkTarget && (
+            {canOpenInternal && linkTarget && event.link && (
               <Button
                 size="compact-xs"
                 variant="subtle"
@@ -965,7 +980,7 @@ function EventRow({
                 {event.link.label}
               </Button>
             )}
-            {canOpenWorkflow && (
+            {canOpenWorkflow && event.link && (
               <Button
                 size="compact-xs"
                 variant="subtle"
@@ -974,7 +989,7 @@ function EventRow({
                 {event.link.label}
               </Button>
             )}
-            {canOpenExternal && (
+            {canOpenExternal && event.link && (
               <Button
                 component="a"
                 href={event.link.href}
@@ -984,6 +999,18 @@ function EventRow({
                 variant="subtle"
               >
                 {event.link.label}
+              </Button>
+            )}
+            {governanceTraceHref && (
+              <Button
+                component="a"
+                href={governanceTraceHref}
+                rel="noopener noreferrer"
+                size="compact-xs"
+                target="_self"
+                variant="subtle"
+              >
+                Governance Traces
               </Button>
             )}
           </Group>

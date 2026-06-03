@@ -7,6 +7,7 @@ const {
   mockToolPolicyService,
   mockAgentPermissionService,
   mockAgentRoutingService,
+  mockGovernanceTraceService,
   mockTaskService,
 } = vi.hoisted(() => ({
   mockPolicyService: {
@@ -15,6 +16,7 @@ const {
     updatePolicy: vi.fn(),
     deletePolicy: vi.fn(),
     evaluatePolicies: vi.fn(),
+    evaluatePoliciesWithTrace: vi.fn(),
   },
   mockToolPolicyService: {
     listPolicies: vi.fn(),
@@ -22,6 +24,7 @@ const {
     savePolicy: vi.fn(),
     deletePolicy: vi.fn(),
     validateToolAccess: vi.fn(),
+    validateToolAccessWithTrace: vi.fn(),
   },
   mockAgentPermissionService: {
     listPermissions: vi.fn(),
@@ -30,13 +33,18 @@ const {
     setLevel: vi.fn(),
     updatePermissions: vi.fn(),
     checkPermission: vi.fn(),
+    checkPermissionWithTrace: vi.fn(),
     requestApproval: vi.fn(),
     reviewApproval: vi.fn(),
   },
   mockAgentRoutingService: {
     resolveAgent: vi.fn(),
+    resolveAgentWithTrace: vi.fn(),
     getRoutingConfig: vi.fn(),
     updateRoutingConfig: vi.fn(),
+  },
+  mockGovernanceTraceService: {
+    record: vi.fn(),
   },
   mockTaskService: {
     getTask: vi.fn(),
@@ -67,6 +75,10 @@ vi.mock('../../services/agent-permission-service.js', () => ({
 
 vi.mock('../../services/agent-routing-service.js', () => ({
   getAgentRoutingService: () => mockAgentRoutingService,
+}));
+
+vi.mock('../../services/governance-trace-service.js', () => ({
+  getGovernanceTraceService: () => mockGovernanceTraceService,
 }));
 
 vi.mock('../../services/task-service.js', () => ({
@@ -146,12 +158,30 @@ describe('admin-only governance routes', () => {
     mockPolicyService.updatePolicy.mockResolvedValue(policyBody);
     mockPolicyService.deletePolicy.mockResolvedValue(undefined);
     mockPolicyService.evaluatePolicies.mockResolvedValue({ decision: 'allow', matches: [] });
+    mockPolicyService.evaluatePoliciesWithTrace.mockResolvedValue({
+      result: { decision: 'allow', matches: [] },
+      trace: {
+        kind: 'policy',
+        outcome: 'allowed',
+        title: 'Policy evaluation',
+        summary: 'Allowed.',
+      },
+    });
 
     mockToolPolicyService.listPolicies.mockResolvedValue([toolPolicyBody]);
     mockToolPolicyService.getToolPolicy.mockResolvedValue(toolPolicyBody);
     mockToolPolicyService.savePolicy.mockResolvedValue(undefined);
     mockToolPolicyService.deletePolicy.mockResolvedValue(undefined);
     mockToolPolicyService.validateToolAccess.mockResolvedValue(true);
+    mockToolPolicyService.validateToolAccessWithTrace.mockResolvedValue({
+      allowed: true,
+      trace: {
+        kind: 'tool-policy',
+        outcome: 'allowed',
+        title: 'Tool policy',
+        summary: 'Allowed.',
+      },
+    });
 
     mockAgentPermissionService.setLevel.mockResolvedValue({ agentId: 'a1', level: 'lead' });
     mockAgentPermissionService.updatePermissions.mockResolvedValue({
@@ -172,7 +202,17 @@ describe('admin-only governance routes', () => {
     });
 
     mockAgentRoutingService.resolveAgent.mockResolvedValue({ agent: 'codex' });
+    mockAgentRoutingService.resolveAgentWithTrace.mockResolvedValue({
+      result: { agent: 'codex' },
+      trace: {
+        kind: 'routing',
+        outcome: 'routed',
+        title: 'Agent routing',
+        summary: 'Routed.',
+      },
+    });
     mockAgentRoutingService.updateRoutingConfig.mockResolvedValue(routingConfigBody);
+    mockGovernanceTraceService.record.mockResolvedValue({ id: 'govtrace_1' });
   });
 
   afterEach(() => {
@@ -215,7 +255,7 @@ describe('admin-only governance routes', () => {
       .send({ actionType: 'create_task', riskScore: 10 })
       .expect(200);
 
-    expect(mockPolicyService.evaluatePolicies).toHaveBeenCalledWith({
+    expect(mockPolicyService.evaluatePoliciesWithTrace).toHaveBeenCalledWith({
       actionType: 'create_task',
       riskScore: 10,
       preview: false,
@@ -249,6 +289,7 @@ describe('admin-only governance routes', () => {
     expect(mockToolPolicyService.savePolicy).not.toHaveBeenCalled();
     expect(mockToolPolicyService.deletePolicy).not.toHaveBeenCalled();
     expect(mockToolPolicyService.validateToolAccess).not.toHaveBeenCalled();
+    expect(mockToolPolicyService.validateToolAccessWithTrace).not.toHaveBeenCalled();
 
     await request(app)
       .put('/api/tool-policies/intern')
@@ -335,7 +376,7 @@ describe('admin-only governance routes', () => {
       .send({ type: 'feature', priority: 'medium' })
       .expect(200);
 
-    expect(mockAgentRoutingService.resolveAgent).toHaveBeenCalledWith({
+    expect(mockAgentRoutingService.resolveAgentWithTrace).toHaveBeenCalledWith({
       type: 'feature',
       priority: 'medium',
       project: undefined,

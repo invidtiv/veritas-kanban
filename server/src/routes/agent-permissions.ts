@@ -14,6 +14,7 @@
 import { Router, type Router as RouterType } from 'express';
 import { z } from 'zod';
 import { getAgentPermissionService } from '../services/agent-permission-service.js';
+import { getGovernanceTraceService } from '../services/governance-trace-service.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { NotFoundError } from '../middleware/error-handler.js';
 import { authorize } from '../middleware/auth.js';
@@ -109,8 +110,9 @@ router.post(
     });
     const { agentId, action } = schema.parse(req.body);
     const service = getAgentPermissionService();
-    const result = await service.checkPermission(agentId, action);
-    res.json(result);
+    const result = await service.checkPermissionWithTrace(agentId, action);
+    const trace = await getGovernanceTraceService().record(result.trace);
+    res.json({ ...result.result, traceId: trace.id });
   })
 );
 

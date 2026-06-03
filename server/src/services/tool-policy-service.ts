@@ -8,6 +8,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import type { CreateGovernanceTraceInput } from '@veritas-kanban/shared';
 import type { ToolPolicy } from '../types/workflow.js';
 import { ValidationError } from '../types/workflow.js';
 import { getToolPoliciesDir } from '../utils/paths.js';
@@ -365,7 +366,15 @@ export class ToolPolicyService {
    * 3. Monitor logs for "No policy found" warnings
    */
   async validateToolAccess(role: string, tool: string): Promise<boolean> {
+    return (await this.validateToolAccessWithTrace(role, tool)).allowed;
+  }
+
+  async validateToolAccessWithTrace(
+    role: string,
+    tool: string
+  ): Promise<{ allowed: boolean; trace: CreateGovernanceTraceInput }> {
     const policy = await this.getToolPolicy(role);
+    const normalizedRole = role.trim().toLowerCase();
 
     if (!policy) {
       // No policy defined for this role - allow all tools (fail-open pattern)
@@ -374,19 +383,56 @@ export class ToolPolicyService {
         { role, tool },
         'No policy found for role - allowing all tools (fail-open). Define a policy for this role to enforce restrictions.'
       );
-      return true;
+      return {
+        allowed: true,
+        trace: {
+          kind: 'tool-policy',
+          outcome: 'allowed',
+          title: `Tool policy: ${normalizedRole} -> ${tool}`,
+          summary: `No tool policy exists for ${normalizedRole}; access allowed by compatibility fallback.`,
+          remediation:
+            'Define a tool policy for this role to enforce explicit allow and deny lists.',
+          subject: { role: normalizedRole, tool, actionType: 'tool.validate' },
+          evaluatedRules: [
+            {
+              id: `tool-policy:${normalizedRole}`,
+              label: normalizedRole,
+              type: 'tool-policy',
+              status: 'skipped',
+              outcome: 'allowed',
+              message: 'No policy found for this role.',
+            },
+          ],
+          matchedRules: [],
+          steps: [
+            {
+              id: 'fallback',
+              label: 'Compatibility fallback',
+              status: 'info',
+              message: 'Missing role policy allows the tool for backward compatibility.',
+            },
+          ],
+          raw: { role: normalizedRole, tool, policy: null, allowed: true },
+        },
+      };
     }
 
     // Denied list takes precedence over allowed list
     if (policy.denied.includes(tool)) {
       log.debug({ role, tool }, 'Tool access denied by policy');
-      return false;
+      return {
+        allowed: false,
+        trace: this.buildToolTrace(policy, tool, false, 'Tool matched the denied list.'),
+      };
     }
 
     // Check allowed list
     // '*' means all tools allowed
     if (policy.allowed.includes('*')) {
-      return true;
+      return {
+        allowed: true,
+        trace: this.buildToolTrace(policy, tool, true, 'Role policy allows all tools.'),
+      };
     }
 
     // Explicit allow
@@ -394,7 +440,15 @@ export class ToolPolicyService {
     if (!allowed) {
       log.debug({ role, tool, allowedTools: policy.allowed }, 'Tool not in allowed list');
     }
-    return allowed;
+    return {
+      allowed,
+      trace: this.buildToolTrace(
+        policy,
+        tool,
+        allowed,
+        allowed ? 'Tool matched the allowed list.' : 'Tool is not present in the allowed list.'
+      ),
+    };
   }
 
   /**
@@ -474,6 +528,75 @@ export class ToolPolicyService {
     if (overlap.length > 0) {
       throw new ValidationError(`Tools cannot be both allowed and denied: ${overlap.join(', ')}`);
     }
+  }
+
+  private buildToolTrace(
+    policy: ToolPolicy,
+    tool: string,
+    allowed: boolean,
+    reason: string
+  ): CreateGovernanceTraceInput {
+    const role = policy.role.trim().toLowerCase();
+    const denied = policy.denied.includes(tool);
+    const outcome: CreateGovernanceTraceInput['outcome'] = allowed ? 'allowed' : 'blocked';
+    const matchedRules =
+      allowed || denied
+        ? [
+            {
+              id: `tool-policy:${role}`,
+              label: role,
+              type: 'tool-policy',
+              status: 'matched' as const,
+              outcome,
+              message: reason,
+            },
+          ]
+        : [];
+
+    return {
+      kind: 'tool-policy',
+      outcome,
+      title: `Tool policy: ${role} -> ${tool}`,
+      summary: allowed
+        ? `${tool} is allowed for role ${role}.`
+        : `${tool} is denied for role ${role}.`,
+      remediation: allowed
+        ? undefined
+        : 'Choose an allowed tool, change the agent role, or update the role tool policy.',
+      subject: { role, tool, actionType: 'tool.validate' },
+      evaluatedRules: [
+        {
+          id: `tool-policy:${role}`,
+          label: role,
+          type: 'tool-policy',
+          status: allowed || denied ? 'matched' : 'not-matched',
+          outcome,
+          message: reason,
+          details: {
+            allowed: policy.allowed,
+            denied: policy.denied,
+          },
+        },
+      ],
+      matchedRules,
+      steps: [
+        {
+          id: 'deny-precedence',
+          label: 'Deny precedence',
+          status: denied ? 'matched' : 'not-matched',
+          message: denied
+            ? 'Denied tools take precedence over allowed tools.'
+            : 'Tool did not match the denied list.',
+        },
+        {
+          id: 'allow-list',
+          label: 'Allow list',
+          status: allowed ? 'matched' : 'not-matched',
+          message: reason,
+        },
+      ],
+      raw: { role, tool, policy, allowed },
+    };
   }
 
   /**

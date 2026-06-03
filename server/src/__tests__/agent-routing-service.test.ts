@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentRoutingService } from '../services/agent-routing-service';
-import type { AgentRoutingConfig, AppConfig, Task } from '@veritas-kanban/shared';
+import type { AgentRoutingConfig, AppConfig } from '@veritas-kanban/shared';
 
 // Mock ConfigService
 const mockGetConfig = vi.fn();
@@ -89,6 +89,31 @@ describe('AgentRoutingService', () => {
       expect(result.fallback).toBe('amp');
       expect(result.rule).toBe('code-high');
       expect(result.reason).toContain('High-priority code');
+    });
+
+    it('returns a governance trace with evaluated and matched routing rules', async () => {
+      const result = await service.resolveAgentWithTrace(
+        {
+          type: 'code',
+          priority: 'high',
+          project: 'core',
+        },
+        { taskId: 'task_1' }
+      );
+
+      expect(result.result.rule).toBe('code-high');
+      expect(result.trace).toMatchObject({
+        kind: 'routing',
+        outcome: 'routed',
+        subject: {
+          agentId: 'claude-code',
+          taskId: 'task_1',
+          actionType: 'agent.route',
+          project: 'core',
+        },
+      });
+      expect(result.trace.evaluatedRules?.map((rule) => rule.id)).toContain('routing:code-high');
+      expect(result.trace.matchedRules?.map((rule) => rule.id)).toEqual(['routing:code-high']);
     });
 
     it('matches medium-priority code task to second rule', async () => {

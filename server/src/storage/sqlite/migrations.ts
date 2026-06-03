@@ -1078,6 +1078,38 @@ export const SQLITE_BASE_MIGRATIONS: readonly SqliteMigration[] = [
         ON device_sessions(workspace_id, revoked_at, expires_at);
     `,
   },
+  {
+    version: 17,
+    name: '0017_governance_decision_traces',
+    up: `
+      CREATE TABLE IF NOT EXISTS governance_decision_traces (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        outcome TEXT NOT NULL,
+        agent_id TEXT,
+        task_id TEXT,
+        action_type TEXT,
+        trace_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_governance_traces_workspace_created
+        ON governance_decision_traces(workspace_id, created_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_governance_traces_kind_created
+        ON governance_decision_traces(kind, created_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_governance_traces_outcome_created
+        ON governance_decision_traces(outcome, created_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_governance_traces_agent_created
+        ON governance_decision_traces(agent_id, created_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_governance_traces_task_created
+        ON governance_decision_traces(task_id, created_at DESC);
+    `,
+  },
 ];
 
 export function sortedMigrations(migrations: readonly SqliteMigration[]): SqliteMigration[] {

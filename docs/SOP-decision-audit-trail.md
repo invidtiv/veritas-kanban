@@ -68,7 +68,26 @@ curl "http://localhost:3001/api/decisions?taskId=task_20260321_abc"
 curl http://localhost:3001/api/decisions/dec_abc123
 ```
 
-### 4. Update an Assumption
+### 4. Review Governance Decision Traces
+
+Policy evaluation, tool-policy validation, agent permission checks, agent
+routing, and workflow gates record redacted decision traces alongside agent
+decision records.
+
+```bash
+# List blocked governance traces
+curl "http://localhost:3001/api/governance/traces?outcome=blocked"
+
+# Inspect one trace
+curl http://localhost:3001/api/governance/traces/govtrace_1760000000000_ab12cd
+```
+
+Use these traces when a policy blocks an action, a tool is denied, an agent lacks
+permission, routing falls back to the default agent, or a workflow gate stops a
+run. The Decision Audit Trail UI has a Governance Traces mode for the same
+records.
+
+### 5. Update an Assumption
 
 After the outcome is known, mark individual assumptions as held or not held:
 
@@ -94,41 +113,43 @@ curl -X PATCH http://localhost:3001/api/decisions/dec_abc123/assumptions/1 \
 
 ## API Endpoints
 
-| Method  | Path                                       | Description                           |
-| ------- | ------------------------------------------ | ------------------------------------- |
-| `GET`   | `/api/decisions`                           | List decisions (filterable)           |
-| `POST`  | `/api/decisions`                           | Log a new decision                    |
-| `GET`   | `/api/decisions/:id`                       | Get a single decision                 |
-| `PATCH` | `/api/decisions/:id/assumptions/:idx`      | Update a specific assumption by index |
+| Method  | Path                                  | Description                           |
+| ------- | ------------------------------------- | ------------------------------------- |
+| `GET`   | `/api/decisions`                      | List decisions (filterable)           |
+| `POST`  | `/api/decisions`                      | Log a new decision                    |
+| `GET`   | `/api/decisions/:id`                  | Get a single decision                 |
+| `PATCH` | `/api/decisions/:id/assumptions/:idx` | Update a specific assumption by index |
+| `GET`   | `/api/governance/traces`              | List governance decision traces       |
+| `GET`   | `/api/governance/traces/:id`          | Get one governance decision trace     |
 
 ---
 
 ## Decision Object Schema
 
-| Field         | Type     | Required | Description                                         |
-| ------------- | -------- | -------- | --------------------------------------------------- |
-| `decision`    | string   | ✅       | The decision made                                   |
-| `confidence`  | number   | ✅       | 0–1 confidence score                                |
-| `reasoning`   | string   | ❌       | Why this decision was made                          |
-| `evidence`    | string[] | ❌       | Supporting evidence references                      |
-| `assumptions` | string[] | ❌       | Assumptions the decision depends on                 |
-| `agent`       | string   | ✅       | Agent identifier                                    |
-| `taskId`      | string   | ❌       | Associated task ID                                  |
+| Field         | Type     | Required | Description                         |
+| ------------- | -------- | -------- | ----------------------------------- |
+| `decision`    | string   | ✅       | The decision made                   |
+| `confidence`  | number   | ✅       | 0–1 confidence score                |
+| `reasoning`   | string   | ❌       | Why this decision was made          |
+| `evidence`    | string[] | ❌       | Supporting evidence references      |
+| `assumptions` | string[] | ❌       | Assumptions the decision depends on |
+| `agent`       | string   | ✅       | Agent identifier                    |
+| `taskId`      | string   | ❌       | Associated task ID                  |
 
 ---
 
 ## Query Parameters (List)
 
-| Param           | Type   | Description                                  |
-| --------------- | ------ | -------------------------------------------- |
-| `agent`         | string | Filter by agent name                         |
-| `taskId`        | string | Filter by task ID                            |
-| `minConfidence` | number | Minimum confidence score (0–1)               |
-| `maxConfidence` | number | Maximum confidence score (0–1)               |
-| `since`         | string | ISO 8601 datetime — decisions after this     |
-| `until`         | string | ISO 8601 datetime — decisions before this    |
-| `limit`         | number | Max records to return (default: 50)          |
-| `offset`        | number | Pagination offset                            |
+| Param           | Type   | Description                               |
+| --------------- | ------ | ----------------------------------------- |
+| `agent`         | string | Filter by agent name                      |
+| `taskId`        | string | Filter by task ID                         |
+| `minConfidence` | number | Minimum confidence score (0–1)            |
+| `maxConfidence` | number | Maximum confidence score (0–1)            |
+| `since`         | string | ISO 8601 datetime — decisions after this  |
+| `until`         | string | ISO 8601 datetime — decisions before this |
+| `limit`         | number | Max records to return (default: 50)       |
+| `offset`        | number | Pagination offset                         |
 
 ---
 

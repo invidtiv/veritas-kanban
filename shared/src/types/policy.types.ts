@@ -98,4 +98,5 @@ export interface PolicyEvaluationResult {
   warnings: string[];
   blockedBy: string[];
   approvalRequiredBy: string[];
+  traceId?: string;
 }

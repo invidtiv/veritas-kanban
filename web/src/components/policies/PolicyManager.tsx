@@ -5,7 +5,15 @@ import type {
   PolicyType,
   PolicyResponseAction,
 } from '@veritas-kanban/shared';
-import { ArrowLeft, Edit, FlaskConical, Plus, ShieldAlert, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Edit,
+  ExternalLink,
+  FlaskConical,
+  Plus,
+  ShieldAlert,
+  Trash2,
+} from 'lucide-react';
 import {
   ActionIcon,
   Badge,
@@ -30,6 +38,8 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 interface PolicyManagerProps {
   onBack: () => void;
 }
+
+const BASE_PATH = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 
 type PolicyFormState = {
   id: string;
@@ -996,6 +1006,18 @@ export function PolicyManager({ onBack }: PolicyManagerProps) {
               <span className="text-sm text-muted-foreground">
                 {evaluatePolicies.data.matches.length} matching policies
               </span>
+              {evaluatePolicies.data.traceId && (
+                <Button
+                  component="a"
+                  href={`${BASE_PATH}/decisions?trace=${encodeURIComponent(evaluatePolicies.data.traceId)}`}
+                  size="xs"
+                  variant="subtle"
+                  target="_self"
+                >
+                  <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                  Open Trace
+                </Button>
+              )}
             </div>
             <div className="space-y-2">
               {evaluatePolicies.data.matches.map((match) => (

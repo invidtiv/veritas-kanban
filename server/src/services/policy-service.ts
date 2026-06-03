@@ -1,6 +1,8 @@
 import path from 'path';
 import type {
   AgentPolicy,
+  CreateGovernanceTraceInput,
+  GovernanceTraceRule,
   PolicyEvaluationMatch,
   PolicyEvaluationRequest,
   PolicyEvaluationResult,
@@ -234,26 +236,82 @@ export class PolicyService {
   }
 
   async evaluatePolicies(input: PolicyEvaluationRequest): Promise<PolicyEvaluationResult> {
+    return (await this.evaluatePoliciesWithTrace(input)).result;
+  }
+
+  async evaluatePoliciesWithTrace(input: PolicyEvaluationRequest): Promise<{
+    result: PolicyEvaluationResult;
+    trace: CreateGovernanceTraceInput;
+  }> {
     await this.waitForInit();
 
     const policies = await this.listPolicies();
     const matches: PolicyEvaluationMatch[] = [];
+    const evaluatedRules: GovernanceTraceRule[] = [];
     let decision: PolicyEvaluationResult['decision'] = 'allow';
 
     for (const policy of policies) {
-      if (!policy.enabled) continue;
-      if (!this.scopeMatches(policy, input)) continue;
+      if (!policy.enabled) {
+        evaluatedRules.push({
+          id: policy.id,
+          label: policy.name,
+          type: policy.type,
+          status: 'skipped',
+          message: `${policy.name} is disabled.`,
+        });
+        continue;
+      }
+
+      if (!this.scopeMatches(policy, input)) {
+        evaluatedRules.push({
+          id: policy.id,
+          label: policy.name,
+          type: policy.type,
+          status: 'not-matched',
+          message: `${policy.name} did not match the actor, project, or action scope.`,
+          details: {
+            scope: policy.scope,
+            agent: input.agent,
+            project: input.project,
+            actionType: input.actionType,
+          },
+        });
+        continue;
+      }
 
       const evaluation = await this.evaluatePolicy(policy, input);
-      if (!evaluation) continue;
+      if (!evaluation) {
+        evaluatedRules.push({
+          id: policy.id,
+          label: policy.name,
+          type: policy.type,
+          status: 'not-matched',
+          message: `${policy.name} was in scope but its condition did not trigger.`,
+          details: {
+            policyType: policy.type,
+            actionType: input.actionType,
+            riskScore: input.riskScore,
+          },
+        });
+        continue;
+      }
 
       matches.push(evaluation);
+      evaluatedRules.push({
+        id: policy.id,
+        label: policy.name,
+        type: policy.type,
+        status: 'matched',
+        outcome: this.traceOutcomeForDecision(this.toDecision(evaluation.responseAction)),
+        message: evaluation.message,
+        details: evaluation.details,
+      });
       if (RESPONSE_PRIORITY[evaluation.responseAction] > DECISION_PRIORITY[decision]) {
         decision = this.toDecision(evaluation.responseAction);
       }
     }
 
-    return {
+    const result: PolicyEvaluationResult = {
       decision,
       matches,
       warnings: matches
@@ -265,6 +323,44 @@ export class PolicyService {
       approvalRequiredBy: matches
         .filter((match) => match.responseAction === 'require-approval')
         .map((match) => match.policyId),
+    };
+    const outcome = this.traceOutcomeForDecision(decision);
+
+    return {
+      result,
+      trace: {
+        kind: 'policy',
+        outcome,
+        title: `Policy evaluation: ${input.actionType}`,
+        summary: this.policyTraceSummary(result),
+        remediation: this.policyTraceRemediation(result),
+        subject: {
+          agentId: input.agent,
+          actorId: input.agent,
+          project: input.project,
+          actionType: input.actionType,
+        },
+        evaluatedRules,
+        matchedRules: evaluatedRules.filter((rule) => rule.status === 'matched'),
+        steps: [
+          {
+            id: 'scope',
+            label: 'Scope evaluation',
+            status: evaluatedRules.some((rule) => rule.status === 'matched') ? 'matched' : 'info',
+            message: `${evaluatedRules.length} policy rule(s) evaluated for ${input.actionType}.`,
+          },
+          {
+            id: 'outcome',
+            label: 'Outcome',
+            status: matches.length > 0 ? 'matched' : 'info',
+            message: this.policyTraceSummary(result),
+          },
+        ],
+        raw: {
+          input,
+          result,
+        },
+      },
     };
   }
 
@@ -551,6 +647,35 @@ export class PolicyService {
     if (action === 'require-approval') return 'require-approval';
     if (action === 'warn') return 'warn';
     return 'allow';
+  }
+
+  private traceOutcomeForDecision(
+    decision: PolicyEvaluationResult['decision']
+  ): CreateGovernanceTraceInput['outcome'] {
+    if (decision === 'block') return 'blocked';
+    if (decision === 'require-approval') return 'approval-required';
+    if (decision === 'warn') return 'warned';
+    return 'allowed';
+  }
+
+  private policyTraceSummary(result: PolicyEvaluationResult): string {
+    if (result.decision === 'allow') return 'No enabled policy blocked or warned on this action.';
+    if (result.decision === 'warn') return result.warnings.join(' ') || 'Policy warning matched.';
+    if (result.decision === 'require-approval') {
+      return `Approval is required by ${result.approvalRequiredBy.join(', ')}.`;
+    }
+    return `Action is blocked by ${result.blockedBy.join(', ')}.`;
+  }
+
+  private policyTraceRemediation(result: PolicyEvaluationResult): string | undefined {
+    if (result.decision === 'allow') return undefined;
+    if (result.decision === 'warn') {
+      return 'Review the matched warning before continuing or adjust the policy scope.';
+    }
+    if (result.decision === 'require-approval') {
+      return 'Request approval from an authorized reviewer or change the matched policy.';
+    }
+    return 'Change the action, lower the risk, or update the matched blocking policy.';
   }
 
   dispose(): void {
