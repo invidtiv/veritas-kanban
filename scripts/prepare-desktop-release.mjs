@@ -11,14 +11,11 @@ const stagingDir = path.join(desktopDir, '.desktop-release');
 const serverStage = path.join(stagingDir, 'server');
 const webStage = path.join(stagingDir, 'web');
 
-function pnpmCommand() {
-  return process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-}
-
 function run(command, args) {
   const result = spawnSync(command, args, {
     cwd: rootDir,
     encoding: 'utf8',
+    shell: process.platform === 'win32',
     stdio: 'inherit',
   });
 
@@ -55,13 +52,7 @@ async function main() {
   await rm(stagingDir, { recursive: true, force: true });
   await mkdir(stagingDir, { recursive: true });
 
-  run(pnpmCommand(), [
-    '--filter',
-    '@veritas-kanban/server',
-    'deploy',
-    '--prod',
-    serverStage,
-  ]);
+  run('pnpm', ['--filter', '@veritas-kanban/server', 'deploy', '--prod', serverStage]);
   await pruneServerDeploy();
 
   await mkdir(webStage, { recursive: true });
