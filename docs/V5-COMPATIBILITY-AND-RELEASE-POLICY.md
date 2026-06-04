@@ -24,6 +24,11 @@ Native mobile apps are post-GA and must follow
 offline write support ships. The v5 Mobile/PWA compatibility row remains
 static-shell-only offline behavior.
 
+Hosted cloud sync and hosted SaaS are post-GA and must follow
+[ADR 0004](architecture/ADR-0004-post-ga-cloud-sync-hosted-saas.md). v5 Mac GA
+and self-hosted releases must not require hosted account state, hosted billing,
+or a default hosted endpoint.
+
 ## Version Negotiation Rules
 
 1. API clients may send `X-API-Version: v1`; unsupported values fail before the
