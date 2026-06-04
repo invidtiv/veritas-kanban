@@ -77,6 +77,7 @@ Stable release must include:
 - [v5 Compatibility And Release Policy](V5-COMPATIBILITY-AND-RELEASE-POLICY.md)
 - [v5 GA Checklist](V5-GA-CHECKLIST.md)
 - [Post-GA Native Mobile Offline ADR](architecture/ADR-0003-post-ga-native-mobile-offline.md)
+- [Post-GA Cloud Sync And Hosted SaaS ADR](architecture/ADR-0004-post-ga-cloud-sync-hosted-saas.md)
 - [Desktop Release](DESKTOP-RELEASE.md)
 - [Migration Recovery](MIGRATION-RECOVERY.md)
 - [Self-Hosting Guide](guides/SELF_HOST.md)
@@ -92,5 +93,6 @@ Stable release must include:
   [Desktop Release](DESKTOP-RELEASE.md).
 - Native mobile apps with offline execution are scoped in
   [ADR 0003](architecture/ADR-0003-post-ga-native-mobile-offline.md).
-- Cloud sync and hosted SaaS model: #544
+- Cloud sync and hosted SaaS are scoped as optional post-GA work in
+  [ADR 0004](architecture/ADR-0004-post-ga-cloud-sync-hosted-saas.md).
 - Deeper desktop agent workbench features: #545

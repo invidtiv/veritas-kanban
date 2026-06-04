@@ -4,6 +4,12 @@ This document defines the durable data classes introduced or expanded in v5.0
 and the rules that Maintenance Center, backup/export, workspace deletion, and
 support bundles must follow.
 
+Hosted cloud sync and hosted SaaS are post-GA. If hosted work starts, extend
+this lifecycle policy with the tenant retention, export, deletion, backup, and
+support-access rules from
+[ADR 0004](architecture/ADR-0004-post-ga-cloud-sync-hosted-saas.md) before any
+customer data is processed.
+
 ## Core Rules
 
 - Full SQLite backup bundles are raw admin exports. They can include private

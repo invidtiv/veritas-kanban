@@ -183,7 +183,11 @@ admin credentials for routine agent writes.
   offline architecture is defined in
   [ADR 0003](architecture/ADR-0003-post-ga-native-mobile-offline.md);
   implementation remains post-GA.
-- Hosted cloud sync/SaaS is out of v5 GA scope and tracked in #544.
+- Hosted cloud sync/SaaS is out of v5 GA scope. The optional post-GA hosted
+  model is defined in
+  [ADR 0004](architecture/ADR-0004-post-ga-cloud-sync-hosted-saas.md); v5 Mac
+  GA has no hosted endpoint, hosted account requirement, or automatic cloud
+  sync default.
 - Deeper desktop agent workbench features are tracked in #545.
 - App rollback after SQLite migration is limited by schema compatibility. Use
   the pre-migration backup when an older app cannot open a newer schema.
