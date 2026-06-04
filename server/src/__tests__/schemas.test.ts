@@ -265,6 +265,55 @@ describe('Feature Settings Schema', () => {
     expect(result.board?.showDashboard).toBe(true);
   });
 
+  it('should accept board saved views with URL-backed filters', () => {
+    const result = FeatureSettingsPatchSchema.parse({
+      board: {
+        savedViews: [
+          {
+            id: 'view-review',
+            name: 'Review Queue',
+            filters: {
+              search: 'review',
+              project: 'veritas',
+              type: 'bug',
+              agent: 'codex',
+            },
+            createdAt: '2026-06-03T12:00:00.000Z',
+            updatedAt: '2026-06-03T12:00:00.000Z',
+          },
+        ],
+        defaultSavedViewId: 'view-review',
+      },
+    });
+
+    expect(result.board?.savedViews?.[0]?.filters.project).toBe('veritas');
+    expect(result.board?.defaultSavedViewId).toBe('view-review');
+  });
+
+  it('should reject saved board views with unexpected filter keys', () => {
+    expect(() =>
+      FeatureSettingsPatchSchema.parse({
+        board: {
+          savedViews: [
+            {
+              id: 'view-review',
+              name: 'Review Queue',
+              filters: {
+                search: 'review',
+                project: null,
+                type: null,
+                agent: null,
+                sprint: 'current',
+              },
+              createdAt: '2026-06-03T12:00:00.000Z',
+              updatedAt: '2026-06-03T12:00:00.000Z',
+            },
+          ],
+        },
+      })
+    ).toThrow();
+  });
+
   it('should accept valid task behavior settings', () => {
     const result = FeatureSettingsPatchSchema.parse({
       tasks: { enableTimeTracking: true, defaultPriority: 'high' },

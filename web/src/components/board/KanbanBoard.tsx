@@ -2,11 +2,16 @@ import { useTasks, useTasksByStatus, useUpdateTask, useReorderTasks } from '@/ho
 import { useBoardDragDrop } from '@/hooks/useBoardDragDrop';
 import { KanbanColumn } from './KanbanColumn';
 import { BoardLoadingSkeleton } from './BoardLoadingSkeleton';
-import type { TaskStatus, Task } from '@veritas-kanban/shared';
-import { useFeatureSettings } from '@/hooks/useFeatureSettings';
+import {
+  DEFAULT_FEATURE_SETTINGS,
+  type BoardSavedView,
+  type TaskStatus,
+  type Task,
+} from '@veritas-kanban/shared';
+import { useFeatureSettings, useUpdateFeatureSettings } from '@/hooks/useFeatureSettings';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { useMediaQuery } from '@mantine/hooks';
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { TaskCard } from '@/components/task/TaskCard';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import {
@@ -19,6 +24,15 @@ import {
 import { BulkActionsBar } from './BulkActionsBar';
 import { BoardSidebar } from './BoardSidebar';
 import { useBulkActions } from '@/hooks/useBulkActions';
+import {
+  areBoardViewFiltersEqual,
+  createBoardSavedView,
+  deleteBoardSavedView,
+  findBoardSavedViewByFilters,
+  hasBoardFilterSearchParams,
+  renameBoardSavedView,
+  updateBoardSavedViewFilters,
+} from '@/lib/board-saved-views';
 import { CheckSquare } from 'lucide-react';
 import { Button } from '@mantine/core';
 import { ArchiveSuggestionBanner } from './ArchiveSuggestionBanner';
@@ -51,22 +65,28 @@ const COLUMNS: { id: TaskStatus; title: string }[] = [
 ];
 
 const STATUS_OPTIONS = COLUMNS.map((column) => ({ value: column.id, label: column.title }));
+const EMPTY_SAVED_VIEWS: BoardSavedView[] = [];
 
 export function KanbanBoard() {
   const { data: tasks, isLoading, error } = useTasks();
-  const { settings: featureSettings } = useFeatureSettings();
+  const { settings: featureSettings, isPlaceholderData } = useFeatureSettings();
+  const updateFeatureSettings = useUpdateFeatureSettings();
+  const boardSettings = featureSettings.board ?? DEFAULT_FEATURE_SETTINGS.board;
+  const savedViews = boardSettings.savedViews ?? EMPTY_SAVED_VIEWS;
+  const defaultSavedViewId = boardSettings.defaultSavedViewId ?? null;
   const { announce } = useLiveAnnouncer();
   const { hasPermission } = useIdentity();
   const { isOnline } = useNetworkStatus();
   const canWriteTasks = hasPermission('task:write');
   const isMobileLayout = useMediaQuery('(max-width: 767px)', false);
   const canDragTasks =
-    featureSettings.board.enableDragAndDrop && canWriteTasks && isOnline && !isMobileLayout;
+    boardSettings.enableDragAndDrop && canWriteTasks && isOnline && !isMobileLayout;
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailPanelMounted, setDetailPanelMounted] = useState(false);
   const [detailNavigationTarget, setDetailNavigationTarget] =
     useState<TaskDetailNavigationTarget | null>(null);
+  const defaultSavedViewAppliedRef = useRef(false);
 
   // Initialize filters from URL
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -75,10 +95,115 @@ export function KanbanBoard() {
     }
     return { search: '', project: null, type: null, agent: null };
   });
+  const [selectedSavedViewId, setSelectedSavedViewId] = useState<string | null>(null);
 
   const { selectedTaskId, setTasks, setOnOpenTask, setOnMoveTask } = useKeyboard();
   const { isSelecting, toggleSelecting } = useBulkActions();
   const { pendingTaskId, pendingTaskTarget, clearPendingTask } = useView();
+
+  const matchingSavedView = useMemo(
+    () => findBoardSavedViewByFilters(savedViews, filters),
+    [filters, savedViews]
+  );
+  const selectedSavedView = useMemo(
+    () => savedViews.find((view) => view.id === selectedSavedViewId) ?? null,
+    [savedViews, selectedSavedViewId]
+  );
+  const activeSavedView = selectedSavedView ?? matchingSavedView ?? null;
+  const hasUnsavedSavedViewChanges = Boolean(
+    selectedSavedView && !areBoardViewFiltersEqual(selectedSavedView.filters, filters)
+  );
+
+  const persistBoardSavedViews = useCallback(
+    (nextSavedViews: BoardSavedView[], nextDefaultSavedViewId = defaultSavedViewId) => {
+      updateFeatureSettings.mutate({
+        board: {
+          savedViews: nextSavedViews,
+          defaultSavedViewId: nextDefaultSavedViewId,
+        },
+      });
+    },
+    [defaultSavedViewId, updateFeatureSettings]
+  );
+
+  const handleFiltersChange = useCallback(
+    (nextFilters: FilterState) => {
+      setFilters(nextFilters);
+      const nextMatchingView = findBoardSavedViewByFilters(savedViews, nextFilters);
+      if (nextMatchingView) {
+        setSelectedSavedViewId(nextMatchingView.id);
+      }
+    },
+    [savedViews]
+  );
+
+  const handleApplySavedView = useCallback(
+    (viewId: string) => {
+      const view = savedViews.find((savedView) => savedView.id === viewId);
+      if (!view) return;
+      setSelectedSavedViewId(view.id);
+      setFilters({
+        search: view.filters.search,
+        project: view.filters.project,
+        type: view.filters.type,
+        agent: view.filters.agent,
+      });
+    },
+    [savedViews]
+  );
+
+  const handleSaveSavedView = useCallback(
+    (name: string) => {
+      const view = createBoardSavedView({
+        name,
+        filters,
+        existingIds: savedViews.map((savedView) => savedView.id),
+      });
+      persistBoardSavedViews([...savedViews, view]);
+      setSelectedSavedViewId(view.id);
+    },
+    [filters, persistBoardSavedViews, savedViews]
+  );
+
+  const handleUpdateSavedView = useCallback(
+    (viewId: string) => {
+      persistBoardSavedViews(updateBoardSavedViewFilters(savedViews, viewId, filters));
+      setSelectedSavedViewId(viewId);
+    },
+    [filters, persistBoardSavedViews, savedViews]
+  );
+
+  const handleRenameSavedView = useCallback(
+    (viewId: string, name: string) => {
+      persistBoardSavedViews(renameBoardSavedView(savedViews, viewId, name));
+      setSelectedSavedViewId(viewId);
+    },
+    [persistBoardSavedViews, savedViews]
+  );
+
+  const handleDeleteSavedView = useCallback(
+    (viewId: string) => {
+      const result = deleteBoardSavedView(savedViews, defaultSavedViewId, viewId);
+      persistBoardSavedViews(result.savedViews, result.defaultSavedViewId);
+      if (selectedSavedViewId === viewId) {
+        setSelectedSavedViewId(null);
+      }
+    },
+    [defaultSavedViewId, persistBoardSavedViews, savedViews, selectedSavedViewId]
+  );
+
+  const handleSetDefaultSavedView = useCallback(
+    (viewId: string | null) => {
+      persistBoardSavedViews(savedViews, viewId);
+    },
+    [persistBoardSavedViews, savedViews]
+  );
+
+  useEffect(() => {
+    if (selectedSavedViewId && !savedViews.some((view) => view.id === selectedSavedViewId)) {
+      setSelectedSavedViewId(null);
+    }
+  }, [savedViews, selectedSavedViewId]);
 
   // Handle navigation from other views (e.g., Activity page clicking on a task)
   useEffect(() => {
@@ -114,6 +239,40 @@ export function KanbanBoard() {
 
     openPendingTask();
   }, [pendingTaskId, pendingTaskTarget, tasks, clearPendingTask]);
+
+  // Apply the configured default saved view only when the current URL has no board filters.
+  useEffect(() => {
+    if (defaultSavedViewAppliedRef.current || isPlaceholderData) return;
+    if (typeof window === 'undefined') {
+      defaultSavedViewAppliedRef.current = true;
+      return;
+    }
+
+    if (hasBoardFilterSearchParams(new URLSearchParams(window.location.search))) {
+      defaultSavedViewAppliedRef.current = true;
+      return;
+    }
+
+    if (!defaultSavedViewId) {
+      defaultSavedViewAppliedRef.current = true;
+      return;
+    }
+
+    const defaultView = savedViews.find((view) => view.id === defaultSavedViewId);
+    if (!defaultView) {
+      defaultSavedViewAppliedRef.current = true;
+      return;
+    }
+
+    setSelectedSavedViewId(defaultView.id);
+    setFilters({
+      search: defaultView.filters.search,
+      project: defaultView.filters.project,
+      type: defaultView.filters.type,
+      agent: defaultView.filters.agent,
+    });
+    defaultSavedViewAppliedRef.current = true;
+  }, [defaultSavedViewId, isPlaceholderData, savedViews]);
 
   // Sync filters to URL
   useEffect(() => {
@@ -286,7 +445,23 @@ export function KanbanBoard() {
   return (
     <>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <FilterBar tasks={tasks || []} filters={filters} onFiltersChange={setFilters} />
+        <FilterBar
+          tasks={tasks || []}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          savedViews={savedViews}
+          selectedSavedViewId={activeSavedView?.id ?? null}
+          defaultSavedViewId={defaultSavedViewId}
+          hasUnsavedSavedViewChanges={hasUnsavedSavedViewChanges}
+          isSavingSavedView={updateFeatureSettings.isPending}
+          onApplySavedView={handleApplySavedView}
+          onClearSelectedSavedView={() => setSelectedSavedViewId(null)}
+          onSaveSavedView={handleSaveSavedView}
+          onUpdateSavedView={handleUpdateSavedView}
+          onRenameSavedView={handleRenameSavedView}
+          onDeleteSavedView={handleDeleteSavedView}
+          onSetDefaultSavedView={handleSetDefaultSavedView}
+        />
         {!isSelecting && (
           <Button
             variant="subtle"
@@ -304,7 +479,7 @@ export function KanbanBoard() {
 
       <BulkActionsBar tasks={filteredTasks} />
 
-      {featureSettings.board.showArchiveSuggestions && <ArchiveSuggestionBanner />}
+      {boardSettings.showArchiveSuggestions && <ArchiveSuggestionBanner />}
 
       <FeatureErrorBoundary fallbackTitle="Board failed to render">
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
@@ -381,7 +556,7 @@ export function KanbanBoard() {
           />
         </div>
 
-        {featureSettings.board.showDashboard && (
+        {boardSettings.showDashboard && (
           <LazyOnVisible
             className="mt-6 border-t pt-4"
             fallback={<DashboardLoadingFallback />}

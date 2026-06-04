@@ -197,6 +197,21 @@ export interface ProductModeSettings {
   dismissedHints: string[];
 }
 
+export interface BoardSavedViewFilters {
+  search: string;
+  project: string | null;
+  type: string | null;
+  agent: string | null;
+}
+
+export interface BoardSavedView {
+  id: string;
+  name: string;
+  filters: BoardSavedViewFilters;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Board display settings */
 export interface BoardSettings {
   showDashboard: boolean;
@@ -207,6 +222,8 @@ export interface BoardSettings {
   showSprintBadges: boolean;
   enableDragAndDrop: boolean;
   showDoneMetrics: boolean;
+  savedViews: BoardSavedView[];
+  defaultSavedViewId: string | null;
   dashboardWidgets: DashboardWidgetSettings;
 }
 
@@ -385,6 +402,8 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
     showSprintBadges: true,
     enableDragAndDrop: true,
     showDoneMetrics: true,
+    savedViews: [],
+    defaultSavedViewId: null,
     dashboardWidgets: {
       showTokenUsage: true,
       showRunDuration: true,
