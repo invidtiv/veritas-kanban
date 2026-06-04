@@ -87,6 +87,7 @@ When the board is working, use [Setup Paths](docs/SETUP-PATHS.md) to choose the 
 - [v5 Compatibility And Release Policy](docs/V5-COMPATIBILITY-AND-RELEASE-POLICY.md) — supported version combinations, update channels, stale-client behavior, rollback limits, and release validation.
 - [v5 Release Notes Draft](docs/V5-RELEASE-NOTES.md) — breaking changes, migration warnings, release artifact checklist, and deferred post-GA backlog.
 - [v5 Desktop Architecture ADR](docs/architecture/ADR-0001-v5-desktop-architecture.md) — shell decision, native/server boundaries, connection modes, lifecycle, packaging, and security model.
+- [Post-GA Native Mobile Offline ADR](docs/architecture/ADR-0003-post-ga-native-mobile-offline.md) — native mobile authority model, offline queue semantics, conflict handling, and security review.
 - [Self-Hosting Guide](docs/guides/SELF_HOST.md) — production deployment, reverse proxy, auth hardening, Docker, and backups.
 - [Agent Task Workflow SOP](docs/SOP-agent-task-workflow.md) — lifecycle, API/CLI snippets, prompts.
 - [Squad Chat Protocol](docs/SQUAD-CHAT-PROTOCOL.md) — agent messaging, system events (spawned/completed/failed), model attribution, and helper scripts.
@@ -829,6 +830,7 @@ Current planning lives in GitHub, not in a stale README checklist:
 - [v5.0 SQLite schema and migration strategy](docs/SQLITE-SCHEMA.md)
 - [v5.0 SQLite migration recovery drill](docs/MIGRATION-RECOVERY.md)
 - [v5.0 desktop architecture decision](docs/architecture/ADR-0001-v5-desktop-architecture.md)
+- [post-GA native mobile offline decision](docs/architecture/ADR-0003-post-ga-native-mobile-offline.md)
 - [Release history](CHANGELOG.md)
 
 Use issues for current work and the changelog for shipped work.

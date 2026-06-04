@@ -19,6 +19,11 @@ engine, WebSocket sync, migration tooling, and updater metadata.
 | Migration tooling    | v4 file-backed projects migrate through dry-run, backup, journaled run, recovery-state, and restore-backup endpoints.                           | Migration report, migration journal, backup manifest.                                        | Failed migrations keep file storage as the recovery source. Destructive down migrations are not a GA rollback path.                              | Migration recovery drills, backup/restore tests, release checklist.                                              |
 | Updater metadata     | Stable, beta, and dev channels publish channel-specific metadata and artifacts.                                                                 | `latest*.yml`, DMG/ZIP/blockmap artifacts, update status bridge.                             | Bad metadata must be removed or superseded. App rollback does not roll back a migrated SQLite schema.                                            | `Desktop Artifacts`, signed `Desktop Release`, manual updater smoke.                                             |
 
+Native mobile apps are post-GA and must follow
+[ADR 0003](architecture/ADR-0003-post-ga-native-mobile-offline.md) before any
+offline write support ships. The v5 Mobile/PWA compatibility row remains
+static-shell-only offline behavior.
+
 ## Version Negotiation Rules
 
 1. API clients may send `X-API-Version: v1`; unsupported values fail before the
