@@ -466,9 +466,15 @@ For read/write auth checks, use the smoke tests in the [CLI Guide](docs/CLI-GUID
 vk setup                         # Guided environment check + sample task
 vk setup --skip-task             # Check only, no sample task
 vk setup --json                  # Machine-readable output
+vk doctor                        # Redacted setup health report
+vk doctor --json                 # Support-safe JSON report
 ```
 
 Validates Node version, server health, API auth, and optionally creates a welcome task to get you started.
+`vk doctor` adds deeper checks for CLI linking, task identity conflicts, agent
+executables, routing fallbacks, prompt registry drift, Codex readiness, and
+notification/webhook configuration. Local paths and delivery URLs are redacted
+unless you pass `--show-paths`.
 
 ### Workflow Commands
 
