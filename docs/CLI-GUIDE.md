@@ -438,6 +438,23 @@ Manage AI agents on code tasks.
 
 ---
 
+### Prompt Commands
+
+Sync file-based prompt templates into the runtime prompt registry.
+
+```bash
+vk prompts import prompt-registry --dry-run
+vk prompts import prompt-registry
+vk prompts import prompt-registry --force --json
+```
+
+`vk prompts import` scans Markdown files, skips `README.md` by default, derives
+stable IDs from frontmatter `id` values or filenames, and reports created,
+updated, unchanged, conflicting, and malformed templates. Runtime templates that
+differ from disk are conflicts unless `--force` is passed.
+
+---
+
 ### Automation Commands
 
 Manage automation tasks.

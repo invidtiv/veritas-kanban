@@ -9,6 +9,14 @@ const promptService = new PromptRegistryService();
 
 // Validation schemas
 const createPromptTemplateSchema = z.object({
+  id: z
+    .string()
+    .min(1, 'Template ID must not be empty')
+    .regex(
+      /^[A-Za-z0-9_-]+$/,
+      'Template ID may contain only letters, numbers, dashes, and underscores'
+    )
+    .optional(),
   name: z.string().min(1, 'Template name is required'),
   description: z.string().optional(),
   category: z.enum(['system', 'agent', 'tool', 'evaluation']),

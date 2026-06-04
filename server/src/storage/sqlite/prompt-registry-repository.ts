@@ -10,6 +10,7 @@ import type {
 } from '@veritas-kanban/shared';
 import type { PromptRegistryRepository } from '../interfaces.js';
 import type { SqliteDatabase } from './database.js';
+import { validatePathSegment } from '../../utils/sanitize.js';
 
 interface PromptTemplateRow {
   template_json: string;
@@ -51,7 +52,9 @@ export class SqlitePromptRegistryRepository implements PromptRegistryRepository 
   }
 
   async createTemplate(input: CreatePromptTemplateInput): Promise<PromptTemplate> {
-    const id = `prompt_${this.slugify(input.name)}_${Date.now()}`;
+    const id = input.id
+      ? validatePathSegment(input.id)
+      : `prompt_${this.slugify(input.name)}_${Date.now()}`;
     const now = new Date().toISOString();
     const variables = this.extractVariables(input.content);
 

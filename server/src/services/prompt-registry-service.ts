@@ -217,7 +217,9 @@ export class PromptRegistryService {
 
     await this.ensureDirs();
 
-    const id = `prompt_${this.slugify(input.name)}_${Date.now()}`;
+    const id = input.id
+      ? validatePathSegment(input.id)
+      : `prompt_${this.slugify(input.name)}_${Date.now()}`;
     const now = new Date().toISOString();
     const variables = this.extractVariables(input.content);
 

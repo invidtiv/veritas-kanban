@@ -157,33 +157,75 @@ curl -X DELETE http://localhost:3001/api/prompt-registry/tmpl_abc123
 
 ---
 
+## Import File-Based Templates
+
+Use the CLI importer when templates live in a repo folder such as
+`prompt-registry/` and need to be synced into the runtime registry:
+
+```bash
+vk prompts import prompt-registry --dry-run
+vk prompts import prompt-registry
+vk prompts import prompt-registry --force
+```
+
+Import rules:
+
+- Markdown files are processed in deterministic path order.
+- `README.md` is skipped unless `--include-readme` is passed.
+- Stable template IDs come from frontmatter `id` or the filename slug.
+- `name` comes from frontmatter `name`, frontmatter `title`, the first H1, or
+  the filename.
+- `category` defaults to `agent`; valid values are `system`, `agent`, `tool`,
+  and `evaluation`.
+- Existing runtime templates that differ from disk are reported as conflicts.
+  Use `--force` to update them and create a new prompt version.
+- Name collisions with a different runtime ID are always conflicts.
+
+Example frontmatter:
+
+```markdown
+---
+id: cross-model-review
+name: Cross Model Review
+category: evaluation
+description: Opposite-model review checklist
+---
+
+# Cross Model Review
+
+Review {{task_id}}.
+```
+
+---
+
 ## API Endpoints
 
-| Method   | Path                                         | Description                          |
-| -------- | -------------------------------------------- | ------------------------------------ |
-| `GET`    | `/api/prompt-registry`                       | List all templates                   |
-| `POST`   | `/api/prompt-registry`                       | Create a new template                |
-| `GET`    | `/api/prompt-registry/:id`                   | Get a template                       |
-| `PATCH`  | `/api/prompt-registry/:id`                   | Update a template (auto-versions)    |
-| `DELETE` | `/api/prompt-registry/:id`                   | Delete a template                    |
-| `GET`    | `/api/prompt-registry/:id/versions`          | List all versions of a template      |
-| `GET`    | `/api/prompt-registry/:id/usage`             | Get usage history                    |
-| `GET`    | `/api/prompt-registry/:id/stats`             | Get usage statistics                 |
-| `GET`    | `/api/prompt-registry/stats/all`             | Aggregate stats across all templates |
-| `POST`   | `/api/prompt-registry/:id/render-preview`    | Render a preview with variables      |
-| `POST`   | `/api/prompt-registry/:id/record-usage`      | Record a usage event                 |
+| Method   | Path                                      | Description                          |
+| -------- | ----------------------------------------- | ------------------------------------ |
+| `GET`    | `/api/prompt-registry`                    | List all templates                   |
+| `POST`   | `/api/prompt-registry`                    | Create a new template                |
+| `GET`    | `/api/prompt-registry/:id`                | Get a template                       |
+| `PATCH`  | `/api/prompt-registry/:id`                | Update a template (auto-versions)    |
+| `DELETE` | `/api/prompt-registry/:id`                | Delete a template                    |
+| `GET`    | `/api/prompt-registry/:id/versions`       | List all versions of a template      |
+| `GET`    | `/api/prompt-registry/:id/usage`          | Get usage history                    |
+| `GET`    | `/api/prompt-registry/:id/stats`          | Get usage statistics                 |
+| `GET`    | `/api/prompt-registry/stats/all`          | Aggregate stats across all templates |
+| `POST`   | `/api/prompt-registry/:id/render-preview` | Render a preview with variables      |
+| `POST`   | `/api/prompt-registry/:id/record-usage`   | Record a usage event                 |
 
 ---
 
 ## Template Schema
 
-| Field         | Type   | Required | Description                                              |
-| ------------- | ------ | -------- | -------------------------------------------------------- |
-| `name`        | string | ✅       | Template name                                            |
-| `description` | string | ❌       | What the template is for                                 |
-| `category`    | enum   | ✅       | `system`, `agent`, `tool`, or `evaluation`               |
-| `content`     | string | ✅       | Template body with `{{variable}}` placeholders           |
-| `changelog`   | string | ❌       | Description of changes (for update operations)           |
+| Field         | Type   | Required | Description                                    |
+| ------------- | ------ | -------- | ---------------------------------------------- |
+| `id`          | string | ❌       | Stable template ID, used by file imports       |
+| `name`        | string | ✅       | Template name                                  |
+| `description` | string | ❌       | What the template is for                       |
+| `category`    | enum   | ✅       | `system`, `agent`, `tool`, or `evaluation`     |
+| `content`     | string | ✅       | Template body with `{{variable}}` placeholders |
+| `changelog`   | string | ❌       | Description of changes (for update operations) |
 
 ---
 

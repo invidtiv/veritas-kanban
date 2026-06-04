@@ -149,10 +149,12 @@ describe('SQLite configuration repositories', () => {
     });
 
     const created = await service.createTemplate({
+      id: 'sqlite-prompt',
       name: 'SQLite Prompt',
       category: 'agent',
       content: 'Hello {{ name }} from {{team}}',
     });
+    expect(created.id).toBe('sqlite-prompt');
     expect(created.variables).toEqual(['name', 'team']);
     expect(
       (await service.getVersionHistory(created.id)).map((version) => version.versionNumber)

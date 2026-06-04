@@ -263,7 +263,14 @@ prompt-registry/
 
 1. Reference in task descriptions: `See prompt: prompt-registry/cross-model-review.md`
 2. Copy and customize for your team's conventions
-3. When spawning agents (OpenClaw `sessions_spawn`), paste the relevant prompt
+3. Preview runtime registry changes: `vk prompts import prompt-registry --dry-run`
+4. Apply new templates: `vk prompts import prompt-registry`
+5. When spawning agents (OpenClaw `sessions_spawn`), paste the relevant prompt
+
+`vk prompts import` derives stable template IDs from frontmatter `id` values or
+filenames, skips `README.md` by default, and reports created, updated,
+unchanged, conflicting, and malformed files. Existing runtime templates that
+differ from disk are reported as conflicts unless you pass `--force`.
 
 **Multi-repo setup:** See [SOP-shared-resources.md](SOP-shared-resources.md) for patterns on sharing prompts across multiple repositories.
 

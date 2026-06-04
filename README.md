@@ -469,6 +469,7 @@ vk setup --json                  # Machine-readable output
 vk doctor                        # Redacted setup health report
 vk doctor --json                 # Support-safe JSON report
 vk snapshot --format markdown    # Redacted runtime support snapshot
+vk prompts import prompt-registry --dry-run
 ```
 
 Validates Node version, server health, API auth, and optionally creates a welcome task to get you started.
@@ -481,6 +482,9 @@ reachability, projects, sprints, agents, global agent status, routing, prompt
 registry counts, task status counts, notification/webhook enabled states, and
 maintenance health. Use `--format json|markdown` and `--output <path>` when
 attaching it to a support handoff.
+`vk prompts import` syncs file-based prompt templates into the runtime registry.
+Run with `--dry-run` first; rerun with `--force` only when you want disk content
+to replace a differing runtime template.
 
 ### Workflow Commands
 
