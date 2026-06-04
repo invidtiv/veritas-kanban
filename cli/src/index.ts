@@ -16,6 +16,7 @@ import { registerWorkflowCommands } from './commands/workflow.js';
 import { registerSetupCommands } from './commands/setup.js';
 import { registerUsageCommands } from './commands/usage.js';
 import { registerSprintCommands } from './commands/sprints.js';
+import { registerDoctorCommand } from './commands/doctor.js';
 
 const program = new Command();
 const packageJson = JSON.parse(
@@ -43,5 +44,6 @@ registerWorkflowCommands(program);
 registerSetupCommands(program);
 registerUsageCommands(program);
 registerSprintCommands(program);
+registerDoctorCommand(program);
 
 program.parse();

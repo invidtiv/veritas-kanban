@@ -404,6 +404,21 @@ cd cli
 npm link
 ```
 
+### Setup health looks wrong
+
+Run the deeper setup health command before collecting manual diagnostics:
+
+```bash
+vk doctor
+vk doctor --json
+```
+
+`vk doctor` exits non-zero for critical blockers such as API/auth failures,
+duplicate task IDs, missing enabled agent executables, or routing rules that
+point at unavailable agents. JSON output is copy/paste safe by default: local
+paths and webhook delivery URLs are redacted. Use `--show-paths` only when local
+path details are needed for a private support handoff.
+
 ### CLI or MCP can read but cannot write
 
 Localhost bypass commonly grants `read-only` access. Create an agent key in `server/.env`, restart the server, and pass the key to the CLI or MCP client:

@@ -51,6 +51,19 @@ vk setup
 
 This checks Node version, server health, API access, and optionally creates a sample task to get you started.
 
+For a deeper support-safe setup check, run:
+
+```bash
+vk doctor
+vk doctor --json
+```
+
+`vk doctor` checks the CLI link, API reachability, auth context, task identity
+conflicts, configured agent executables, routing fallbacks, prompt registry,
+Codex readiness, and notification/webhook configuration. Output redacts local
+paths and delivery URLs by default; use `--show-paths` only when you explicitly
+want local paths in the report.
+
 ### Manual Setup
 
 If you prefer step-by-step control, follow the manual wizard below:
@@ -97,7 +110,7 @@ Visit [http://localhost:3000](http://localhost:3000) → follow the onboarding f
 - Save the recovery key (seriously; it's the only way to regain access)
 - Log in and confirm you can see the seeded board
 
-> 🧙 **Tip:** Run `vk setup` at any time to verify your environment is correctly configured.
+> 🧙 **Tip:** Run `vk setup` for the guided first-run flow and `vk doctor` when you need a deeper setup health report.
 
 ---
 
