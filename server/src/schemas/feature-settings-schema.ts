@@ -58,6 +58,25 @@ const DashboardWidgetSettingsSchema = z
   .strict()
   .optional();
 
+const BoardSavedViewFiltersSchema = z
+  .object({
+    search: z.string().max(200),
+    project: z.string().min(1).max(120).nullable(),
+    type: z.string().min(1).max(80).nullable(),
+    agent: z.string().min(1).max(80).nullable(),
+  })
+  .strict();
+
+const BoardSavedViewSchema = z
+  .object({
+    id: z.string().min(1).max(100),
+    name: z.string().min(1).max(80),
+    filters: BoardSavedViewFiltersSchema,
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  })
+  .strict();
+
 const BoardSettingsSchema = z
   .object({
     showDashboard: z.boolean().optional(),
@@ -68,6 +87,8 @@ const BoardSettingsSchema = z
     showSprintBadges: z.boolean().optional(),
     enableDragAndDrop: z.boolean().optional(),
     showDoneMetrics: z.boolean().optional(),
+    savedViews: z.array(BoardSavedViewSchema).max(50).optional(),
+    defaultSavedViewId: z.string().min(1).max(100).nullable().optional(),
     dashboardWidgets: DashboardWidgetSettingsSchema,
   })
   .strict()

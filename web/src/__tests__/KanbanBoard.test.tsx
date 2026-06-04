@@ -4,11 +4,11 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { screen, cleanup } from '@testing-library/react';
+import { screen, cleanup, waitFor } from '@testing-library/react';
 import { QueryClient } from '@tanstack/react-query';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { createMockTask, renderWithProviders } from './test-utils';
-import type { Task } from '@veritas-kanban/shared';
+import { DEFAULT_FEATURE_SETTINGS, type FeatureSettings, type Task } from '@veritas-kanban/shared';
 
 // ── Mocks ────────────────────────────────────────────────────
 
@@ -19,6 +19,26 @@ const mockTasks: Task[] = [
 ];
 
 let mockUseTasks: () => { data: Task[] | undefined; isLoading: boolean; error: Error | null };
+let mockFeatureSettingsResult: { isPlaceholderData: boolean; settings: FeatureSettings } = {
+  isPlaceholderData: false,
+  settings: createFeatureSettings(),
+};
+
+function createFeatureSettings(
+  boardOverrides: Partial<FeatureSettings['board']> = {}
+): FeatureSettings {
+  return {
+    ...DEFAULT_FEATURE_SETTINGS,
+    board: {
+      ...DEFAULT_FEATURE_SETTINGS.board,
+      enableDragAndDrop: false,
+      showDashboard: false,
+      showArchiveSuggestions: false,
+      showDoneMetrics: false,
+      ...boardOverrides,
+    },
+  };
+}
 
 vi.mock('@/hooks/useTasks', () => ({
   useTasks: () => mockUseTasks(),
@@ -64,25 +84,10 @@ vi.mock('@/hooks/useKeyboard', () => ({
 }));
 
 vi.mock('@/hooks/useFeatureSettings', () => ({
-  useFeatureSettings: () => ({
-    settings: {
-      board: {
-        enableDragAndDrop: false,
-        showDashboard: false,
-        showArchiveSuggestions: false,
-        cardDensity: 'normal',
-        showPriorityIndicators: true,
-        showProjectBadges: true,
-        showSprintBadges: true,
-        showDoneMetrics: false,
-      },
-      budget: {
-        enabled: false,
-        monthlyTokenLimit: 1_000_000,
-        monthlyCostLimit: 100,
-        warningThreshold: 0.8,
-      },
-    },
+  useFeatureSettings: () => mockFeatureSettingsResult,
+  useUpdateFeatureSettings: () => ({
+    mutate: vi.fn(),
+    isPending: false,
   }),
 }));
 
@@ -139,12 +144,17 @@ vi.mock('@/components/task/TaskDetailPanel', () => ({
   TaskDetailPanel: () => null,
 }));
 
-vi.mock('@/components/board/FilterBar', () => ({
-  FilterBar: () => null,
-  filterTasks: (tasks: Task[]) => tasks,
-  filtersToSearchParams: () => new URLSearchParams(),
-  searchParamsToFilters: () => ({ search: '', project: null, type: null, agent: null }),
-}));
+vi.mock('@/components/board/FilterBar', async () => {
+  const actual = await vi.importActual<typeof import('@/components/board/FilterBar')>(
+    '@/components/board/FilterBar'
+  );
+  return {
+    FilterBar: () => null,
+    filterTasks: actual.filterTasks,
+    filtersToSearchParams: actual.filtersToSearchParams,
+    searchParamsToFilters: actual.searchParamsToFilters,
+  };
+});
 
 vi.mock('@/components/board/BulkActionsBar', () => ({
   BulkActionsBar: () => null,
@@ -191,6 +201,11 @@ function setOnline(value: boolean) {
 afterEach(() => {
   cleanup();
   setOnline(true);
+  mockFeatureSettingsResult = {
+    isPlaceholderData: false,
+    settings: createFeatureSettings(),
+  };
+  window.history.replaceState({}, '', '/');
 });
 
 // ── Tests ────────────────────────────────────────────────────
@@ -255,5 +270,56 @@ describe('KanbanBoard', () => {
 
     expect(screen.getByTestId('column-todo').dataset.canChangeStatus).toBe('false');
     expect(screen.getByTestId('column-in-progress').dataset.canChangeStatus).toBe('false');
+  });
+
+  it('applies the default saved view when no board filters are in the URL', async () => {
+    mockUseTasks = () => ({ data: mockTasks, isLoading: false, error: null });
+    mockFeatureSettingsResult = {
+      isPlaceholderData: false,
+      settings: createFeatureSettings({
+        savedViews: [
+          {
+            id: 'view-review',
+            name: 'Review Queue',
+            filters: { search: 'review', project: 'veritas', type: null, agent: null },
+            createdAt: '2026-06-03T12:00:00.000Z',
+            updatedAt: '2026-06-03T12:00:00.000Z',
+          },
+        ],
+        defaultSavedViewId: 'view-review',
+      }),
+    };
+
+    renderBoard();
+
+    await waitFor(() => {
+      expect(window.location.search).toBe('?q=review&project=veritas');
+    });
+  });
+
+  it('keeps explicit URL filters instead of applying the default saved view', async () => {
+    window.history.replaceState({}, '', '/?q=existing');
+    mockUseTasks = () => ({ data: mockTasks, isLoading: false, error: null });
+    mockFeatureSettingsResult = {
+      isPlaceholderData: false,
+      settings: createFeatureSettings({
+        savedViews: [
+          {
+            id: 'view-review',
+            name: 'Review Queue',
+            filters: { search: 'review', project: 'veritas', type: null, agent: null },
+            createdAt: '2026-06-03T12:00:00.000Z',
+            updatedAt: '2026-06-03T12:00:00.000Z',
+          },
+        ],
+        defaultSavedViewId: 'view-review',
+      }),
+    };
+
+    renderBoard();
+
+    await waitFor(() => {
+      expect(window.location.search).toBe('?q=existing');
+    });
   });
 });
