@@ -2,6 +2,7 @@
   "name": "@veritas-kanban/desktop",
   "version": "4.3.2",
   "private": true,
+  "homepage": "https://github.com/BradGroux/veritas-kanban",
   "description": "Veritas Kanban native desktop shell",
   "author": "Brad Groux <brad@digitalmeld.io>",
   "license": "MIT",
