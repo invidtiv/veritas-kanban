@@ -180,7 +180,9 @@ admin credentials for routine agent writes.
 - Mac is the only desktop GA target. Linux and Windows are post-GA artifact
   targets documented in [Desktop Release](DESKTOP-RELEASE.md).
 - Mobile GA is responsive web plus PWA, not native offline apps. Native mobile
-  planning is tracked in #543.
+  offline architecture is defined in
+  [ADR 0003](architecture/ADR-0003-post-ga-native-mobile-offline.md);
+  implementation remains post-GA.
 - Hosted cloud sync/SaaS is out of v5 GA scope and tracked in #544.
 - Deeper desktop agent workbench features are tracked in #545.
 - App rollback after SQLite migration is limited by schema compatibility. Use

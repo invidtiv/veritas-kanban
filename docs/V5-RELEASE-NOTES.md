@@ -76,6 +76,7 @@ Stable release must include:
 - [v5 Upgrade, Install, Remote, And Admin Guide](V5-UPGRADE-INSTALL-ADMIN-GUIDE.md)
 - [v5 Compatibility And Release Policy](V5-COMPATIBILITY-AND-RELEASE-POLICY.md)
 - [v5 GA Checklist](V5-GA-CHECKLIST.md)
+- [Post-GA Native Mobile Offline ADR](architecture/ADR-0003-post-ga-native-mobile-offline.md)
 - [Desktop Release](DESKTOP-RELEASE.md)
 - [Migration Recovery](MIGRATION-RECOVERY.md)
 - [Self-Hosting Guide](guides/SELF_HOST.md)
@@ -85,10 +86,11 @@ Stable release must include:
 - [v5 Security Review](security/v5-security-review.md)
 - [v5 Performance And Load Test Notes](testing/v5-performance-load.md)
 
-## Deferred Post-GA Work
+## Post-GA Follow-Up
 
-- Linux desktop packaging: #541
-- Windows desktop packaging: #542
-- Native mobile apps with offline execution: #543
+- Linux and Windows unsigned desktop artifact support is documented in
+  [Desktop Release](DESKTOP-RELEASE.md).
+- Native mobile apps with offline execution are scoped in
+  [ADR 0003](architecture/ADR-0003-post-ga-native-mobile-offline.md).
 - Cloud sync and hosted SaaS model: #544
 - Deeper desktop agent workbench features: #545
