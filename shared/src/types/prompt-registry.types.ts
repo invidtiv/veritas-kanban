@@ -56,6 +56,7 @@ export interface PromptStats {
 
 /** Input for creating a new prompt template */
 export interface CreatePromptTemplateInput {
+  id?: string;
   name: string;
   description?: string;
   category: PromptCategory;

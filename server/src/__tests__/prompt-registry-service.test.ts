@@ -44,6 +44,25 @@ describe('PromptRegistryService', () => {
     expect((await service.getVersionHistory(created.id)).map((v) => v.versionNumber)).toEqual([1]);
   });
 
+  it('creates templates with caller-provided stable IDs', async () => {
+    const created = await service.createTemplate({
+      id: 'worker-handoff',
+      name: 'Worker Handoff',
+      category: 'agent',
+      content: 'Hand off {{task_id}}',
+    });
+
+    expect(created.id).toBe('worker-handoff');
+    expect(created.currentVersionId).toBe('worker-handoff_v1');
+    expect(await service.getTemplate('worker-handoff')).toMatchObject({
+      id: 'worker-handoff',
+      name: 'Worker Handoff',
+    });
+    expect((await service.getVersionHistory('worker-handoff')).map((v) => v.versionNumber)).toEqual(
+      [1]
+    );
+  });
+
   it('updates metadata without creating a version and creates a new version on content change', async () => {
     const created = await service.createTemplate({
       name: 'Ops Prompt',
