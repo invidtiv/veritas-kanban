@@ -14,7 +14,13 @@
     "package:prepare": "node ../scripts/prepare-desktop-release.mjs",
     "package:mac:dir": "pnpm package:prepare && electron-builder --mac dir --publish never --config.mac.identity=null --config.mac.notarize=false",
     "package:mac:unsigned": "pnpm package:prepare && electron-builder --mac dmg zip --publish never --config.mac.identity=null --config.mac.notarize=false",
+    "package:linux:dir": "pnpm package:prepare && electron-builder --linux dir --x64 --publish never",
+    "package:linux:unsigned": "pnpm package:prepare && electron-builder --linux AppImage deb rpm --x64 --publish never",
+    "package:win:dir": "pnpm package:prepare && electron-builder --win dir --x64 --publish never",
+    "package:win:unsigned": "pnpm package:prepare && electron-builder --win nsis zip --x64 --publish never",
     "release:mac": "pnpm package:prepare && electron-builder --mac dmg zip --publish always",
+    "release:linux": "pnpm package:prepare && electron-builder --linux AppImage deb rpm --x64 --publish always",
+    "release:win": "pnpm package:prepare && electron-builder --win nsis zip --x64 --publish always",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src electron.vite.config.ts --ext .ts",
     "test": "vitest run --config vitest.config.ts",
@@ -95,6 +101,57 @@
           "path": "/Applications"
         }
       ]
+    },
+    "linux": {
+      "category": "Office",
+      "maintainer": "Digital Meld <support@digitalmeld.io>",
+      "synopsis": "Local-first task management and AI agent orchestration",
+      "description": "Veritas Kanban packages the local board, API server, and desktop runtime for local-first task management and AI agent orchestration.",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "verifyUpdateCodeSignature": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Veritas Kanban"
     },
     "publish": [
       {

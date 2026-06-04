@@ -1,7 +1,8 @@
 # Veritas Kanban Desktop Release
 
-This guide covers the v5 macOS desktop packaging path: unsigned PR artifacts,
-signed/notarized release artifacts, update metadata, and smoke testing.
+This guide covers desktop packaging paths for macOS GA artifacts and post-GA
+Linux/Windows artifacts: unsigned PR artifacts, signed release artifacts, update
+metadata, and smoke testing.
 
 ## Local Commands
 
@@ -10,13 +11,24 @@ Run these from the repository root:
 ```bash
 pnpm desktop:package:mac:dir
 pnpm desktop:package:mac:unsigned
+pnpm desktop:package:linux:unsigned
+pnpm desktop:package:windows:unsigned
 pnpm desktop:release:mac
+pnpm desktop:release:linux
+pnpm desktop:release:windows
 ```
 
 `desktop:package:mac:dir` creates an unpacked local app for fast inspection.
 `desktop:package:mac:unsigned` creates unsigned DMG/ZIP artifacts and update
-metadata for PR validation. `desktop:release:mac` expects signing and
-notarization credentials and publishes update metadata through electron-builder.
+metadata for PR validation. `desktop:package:linux:unsigned` creates x64
+AppImage, deb, and rpm artifacts. `desktop:package:windows:unsigned` creates
+x64 NSIS installer and ZIP artifacts.
+
+`desktop:release:mac` expects Apple signing and notarization credentials and
+publishes update metadata through electron-builder. `desktop:release:linux`
+publishes Linux artifacts without signing in the first post-GA slice.
+`desktop:release:windows` expects a Windows code-signing certificate available
+to electron-builder before a supported Windows release is cut.
 
 The package step builds the workspace, stages the production server runtime in
 `desktop/.desktop-release/server`, stages the built web app in
@@ -26,8 +38,13 @@ Both staging and release directories are ignored by git.
 ## GitHub Workflows
 
 `Desktop Artifacts` runs on desktop/server/web/shared changes and on manual
-dispatch. It builds unsigned macOS artifacts on `macos-15`, uploads the DMG,
-ZIP, blockmap, and update YAML files, and does not require Apple credentials.
+dispatch. It builds unsigned artifacts on:
+
+- `macos-15`: DMG, ZIP, blockmap, and update YAML.
+- `ubuntu-24.04`: x64 AppImage, deb, rpm, blockmap, and update YAML.
+- `windows-2025`: x64 NSIS installer, ZIP, blockmap, and update YAML.
+
+Unsigned artifact jobs do not require platform signing credentials.
 
 `Desktop Release` runs on manual dispatch or a published GitHub release. It
 requires the signing secrets below, builds signed/notarized macOS artifacts,
@@ -47,6 +64,25 @@ Configure these repository secrets before running `Desktop Release`:
 The workflow maps those secrets to electron-builder's `CSC_LINK`,
 `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and
 `APPLE_TEAM_ID` environment variables.
+
+Windows releases need a separate code-signing certificate before the first
+supported Windows artifact is published. Use `WINDOWS_CSC_LINK` and
+`WINDOWS_CSC_KEY_PASSWORD` as the repository secret names when the Windows
+release job is enabled. Linux AppImage/deb/rpm artifacts are unsigned in the
+first post-GA slice; publish checks should rely on checksum verification and
+GitHub release provenance until a Linux signing policy is added.
+
+## Supported Post-GA Targets
+
+| Platform | First supported matrix                          | Artifact formats           | Update stance                                                           |
+| -------- | ----------------------------------------------- | -------------------------- | ----------------------------------------------------------------------- |
+| macOS    | macOS 14+ Apple Silicon                         | signed DMG, ZIP            | Supported through signed electron-updater metadata                      |
+| Linux    | Ubuntu 24.04 x64 and Fedora 40+ x64 smoke hosts | AppImage, deb, rpm         | Metadata generated; manual download/install is the first supported path |
+| Windows  | Windows 11 23H2+ x64 smoke host                 | signed NSIS installer, ZIP | Requires Windows code signing before update support is enabled          |
+
+Linux and Windows support is post-GA. Do not mention Linux/Windows as Mac v5 GA
+install targets until the corresponding release artifact has passed the smoke
+matrix below.
 
 ## Update Channels
 
@@ -76,6 +112,10 @@ policy is tracked in
 - Run `pnpm typecheck`, `pnpm lint:budget`, `pnpm build`, and
   `pnpm test:unit`.
 - Run `pnpm desktop:package:mac:unsigned` and inspect artifact names.
+- Run `pnpm desktop:package:linux:unsigned` on Linux or the
+  `Desktop Artifacts` Linux job and inspect artifact names.
+- Run `pnpm desktop:package:windows:unsigned` on Windows or the
+  `Desktop Artifacts` Windows job and inspect artifact names.
 - Run `Desktop Artifacts` and download the uploaded DMG/ZIP/update metadata.
 - Run `Desktop Release` only after Apple signing secrets are configured.
 - Confirm notarization succeeds and the DMG installs without Gatekeeper
@@ -107,6 +147,37 @@ Signed release artifact:
 5. Publish a higher test-channel build, then confirm available, downloading,
    ready, and install states.
 
+Linux unsigned artifact:
+
+1. Download `veritas-kanban-linux-unsigned` from the workflow run.
+2. On Ubuntu 24.04 x64, install the deb with
+   `sudo apt install ./Veritas\ Kanban-*-linux-x64.deb` and launch from the
+   app menu.
+3. On Fedora 40+ x64, install the rpm with
+   `sudo dnf install ./Veritas\ Kanban-*-linux-x64.rpm` and launch from the
+   app menu.
+4. Run the AppImage with `chmod +x` followed by
+   `./Veritas\ Kanban-*-linux-x64.AppImage`.
+5. Confirm local server health through the desktop UI, logs, backup/import
+   paths, and app data under `~/.config/@veritas-kanban/desktop/`.
+6. Confirm uninstall removes the app but preserves user data unless the user
+   explicitly deletes the app data directory.
+
+Windows unsigned artifact:
+
+1. Download `veritas-kanban-windows-unsigned` from the workflow run.
+2. On Windows 11 23H2+ x64, run the NSIS installer and accept expected unsigned
+   publisher warnings only for PR artifacts.
+3. Launch from the Start menu and confirm the desktop status page reaches the
+   local app.
+4. Confirm the local server binds to loopback, Windows Firewall prompts are
+   documented if shown, and app data appears under
+   `%APPDATA%\@veritas-kanban\desktop\`.
+5. Confirm backup/import, logs, and uninstall behavior. Uninstall should remove
+   the app and preserve user data unless explicitly deleted by the user.
+6. For supported release artifacts, confirm the installer is code-signed before
+   enabling update checks or recommending the artifact to users.
+
 Rollback:
 
 1. Quit Veritas Kanban.
@@ -115,9 +186,10 @@ Rollback:
 4. If an update artifact is bad, remove or supersede the affected GitHub
    release assets and publish corrected update metadata.
 
-## Future Targets
+## Platform Notes
 
 Linux and Windows packages are intentionally not v5 Mac GA blockers. The
-current packaging config keeps artifact naming and update-channel conventions
-portable, but Windows signing, Linux package formats, auto-launch behavior, and
-OS-specific smoke tests should be handled in follow-up issues.
+post-GA artifact jobs keep artifact naming and update-channel conventions
+portable, but Windows update support stays blocked until code signing and
+signed-installer smoke coverage are in place. Linux updater support is deferred
+until the project has a clear AppImage/deb/rpm update policy.

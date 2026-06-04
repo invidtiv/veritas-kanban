@@ -177,8 +177,8 @@ admin credentials for routine agent writes.
 
 ## Known v5 GA Limits
 
-- Mac is the only desktop GA target. Linux and Windows are tracked in #541 and
-  #542.
+- Mac is the only desktop GA target. Linux and Windows are post-GA artifact
+  targets documented in [Desktop Release](DESKTOP-RELEASE.md).
 - Mobile GA is responsive web plus PWA, not native offline apps. Native mobile
   planning is tracked in #543.
 - Hosted cloud sync/SaaS is out of v5 GA scope and tracked in #544.

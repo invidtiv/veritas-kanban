@@ -81,11 +81,13 @@ in `config/window-state.json`.
 ## Release Packaging
 
 Unsigned PR artifacts, signed/notarized release artifacts, update metadata, and
-macOS smoke steps are documented in
+platform smoke steps are documented in
 [`docs/DESKTOP-RELEASE.md`](../docs/DESKTOP-RELEASE.md). Use the root
-`desktop:package:mac:unsigned` script for local unsigned DMG/ZIP validation and
-`desktop:release:mac` only when Apple signing/notarization credentials are
-configured.
+`desktop:package:mac:unsigned`, `desktop:package:linux:unsigned`, and
+`desktop:package:windows:unsigned` scripts for local unsigned validation.
+Use `desktop:release:mac`, `desktop:release:linux`, or
+`desktop:release:windows` only after the platform release prerequisites in the
+release guide are satisfied.
 
 ## Production Scaffold
 
