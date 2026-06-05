@@ -1,6 +1,6 @@
 {
   "name": "@veritas-kanban/mcp",
-  "version": "4.3.2",
+  "version": "5.0.0",
   "description": "MCP server for Veritas Kanban",
   "type": "module",
   "main": "./dist/index.js",

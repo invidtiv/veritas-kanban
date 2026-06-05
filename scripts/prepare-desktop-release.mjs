@@ -11,10 +11,34 @@ const stagingDir = path.join(desktopDir, '.desktop-release');
 const serverStage = path.join(stagingDir, 'server');
 const webStage = path.join(stagingDir, 'web');
 
+function releaseChildEnv() {
+  const env = { ...process.env };
+
+  for (const key of Object.keys(env)) {
+    if (
+      key === 'INIT_CWD' ||
+      key.startsWith('npm_') ||
+      key.startsWith('NPM_') ||
+      key.startsWith('PNPM_')
+    ) {
+      delete env[key];
+    }
+  }
+
+  return {
+    ...env,
+    CI: 'true',
+    npm_config_confirm_modules_purge: 'false',
+    npm_config_confirmModulesPurge: 'false',
+    NPM_CONFIG_CONFIRM_MODULES_PURGE: 'false',
+  };
+}
+
 function run(command, args) {
   const result = spawnSync(command, args, {
     cwd: rootDir,
     encoding: 'utf8',
+    env: releaseChildEnv(),
     shell: process.platform === 'win32',
     stdio: 'inherit',
   });
@@ -45,6 +69,20 @@ async function pruneServerDeploy() {
   ]);
 }
 
+async function materializeServerSelfReference() {
+  const selfReference = path.join(
+    serverStage,
+    'node_modules/.pnpm/node_modules/@veritas-kanban/server'
+  );
+
+  await rm(selfReference, { recursive: true, force: true });
+  await mkdir(selfReference, { recursive: true });
+  await cp(path.join(serverStage, 'package.json'), path.join(selfReference, 'package.json'));
+  await cp(path.join(serverStage, 'dist'), path.join(selfReference, 'dist'), {
+    recursive: true,
+  });
+}
+
 async function main() {
   await assertExists('Server build output', path.join(rootDir, 'server/dist/index.js'));
   await assertExists('Web build output', path.join(rootDir, 'web/dist/index.html'));
@@ -54,6 +92,7 @@ async function main() {
 
   run('pnpm', ['--filter', '@veritas-kanban/server', 'deploy', '--legacy', '--prod', serverStage]);
   await pruneServerDeploy();
+  await materializeServerSelfReference();
 
   await mkdir(webStage, { recursive: true });
   await cp(path.join(rootDir, 'web/dist'), path.join(webStage, 'dist'), {
@@ -62,6 +101,10 @@ async function main() {
 
   await assertExists('Packaged server entry', path.join(serverStage, 'dist/index.js'));
   await assertExists('Packaged server dependencies', path.join(serverStage, 'node_modules'));
+  await assertExists(
+    'Packaged server pnpm self-reference',
+    path.join(serverStage, 'node_modules/.pnpm/node_modules/@veritas-kanban/server/package.json')
+  );
   await assertExists('Packaged web app', path.join(webStage, 'dist/index.html'));
 
   console.log(`Prepared desktop release staging at ${path.relative(rootDir, stagingDir)}`);

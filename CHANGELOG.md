@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-06-05
+
 ### Added
 
 - Added v5 release readiness docs covering upgrade/install/admin paths,
@@ -15,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bumped the release from `4.3.2` to `5.0.0` across the root, shared, server,
+  web, CLI, MCP, and desktop package manifests.
+- Updated the README version badge and MCP documentation footer for `5.0.0`.
 - Expanded release validation to cover the desktop package version and required
   v5 release documentation.
 
