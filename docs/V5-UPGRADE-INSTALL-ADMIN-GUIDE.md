@@ -22,16 +22,25 @@ packet before publishing stable.
 
 ## Fresh Mac Desktop Install
 
-1. Download the signed/notarized DMG from the stable GitHub release.
-2. Mount the DMG and drag Veritas Kanban into `/Applications`.
-3. Launch normally. A stable release should not show a Gatekeeper warning.
-4. Pick the first-run path:
+1. Install the signed/notarized desktop app with Homebrew:
+
+   ```bash
+   brew tap BradGroux/tap
+   brew install --cask veritas-kanban
+   ```
+
+   Manual install is also supported from the stable GitHub release by
+   downloading `Veritas-Kanban-5.0.0-mac-arm64.zip`, unzipping it, and moving
+   `Veritas Kanban.app` into `/Applications`.
+
+2. Launch normally. A stable release should not show a Gatekeeper warning.
+3. Pick the first-run path:
    - Board Only for a local board with no agents.
    - Agent Ready for local agent tooling.
    - Remote Server to pair with a trusted host.
    - Restore to import a backup.
-5. Create the admin password and save the recovery key.
-6. Open Settings -> Maintenance and verify health checks, storage, logs, backup,
+4. Create the admin password and save the recovery key.
+5. Open Settings -> Maintenance and verify health checks, storage, logs, backup,
    and debug-bundle previews.
 
 Desktop data lives under:

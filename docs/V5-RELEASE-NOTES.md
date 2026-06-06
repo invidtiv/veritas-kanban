@@ -41,7 +41,15 @@ package version and artifact links when the signed stable release is published.
 
 ## Fresh Install
 
-1. Install the signed Mac DMG from the stable release.
+1. Install the signed Mac desktop app:
+
+   ```bash
+   brew tap BradGroux/tap
+   brew install --cask veritas-kanban
+   ```
+
+   Manual install is also supported from the stable GitHub release ZIP.
+
 2. Launch Veritas Kanban and choose Board Only unless you already need agent or
    remote setup.
 3. Save the recovery key.

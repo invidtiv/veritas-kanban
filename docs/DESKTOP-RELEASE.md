@@ -60,6 +60,27 @@ targets.
 requires the signing secrets below, builds signed/notarized macOS artifacts,
 and publishes update metadata with the GitHub provider.
 
+## Homebrew Cask
+
+The supported packaged install path is the dedicated BradGroux tap:
+
+```bash
+brew tap BradGroux/tap
+brew install --cask veritas-kanban
+```
+
+The cask lives in
+`BradGroux/homebrew-tap/Casks/veritas-kanban.rb` and tracks the signed,
+notarized GitHub release ZIP. After publishing a stable macOS release, update
+the cask version and SHA256, then validate from the registered tap checkout:
+
+```bash
+brew style --cask bradgroux/tap/veritas-kanban
+brew audit --cask --strict --online bradgroux/tap/veritas-kanban
+brew install --cask --dry-run bradgroux/tap/veritas-kanban
+brew livecheck bradgroux/tap/veritas-kanban
+```
+
 ## Required Release Secrets
 
 Configure these repository secrets before running `Desktop Release`:

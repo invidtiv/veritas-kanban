@@ -42,6 +42,15 @@ Clone and set up veritas-kanban locally using the board-only setup path first. I
 
 Want to do it yourself? Get up and running in under 5 minutes:
 
+For the packaged Mac desktop app:
+
+```bash
+brew tap BradGroux/tap
+brew install --cask veritas-kanban
+```
+
+For local source development:
+
 ```bash
 git clone https://github.com/BradGroux/veritas-kanban.git
 cd veritas-kanban
@@ -50,7 +59,7 @@ cp server/.env.example server/.env   # Edit to change VERITAS_ADMIN_KEY
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — that's it. The board auto-seeds with example tasks on first run so you can explore right away.
+Open [http://localhost:3000](http://localhost:3000) for source runs, or launch `Veritas Kanban.app` from `/Applications` after the Homebrew install. The board auto-seeds with example tasks on first run so you can explore right away.
 
 A working board means the UI loads and `http://localhost:3001/api/health` returns healthy. Agent-ready and external wake/delivery-ready are separate setup levels; use [Setup Paths](docs/SETUP-PATHS.md#readiness-levels) before adding those layers.
 
