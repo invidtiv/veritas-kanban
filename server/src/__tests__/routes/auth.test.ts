@@ -54,6 +54,7 @@ vi.mock('../../config/security.js', () => {
 // Import auth route after mocking
 import authRouter from '../../routes/auth.js';
 import { errorHandler } from '../../middleware/error-handler.js';
+import { authRateLimit } from '../../middleware/rate-limit.js';
 import {
   DeviceSessionService,
   resetDeviceSessionServiceForTests,
@@ -133,6 +134,31 @@ describe('Auth Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.authenticated).toBe(false);
+    });
+
+    it('should not consume strict auth attempts for status checks in production', async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      const limitedApp = express();
+      limitedApp.use(express.json());
+      limitedApp.use(cookieParser());
+      limitedApp.use('/api/auth', authRateLimit, authRouter);
+      limitedApp.use(errorHandler);
+
+      try {
+        for (let i = 0; i < 12; i++) {
+          const res = await request(limitedApp).get('/api/auth/status');
+          expect(res.status).toBe(200);
+          expect(res.body.needsSetup).toBe(true);
+        }
+      } finally {
+        if (originalNodeEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = originalNodeEnv;
+        }
+      }
     });
   });
 

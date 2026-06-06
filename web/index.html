@@ -4,6 +4,12 @@
     <script>
       // Apply theme immediately to prevent flash. Default dark.
       (function () {
+        var currentScript = document.currentScript;
+        var cspNonce = currentScript && currentScript.nonce ? currentScript.nonce : '';
+        if (cspNonce) {
+          window.__VERITAS_CSP_NONCE__ = cspNonce;
+        }
+
         var value = null;
         try {
           value = localStorage.getItem('veritas-kanban-theme');

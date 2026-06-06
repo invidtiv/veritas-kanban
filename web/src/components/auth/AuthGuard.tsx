@@ -1,6 +1,7 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, RefreshCw, RotateCcw, Scale } from 'lucide-react';
+import { Button } from '@mantine/core';
 
 const SetupScreen = lazy(() =>
   import('./SetupScreen').then((mod) => ({
@@ -30,7 +31,34 @@ function AuthSurfaceFallback() {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { status, isLoading, error } = useAuth();
+  const { status, isLoading, error, refreshStatus } = useAuth();
+  const [isRestarting, setIsRestarting] = useState(false);
+  const desktopBridge =
+    typeof window !== 'undefined'
+      ? (
+          window as Window & {
+            veritasDesktop?: { restartLocalServer?: () => Promise<unknown> };
+          }
+        ).veritasDesktop
+      : undefined;
+
+  const retryConnection = () => {
+    void refreshStatus();
+  };
+
+  const restartLocalServer = async () => {
+    if (!desktopBridge?.restartLocalServer) return;
+
+    setIsRestarting(true);
+    try {
+      await desktopBridge.restartLocalServer();
+      await refreshStatus();
+    } catch (restartError) {
+      console.error('[Auth] Failed to restart local server:', restartError);
+    } finally {
+      setIsRestarting(false);
+    }
+  };
 
   // Loading state
   if (isLoading) {
@@ -40,14 +68,38 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Error state
   if (error && !status) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="text-center space-y-4 max-w-md">
-          <div className="text-destructive text-6xl">⚠️</div>
-          <h1 className="text-xl font-bold">Connection Error</h1>
-          <p className="text-muted-foreground">{error}</p>
-          <button onClick={() => window.location.reload()} className="text-primary hover:underline">
-            Try again
-          </button>
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md rounded-xl border border-border bg-card p-7 text-center shadow-lg">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-destructive/30 bg-destructive/10 text-destructive">
+            <Scale className="h-7 w-7" aria-hidden="true" />
+          </div>
+          <div className="mt-5 flex items-center justify-center gap-2 text-destructive">
+            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+            <h1 className="text-lg font-semibold">Connection Error</h1>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+          <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
+            <Button
+              variant="filled"
+              size="sm"
+              leftSection={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+              onClick={retryConnection}
+            >
+              Retry
+            </Button>
+            {desktopBridge?.restartLocalServer && (
+              <Button
+                variant="light"
+                color="gray"
+                size="sm"
+                loading={isRestarting}
+                leftSection={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
+                onClick={() => void restartLocalServer()}
+              >
+                Restart local server
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );

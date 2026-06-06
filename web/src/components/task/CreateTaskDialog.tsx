@@ -226,11 +226,17 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
             .filter((result) => result.title.trim().toLowerCase() !== normalizedTitle)
             .slice(0, 3)
         );
-        setDuplicateError(response.degraded ? response.reason || null : null);
+        setDuplicateError(
+          response.degraded
+            ? 'Duplicate search is using a reduced index right now. You can still create the task.'
+            : null
+        );
       } catch (err) {
         if (cancelled) return;
         setDuplicateResults([]);
-        setDuplicateError(err instanceof Error ? err.message : 'Duplicate check failed');
+        setDuplicateError(
+          'Duplicate search is unavailable right now. You can still create the task.'
+        );
       } finally {
         if (!cancelled) setIsCheckingDuplicates(false);
       }

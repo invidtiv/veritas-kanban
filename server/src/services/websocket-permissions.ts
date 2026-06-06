@@ -4,6 +4,7 @@ import {
   type AuthenticatedWebSocket,
   type AuthPermission,
 } from '../middleware/auth.js';
+import { closeWebSocketSafely } from '../utils/websocket-close.js';
 
 const DEFAULT_WORKSPACE_ID = 'local';
 const WEBSOCKET_OPEN = 1;
@@ -96,7 +97,7 @@ export function sendWebSocketEvent(
   if (client.readyState !== WEBSOCKET_OPEN) return false;
   if (!canReceiveWebSocketEvent(client, options)) return false;
   if (isWebSocketBackpressured(client)) {
-    client.close(1013, 'Client backpressure');
+    closeWebSocketSafely(client, 1013, 'Client backpressure');
     return false;
   }
 

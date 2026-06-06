@@ -141,4 +141,37 @@ describe('CreateTaskDialog duplicate detection', () => {
     expect(navigateToTaskMock).toHaveBeenCalledWith('task_20260504_match');
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
+
+  it('hides raw degraded-search backend errors', async () => {
+    queryMock.mockResolvedValue({
+      query: 'Search duplicate',
+      backend: 'keyword',
+      degraded: true,
+      reason: 'spawn qmd ENOENT',
+      elapsedMs: 3,
+      results: [],
+    });
+
+    renderWithProviders(<CreateTaskDialog open onOpenChange={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Search duplicate' },
+    });
+
+    expect(await screen.findByText(/Duplicate search is using a reduced index/i)).toBeDefined();
+    expect(screen.queryByText(/spawn qmd ENOENT/i)).toBeNull();
+  });
+
+  it('hides raw duplicate-check exceptions', async () => {
+    queryMock.mockRejectedValue(new Error('spawn qmd ENOENT'));
+
+    renderWithProviders(<CreateTaskDialog open onOpenChange={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Search duplicate' },
+    });
+
+    expect(await screen.findByText(/Duplicate search is unavailable/i)).toBeDefined();
+    expect(screen.queryByText(/spawn qmd ENOENT/i)).toBeNull();
+  });
 });

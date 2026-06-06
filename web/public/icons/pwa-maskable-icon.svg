@@ -1,10 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Veritas Kanban">
-  <rect width="512" height="512" fill="#15171f"/>
-  <circle cx="256" cy="256" r="224" fill="#202431"/>
-  <rect x="104" y="128" width="72" height="256" rx="18" fill="#4f46e5"/>
-  <rect x="220" y="128" width="72" height="256" rx="18" fill="#14b8a6"/>
-  <rect x="336" y="128" width="72" height="256" rx="18" fill="#f59e0b"/>
-  <path d="M124 190h32M124 238h32M240 190h32M240 238h32M356 190h32M356 238h32M356 286h32" stroke="#f8fafc" stroke-width="18" stroke-linecap="round"/>
-  <circle cx="256" cy="372" r="44" fill="#f8fafc"/>
-  <path d="M237 373l15 15 29-34" fill="none" stroke="#15171f" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="vk-bg" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#171a24"/>
+      <stop offset="1" stop-color="#08090d"/>
+    </linearGradient>
+    <linearGradient id="vk-accent" x1="150" y1="116" x2="372" y2="384" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#vk-bg)"/>
+  <rect x="74" y="74" width="364" height="364" rx="82" fill="none" stroke="url(#vk-accent)" stroke-width="18"/>
+  <circle cx="256" cy="160" r="17" fill="#f8fafc"/>
+  <rect x="243" y="178" width="26" height="188" rx="13" fill="#f8fafc"/>
+  <rect x="182" y="378" width="148" height="30" rx="15" fill="#f8fafc"/>
+  <rect x="212" y="348" width="88" height="38" rx="19" fill="#14b8a6"/>
+  <path d="M136 212 376 186" fill="none" stroke="#d6a533" stroke-width="23" stroke-linecap="round"/>
+  <path d="M150 211v62M114 273h72M114 273c0 34 36 48 36 48s36-14 36-48" fill="none" stroke="#f8fafc" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M362 187v62M326 249h72M326 249c0 34 36 48 36 48s36-14 36-48" fill="none" stroke="#f8fafc" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

@@ -78,6 +78,7 @@
     "generateUpdatesFilesForAllChannels": true,
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "resources/icon.icns",
       "target": [
         "dmg",
         "zip"
