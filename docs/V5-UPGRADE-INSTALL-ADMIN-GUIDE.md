@@ -4,10 +4,11 @@ This guide is the release-facing entry point for v5 operators. It links the
 existing detailed docs and keeps the happy path separate from optional
 automation layers.
 
-For current dummy-data screenshots and GIFs of the v5 board, task work view,
-Maintenance Center, and mobile/PWA shell, see
-[v5 Visual Tour](V5-VISUAL-TOUR.md). Use real RC screenshots in the evidence
-packet before publishing stable.
+For current release-safe dummy screenshots and GIFs of the v5 board, task work
+view, Maintenance Center, and mobile/PWA shell, see
+[v5 Visual Tour](V5-VISUAL-TOUR.md). Release evidence, when needed for a future
+candidate, belongs in the reusable
+[v5 Release Candidate Evidence Packet](V5-RC-EVIDENCE-PACKET.md).
 
 ## Choose The Right Path
 
@@ -29,9 +30,10 @@ packet before publishing stable.
    brew install --cask veritas-kanban
    ```
 
-   Manual install is also supported from the stable GitHub release by
-   downloading `Veritas-Kanban-5.0.0-mac-arm64.zip`, unzipping it, and moving
-   `Veritas Kanban.app` into `/Applications`.
+   Manual install is also supported from the
+   [stable GitHub release](https://github.com/BradGroux/veritas-kanban/releases/tag/v5.0.0)
+   by downloading `Veritas-Kanban-5.0.0-mac-arm64.zip`, unzipping it, and
+   moving `Veritas Kanban.app` into `/Applications`.
 
 2. Launch normally. A stable release should not show a Gatekeeper warning.
 3. Pick the first-run path:

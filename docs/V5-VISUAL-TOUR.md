@@ -1,16 +1,16 @@
 # Veritas Kanban v5 Visual Tour
 
 This page is the v5 documentation media index. The screenshots and GIFs use
-dummy release-candidate content captured from the current app surfaces so the
-docs can show realistic workflows without exposing real tasks, prompts, logs,
-paths, tokens, or customer data.
+release-safe dummy content captured from the current app surfaces so the docs
+can show realistic workflows without exposing real tasks, prompts, logs, paths,
+tokens, or customer data.
 
 ## Capture Set
 
 | Asset                  | Path                                       | Notes                                                                           |
 | ---------------------- | ------------------------------------------ | ------------------------------------------------------------------------------- |
 | Board to workflow tour | `docs/assets/v5/v5-board-to-workflow.gif`  | Desktop board, task detail, Workflows, and Decision Audit Trail flow.           |
-| Board overview         | `docs/assets/v5/v5-board-overview.png`     | Current dark-mode board with v5 release-candidate dummy tasks.                  |
+| Board overview         | `docs/assets/v5/v5-board-overview.png`     | Current dark-mode board with v5 dummy tasks.                                    |
 | Task work view         | `docs/assets/v5/v5-task-work-view.png`     | Task detail drawer with dummy v5 release smoke content.                         |
 | Maintenance Center     | `docs/assets/v5/v5-maintenance-center.png` | Operator diagnostics, storage, cleanup preview, and redacted evidence surfaces. |
 | Mobile/PWA board       | `docs/assets/v5/v5-mobile-pwa-board.png`   | Phone-width board shell with mobile navigation.                                 |
@@ -53,15 +53,15 @@ mobile/PWA access. They do not claim native offline execution; v5 PWA offline
 behavior remains static-shell-only as documented in the release notes and admin
 guide.
 
-## Release Evidence Use
+## Documentation Use
 
 Use this page when completing:
 
 - [v5 GA Checklist](V5-GA-CHECKLIST.md)
-- [v5 Release Candidate Evidence Packet](V5-RC-EVIDENCE-PACKET.md)
 - [v5 Upgrade, Install, Remote, And Admin Guide](V5-UPGRADE-INSTALL-ADMIN-GUIDE.md)
-- [Draft v5.0 Release Notes](V5-RELEASE-NOTES.md)
+- [v5.0 Release Notes](V5-RELEASE-NOTES.md)
 
-For an actual release candidate, attach real installer, browser, and mobile
-smoke evidence to the RC packet. These dummy captures are documentation assets,
-not final release-candidate proof.
+These dummy captures are documentation assets, not release proof. Future
+release-candidate evidence belongs in the reusable
+[v5 Release Candidate Evidence Packet](V5-RC-EVIDENCE-PACKET.md) or the linked
+GitHub release issue for that candidate.

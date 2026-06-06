@@ -1,16 +1,17 @@
 # v5 Release Candidate Evidence Packet
 
-Use this packet for each v5 release candidate before marking GA complete. Keep
-links to GitHub workflow runs, release assets, screenshots, logs, and command
-output artifacts here or in the linked GitHub issue. Do not paste secrets,
-tokens, private keys, raw chat/task content, or unredacted local private paths.
-The filled packet is the evidence target for #644.
+Use this packet for future v5 release candidates and for retained follow-up
+evidence tied to v5.0.0 release issues. Keep links to GitHub workflow runs,
+release assets, screenshots, logs, and command output artifacts here or in the
+linked GitHub issue. Do not paste secrets, tokens, private keys, raw chat/task
+content, or unredacted local private paths. The reusable packet remains the
+evidence target for #644.
 
 ## Candidate Identity
 
 | Field                 | Value |
 | --------------------- | ----- |
-| RC label              |       |
+| Candidate label       |       |
 | Release version       |       |
 | Git tag               |       |
 | Commit SHA            |       |
@@ -175,16 +176,17 @@ Security release notes:
 
 The checked-in dummy-data docs media lives in
 [v5 Visual Tour](V5-VISUAL-TOUR.md). Use this section to confirm the docs assets
-still match the RC UI and to attach real RC screenshots or recordings.
+still match the candidate UI and to attach real screenshots or recordings when
+release evidence is required.
 
-| Surface                   | Docs asset                                 | RC proof |
-| ------------------------- | ------------------------------------------ | -------- |
-| Desktop board             | `docs/assets/v5/v5-board-overview.png`     |          |
-| Board/workflow/audit GIF  | `docs/assets/v5/v5-board-to-workflow.gif`  |          |
-| Task work view            | `docs/assets/v5/v5-task-work-view.png`     |          |
-| Maintenance Center        | `docs/assets/v5/v5-maintenance-center.png` |          |
-| Mobile/PWA board          | `docs/assets/v5/v5-mobile-pwa-board.png`   |          |
-| Mobile/PWA navigation GIF | `docs/assets/v5/v5-mobile-pwa-flow.gif`    |          |
+| Surface                   | Docs asset                                 | Candidate proof |
+| ------------------------- | ------------------------------------------ | --------------- |
+| Desktop board             | `docs/assets/v5/v5-board-overview.png`     |                 |
+| Board/workflow/audit GIF  | `docs/assets/v5/v5-board-to-workflow.gif`  |                 |
+| Task work view            | `docs/assets/v5/v5-task-work-view.png`     |                 |
+| Maintenance Center        | `docs/assets/v5/v5-maintenance-center.png` |                 |
+| Mobile/PWA board          | `docs/assets/v5/v5-mobile-pwa-board.png`   |                 |
+| Mobile/PWA navigation GIF | `docs/assets/v5/v5-mobile-pwa-flow.gif`    |                 |
 
 Visual docs notes:
 
@@ -199,7 +201,7 @@ Visual docs notes:
 | Are all critical/high v5 release blockers closed?    |        |
 | Are all deferred items linked as post-GA issues?     |        |
 | Are user-visible limits documented in release notes? |        |
-| Is this RC approved for stable publication?          |        |
+| Is this candidate approved for publication?          |        |
 
 Decision notes:
 

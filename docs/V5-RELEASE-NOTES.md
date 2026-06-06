@@ -1,7 +1,13 @@
-# Draft v5.0 Release Notes
+# v5.0 Release Notes
 
-These notes are the source draft for the v5.0 GitHub release. Replace the
-package version and artifact links when the signed stable release is published.
+These notes describe the published Veritas Kanban v5.0.0 stable release.
+
+- GitHub release:
+  [Veritas Kanban v5.0.0](https://github.com/BradGroux/veritas-kanban/releases/tag/v5.0.0)
+- Supported packaged install:
+  `brew tap BradGroux/tap && brew install --cask veritas-kanban`
+- Manual macOS install:
+  [Veritas-Kanban-5.0.0-mac-arm64.zip](https://github.com/BradGroux/veritas-kanban/releases/download/v5.0.0/Veritas-Kanban-5.0.0-mac-arm64.zip)
 
 ## Highlights
 
@@ -68,16 +74,23 @@ package version and artifact links when the signed stable release is published.
 
 ## Release Artifacts
 
-Stable release must include:
+The v5.0.0 stable release includes:
 
-- signed/notarized macOS DMG
-- signed/notarized macOS ZIP
-- blockmap files
-- channel update metadata
-- source archive
-- changelog entry
-- links to upgrade, desktop install, remote/mobile, admin, compatibility, and
-  GA checklist docs
+| Artifact                                                                                                                                                        | SHA-256                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [Veritas-Kanban-5.0.0-mac-arm64.dmg](https://github.com/BradGroux/veritas-kanban/releases/download/v5.0.0/Veritas-Kanban-5.0.0-mac-arm64.dmg)                   | `ea0c98d5e8a57cf9352602a198d840678aeae427d4a5d51c8418f2219cf0c35d` |
+| [Veritas-Kanban-5.0.0-mac-arm64.zip](https://github.com/BradGroux/veritas-kanban/releases/download/v5.0.0/Veritas-Kanban-5.0.0-mac-arm64.zip)                   | `ea492c71c3276de8c44c15e1ccb51fc7d713b5b4f8b8c9f302c0f5dd54e14c32` |
+| [Veritas-Kanban-5.0.0-mac-arm64.dmg.blockmap](https://github.com/BradGroux/veritas-kanban/releases/download/v5.0.0/Veritas-Kanban-5.0.0-mac-arm64.dmg.blockmap) | `8a24eeed35f09313488e4fd6feecefada5f4218a97c03879c9d81e7fc43869a7` |
+| [Veritas-Kanban-5.0.0-mac-arm64.zip.blockmap](https://github.com/BradGroux/veritas-kanban/releases/download/v5.0.0/Veritas-Kanban-5.0.0-mac-arm64.zip.blockmap) | `0ba0660ff9e82c32c120bf3ec828a5b363db5946df6117cc2073a03cc275981e` |
+| [latest-mac.yml](https://github.com/BradGroux/veritas-kanban/releases/download/v5.0.0/latest-mac.yml)                                                           | `60baa09d4eb3b93c419178536e639aff74ecd8e5ee72e628f461cd027f945501` |
+
+Checksum sidecars are published as
+[`Veritas-Kanban-5.0.0-mac-arm64.dmg.sha256`](https://github.com/BradGroux/veritas-kanban/releases/download/v5.0.0/Veritas-Kanban-5.0.0-mac-arm64.dmg.sha256)
+and
+[`Veritas-Kanban-5.0.0-mac-arm64.zip.sha256`](https://github.com/BradGroux/veritas-kanban/releases/download/v5.0.0/Veritas-Kanban-5.0.0-mac-arm64.zip.sha256).
+
+The GitHub release also includes the source archive and links to the upgrade,
+desktop install, remote/mobile, admin, compatibility, and GA checklist docs.
 
 ## Documentation
 
