@@ -111,6 +111,7 @@
       "packageName": "veritas-kanban"
     },
     "linux": {
+      "icon": "resources/icon.png",
       "category": "Office",
       "maintainer": "Digital Meld <support@digitalmeld.io>",
       "synopsis": "Local-first task management and AI agent orchestration",
@@ -137,6 +138,7 @@
       ]
     },
     "win": {
+      "icon": "resources/icon.ico",
       "target": [
         {
           "target": "nsis",

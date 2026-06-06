@@ -43,7 +43,8 @@ Reverse proxies should route these paths to the same Veritas host:
 - `/ws`
 - `/manifest.webmanifest`
 - `/sw.js`
-- `/favicon.svg`
+- `/favicon.png`
+- `/apple-touch-icon.png`
 - `/icons/*`
 - `/assets/*`
 

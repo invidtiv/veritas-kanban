@@ -1,14 +1,16 @@
 /* global caches, fetch, self, URL */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `veritas-kanban-static-${CACHE_VERSION}`;
 const SHELL_URL = new URL('./', self.registration.scope).toString();
 const PRECACHE_URLS = [
   SHELL_URL,
   new URL('manifest.webmanifest', self.registration.scope).toString(),
-  new URL('favicon.svg', self.registration.scope).toString(),
-  new URL('icons/pwa-icon.svg', self.registration.scope).toString(),
-  new URL('icons/pwa-maskable-icon.svg', self.registration.scope).toString(),
+  new URL('favicon.png', self.registration.scope).toString(),
+  new URL('apple-touch-icon.png', self.registration.scope).toString(),
+  new URL('icons/pwa-icon-192.png', self.registration.scope).toString(),
+  new URL('icons/pwa-icon-512.png', self.registration.scope).toString(),
+  new URL('icons/pwa-maskable-icon-512.png', self.registration.scope).toString(),
 ];
 const STATIC_DESTINATIONS = new Set(['font', 'image', 'manifest', 'script', 'style', 'worker']);
 
