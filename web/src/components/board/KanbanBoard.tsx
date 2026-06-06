@@ -34,7 +34,7 @@ import {
   renameBoardSavedView,
   updateBoardSavedViewFilters,
 } from '@/lib/board-saved-views';
-import { CheckSquare } from 'lucide-react';
+import { AlertTriangle, CheckSquare, RefreshCw, Wrench } from 'lucide-react';
 import { Button } from '@mantine/core';
 import { ArchiveSuggestionBanner } from './ArchiveSuggestionBanner';
 import FeatureErrorBoundary from '@/components/shared/FeatureErrorBoundary';
@@ -67,7 +67,7 @@ const BoardSidebar = lazy(() =>
 const EMPTY_SAVED_VIEWS: BoardSavedView[] = [];
 
 export function KanbanBoard() {
-  const { data: tasks, isLoading, error } = useTasks();
+  const { data: tasks, isLoading, error, refetch, isFetching } = useTasks();
   const { settings: featureSettings, isPlaceholderData } = useFeatureSettings();
   const updateFeatureSettings = useUpdateFeatureSettings();
   const boardSettings = featureSettings.board ?? DEFAULT_FEATURE_SETTINGS.board;
@@ -440,10 +440,34 @@ export function KanbanBoard() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96" role="alert">
-        <div className="text-center space-y-2">
-          <div className="text-destructive font-medium">Error loading tasks</div>
-          <div className="text-sm text-muted-foreground">{error.message}</div>
+      <div className="flex min-h-[24rem] items-center justify-center px-4" role="alert">
+        <div className="w-full max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center shadow-sm">
+          <AlertTriangle className="mx-auto h-8 w-8 text-destructive" aria-hidden="true" />
+          <div className="mt-3 text-base font-semibold text-destructive">Task sync unavailable</div>
+          <div className="mt-2 text-sm text-muted-foreground">
+            {error.message || 'The local task service did not respond.'}
+          </div>
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <Button
+              variant="filled"
+              color="red"
+              size="sm"
+              loading={isFetching}
+              leftSection={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+              onClick={() => void refetch()}
+            >
+              Retry
+            </Button>
+            <Button
+              variant="light"
+              color="gray"
+              size="sm"
+              leftSection={<Wrench className="h-4 w-4" aria-hidden="true" />}
+              onClick={() => window.dispatchEvent(new CustomEvent('veritas:open-diagnostics'))}
+            >
+              Diagnostics
+            </Button>
+          </div>
         </div>
       </div>
     );

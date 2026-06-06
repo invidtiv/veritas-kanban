@@ -73,6 +73,7 @@ import {
   unsubscribeWebSocketChatSession,
   type WebSocketEventChannel,
 } from './services/websocket-permissions.js';
+import { closeWebSocketSafely } from './utils/websocket-close.js';
 
 const log = createLogger('server');
 
@@ -680,7 +681,7 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
       { current: wss.clients.size, max: WS_MAX_CONNECTIONS },
       'WebSocket connection limit reached — rejecting'
     );
-    ws.close(1013, 'Try again later');
+    closeWebSocketSafely(ws, 1013, 'Try again later');
     return;
   }
 
@@ -689,7 +690,7 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
 
   if (!authResult.authenticated || !authResult.role) {
     log.warn({ error: authResult.error }, 'WebSocket connection rejected');
-    ws.close(4001, authResult.error || 'Authentication required');
+    closeWebSocketSafely(ws, 4001, authResult.error || 'Authentication required');
     return;
   }
 
@@ -773,7 +774,7 @@ wss.on('connection', (ws: HeartbeatWebSocket, req) => {
     messageCount++;
     if (messageCount > WS_MESSAGE_RATE_LIMIT) {
       log.warn({ count: messageCount }, 'WebSocket message rate limit exceeded');
-      ws.close(4008, 'Rate limit exceeded');
+      closeWebSocketSafely(ws, 4008, 'Rate limit exceeded');
       return;
     }
 
@@ -1034,7 +1035,7 @@ async function gracefulShutdown(signal: string) {
       clearTimeout(hbClient.heartbeatTimer);
       hbClient.heartbeatTimer = undefined;
     }
-    client.close(1001, 'Server going away');
+    closeWebSocketSafely(client, 1001, 'Server going away');
   });
 
   // Close the WebSocket server itself (stop accepting new connections)

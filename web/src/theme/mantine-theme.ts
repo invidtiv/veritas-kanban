@@ -173,6 +173,7 @@ export const veritasMantineTheme = createTheme({
       defaultProps: {
         radius: 'md',
         centered: true,
+        lockScroll: false,
         trapFocus: true,
         returnFocus: true,
         closeButtonProps: { 'aria-label': 'Close dialog' },
@@ -181,6 +182,7 @@ export const veritasMantineTheme = createTheme({
     },
     Drawer: {
       defaultProps: {
+        lockScroll: false,
         trapFocus: true,
         returnFocus: true,
         closeButtonProps: { 'aria-label': 'Close panel' },

@@ -24,6 +24,7 @@ import {
   type AuthPermission,
 } from '../middleware/auth.js';
 import { ValidationError } from '../middleware/error-handler.js';
+import { authStatusRateLimit } from '../middleware/rate-limit.js';
 import { auditLog } from '../services/audit-service.js';
 import { getIdentityService } from '../services/identity-service.js';
 import { SCOPED_API_TOKEN_PERMISSIONS } from '../services/api-token-service.js';
@@ -177,6 +178,7 @@ function clearAttempts(ip: string): void {
  */
 router.get(
   '/status',
+  authStatusRateLimit,
   asyncHandler(async (req: Request, res: Response) => {
     const config = getSecurityConfig();
     const needsSetup = !config.passwordHash;

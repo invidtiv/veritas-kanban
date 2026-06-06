@@ -14,6 +14,7 @@ import {
   normalizeVeritasColorScheme,
   VERITAS_COLOR_SCHEME_STORAGE_KEY,
 } from './color-scheme';
+import { getDocumentCspNonce } from './csp-nonce';
 
 export const veritasColorSchemeManager = localStorageColorSchemeManager({
   key: VERITAS_COLOR_SCHEME_STORAGE_KEY,
@@ -36,6 +37,10 @@ export const testColorSchemeManager: MantineColorSchemeManager = {
 interface MantineRootProps {
   children: ReactNode;
   env?: 'default' | 'test';
+}
+
+function getMantineStyleNonce() {
+  return getDocumentCspNonce() ?? '';
 }
 
 function VeritasColorSchemeSync() {
@@ -64,6 +69,7 @@ export function MantineRoot({ children, env = 'default' }: MantineRootProps) {
       theme={veritasMantineTheme}
       colorSchemeManager={env === 'test' ? testColorSchemeManager : veritasColorSchemeManager}
       defaultColorScheme="dark"
+      getStyleNonce={getMantineStyleNonce}
       env={env}
     >
       {env === 'test' ? <VeritasTestColorSchemeSync /> : <VeritasColorSchemeSync />}

@@ -262,8 +262,7 @@ export function getAuthConfig(): AuthConfig {
 
 // === Helper Functions ===
 
-function isLocalhostRequest(req: Request | IncomingMessage): boolean {
-  // Only trust X-Forwarded-For when trust proxy is explicitly configured
+function isLoopbackRequest(req: Request | IncomingMessage): boolean {
   const trustProxy =
     'app' in req &&
     typeof (req as Request).app?.get === 'function' &&
@@ -272,11 +271,6 @@ function isLocalhostRequest(req: Request | IncomingMessage): boolean {
     ? (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
     : undefined;
   let remoteAddr: string;
-
-  // In production, never allow localhost bypass regardless of config
-  if (process.env.NODE_ENV === 'production') {
-    return false;
-  }
 
   if ('socket' in req && req.socket) {
     remoteAddr = forwarded || req.socket.remoteAddress || '';
@@ -292,6 +286,15 @@ function isLocalhostRequest(req: Request | IncomingMessage): boolean {
     remoteAddr === '::ffff:127.0.0.1' ||
     remoteAddr === 'localhost'
   );
+}
+
+function isLocalhostRequest(req: Request | IncomingMessage): boolean {
+  // In production, never allow localhost bypass regardless of config.
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+
+  return isLoopbackRequest(req);
 }
 
 function firstHeaderValue(value: string | string[] | undefined): string | undefined {
@@ -331,7 +334,7 @@ function isLocalOwnerPasswordSessionRequest(
   req: Request | IncomingMessage,
   isLocalhost: boolean
 ): boolean {
-  if (!isLocalhost) return false;
+  if (!isLoopbackRequest(req)) return false;
 
   const host = firstHeaderValue(req.headers.host);
   if (!isLoopbackHost(host)) return false;

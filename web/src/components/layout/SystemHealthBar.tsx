@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CheckCircle2,
   Eye,
@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { useSystemHealth, type OverallStatus } from '@/hooks/useSystemHealth';
 
@@ -70,10 +71,20 @@ function SignalDot({ status }: { status: 'ok' | 'warn' | 'fail' | 'critical' }) 
  */
 export function SystemHealthBar() {
   const [expanded, setExpanded] = useState(false);
-  const { data, isLoading, isError } = useSystemHealth();
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  const { data, isLoading, isError, isFetching, refetch, error } = useSystemHealth();
 
-  // Don't render anything while loading or on error
-  if (isLoading && !data) {
+  useEffect(() => {
+    if (!isLoading || data) {
+      setLoadingTimedOut(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setLoadingTimedOut(true), 8_000);
+    return () => window.clearTimeout(timeout);
+  }, [data, isLoading]);
+
+  if (isLoading && !data && !loadingTimedOut) {
     return (
       <div
         className="flex h-7 items-center justify-center border-b border-border bg-muted/30 text-xs text-muted-foreground"
@@ -87,7 +98,50 @@ export function SystemHealthBar() {
   }
 
   if (isError && !data) {
-    return null;
+    return (
+      <div
+        className="flex min-h-8 items-center justify-center gap-2 border-b border-red-500/30 bg-red-500/10 px-3 text-xs text-red-700 dark:text-red-300"
+        role="status"
+        aria-label="System health unavailable"
+      >
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span className="font-medium">Health unavailable</span>
+        <span className="hidden max-w-[32rem] truncate opacity-75 sm:inline">
+          {error instanceof Error ? error.message : 'Unable to reach the local server.'}
+        </span>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded border border-red-500/30 px-2 py-0.5 font-medium transition-colors hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-400"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (loadingTimedOut && !data) {
+    return (
+      <div
+        className="flex min-h-8 items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 text-xs text-amber-700 dark:text-amber-300"
+        role="status"
+        aria-label="System health check is still pending"
+      >
+        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+        <span className="font-medium">Health check still pending</span>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded border border-amber-500/30 px-2 py-0.5 font-medium transition-colors hover:bg-amber-500/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
+          Retry
+        </button>
+      </div>
+    );
   }
 
   if (!data) {

@@ -7,6 +7,7 @@ import {
   Divider,
   Group,
   Kbd,
+  Menu,
   Text,
 } from '@mantine/core';
 import {
@@ -26,6 +27,7 @@ import {
   GitBranch,
   LayoutDashboard,
   ListOrdered,
+  MoreHorizontal,
   Scale,
   ShieldAlert,
   type LucideIcon,
@@ -43,6 +45,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useIdentity } from '@/hooks/useIdentity';
 import type { SearchCollection } from '@/lib/api';
 import { NAVIGATION_VIEWS, type ViewIcon } from '@/lib/views';
+import { cn } from '@/lib/utils';
 
 const CreateTaskDialog = lazy(() =>
   import('@/components/task/CreateTaskDialog').then((mod) => ({
@@ -96,6 +99,34 @@ const VIEW_ICONS: Record<ViewIcon, LucideIcon> = {
   Workflow,
 };
 
+const PRIMARY_NAVIGATION_VIEW_IDS = new Set<string>([
+  'activity',
+  'backlog',
+  'archive',
+  'workflows',
+]);
+
+const PRIMARY_NAVIGATION_VIEWS = NAVIGATION_VIEWS.filter((item) =>
+  PRIMARY_NAVIGATION_VIEW_IDS.has(item.view)
+);
+
+type NavigationItem = (typeof NAVIGATION_VIEWS)[number];
+
+function VeritasMark({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        'relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg border border-primary/30 bg-primary/15 text-primary shadow-sm',
+        className
+      )}
+      aria-hidden="true"
+    >
+      <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_45%)]" />
+      <Scale className="relative h-[18px] w-[18px]" strokeWidth={2.25} />
+    </span>
+  );
+}
+
 export function Header() {
   const [createOpen, setCreateOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -114,6 +145,14 @@ export function Header() {
   const { hasPermission } = useIdentity();
   const canCreateTask = hasPermission('task:write');
   const canOpenSettings = hasPermission('settings:read') || hasPermission('admin:manage');
+  const isDesktopClient =
+    typeof window !== 'undefined' &&
+    Boolean((window as Window & { veritasDesktop?: unknown }).veritasDesktop);
+
+  const toggleView = useCallback(
+    (nextView: NavigationItem['view']) => setView(view === nextView ? 'board' : nextView),
+    [setView, view]
+  );
 
   const markPanelLoaded = useCallback((panel: LazyPanel) => {
     setLoadedPanels((current) => {
@@ -170,6 +209,61 @@ export function Header() {
     setSettingsOpen(true);
   }, [markPanelLoaded]);
 
+  const renderNavigationAction = (item: NavigationItem) => {
+    const Icon = VIEW_ICONS[item.icon];
+    const isBacklog = item.view === 'backlog';
+
+    return (
+      <ActionIcon
+        key={item.view}
+        variant={view === item.view ? 'light' : 'subtle'}
+        color={view === item.view ? 'veritas' : 'gray'}
+        size={32}
+        onClick={() => toggleView(item.view)}
+        aria-label={item.label}
+        aria-pressed={view === item.view}
+        title={item.title ?? item.label}
+        className={isBacklog ? 'relative shrink-0' : 'shrink-0'}
+      >
+        <Icon className="h-4 w-4" aria-hidden="true" />
+        {isBacklog && backlogCount > 0 && (
+          <Badge
+            variant="light"
+            color="gray"
+            size="xs"
+            px={0}
+            className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full text-[10px]"
+          >
+            {backlogCount > 99 ? '99+' : backlogCount}
+          </Badge>
+        )}
+      </ActionIcon>
+    );
+  };
+
+  const renderNavigationMenuItem = (item: NavigationItem) => {
+    const Icon = VIEW_ICONS[item.icon];
+    const isBacklog = item.view === 'backlog';
+
+    return (
+      <Menu.Item
+        key={item.view}
+        leftSection={<Icon className="h-4 w-4" aria-hidden="true" />}
+        rightSection={
+          isBacklog && backlogCount > 0 ? (
+            <Badge variant="light" color="gray" size="xs">
+              {backlogCount > 99 ? '99+' : backlogCount}
+            </Badge>
+          ) : undefined
+        }
+        onClick={() => toggleView(item.view)}
+        aria-current={view === item.view ? 'page' : undefined}
+      >
+        {item.title ?? item.label}
+      </Menu.Item>
+    );
+  };
+
   useEffect(() => {
     const handleOpenSettings = (event: Event) => {
       const section = (event as CustomEvent<{ section?: string }>).detail?.section;
@@ -200,39 +294,56 @@ export function Header() {
       className="sticky top-0 z-50 border-b border-border bg-card"
       role="banner"
     >
-      <Container fluid px="md">
+      <Container fluid px={{ base: 'xs', sm: 'md' }}>
         <Group
           component="nav"
           aria-label="Main navigation"
-          h={56}
+          h={58}
           justify="space-between"
           wrap="nowrap"
+          className="min-w-0"
         >
-          <Group gap="md" wrap="nowrap" miw={0}>
+          <Group
+            gap="sm"
+            wrap="nowrap"
+            miw={0}
+            className={cn('min-w-0 flex-1', isDesktopClient && 'pl-[4.75rem]')}
+          >
             <Box
               component="button"
               type="button"
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+              className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80"
               onClick={() => window.location.reload()}
               aria-label="Refresh page"
               title="Refresh page"
             >
-              <Scale className="h-5 w-5 text-primary" aria-hidden="true" />
-              <Text component="h1" size="lg" fw={650} lh={1} m={0}>
-                Veritas Kanban
+              <VeritasMark />
+              <Text component="h1" size="sm" fw={700} lh={1.1} m={0} className="hidden sm:block">
+                <span className="block">Veritas</span>
+                <span className="block text-xs font-medium text-muted-foreground">Kanban</span>
               </Text>
             </Box>
-            <Divider orientation="vertical" className="h-4 border-border" aria-hidden="true" />
+            <Divider
+              orientation="vertical"
+              className="hidden h-5 border-border sm:block"
+              aria-hidden="true"
+            />
             <WorkspaceSwitcher />
             <Divider
               orientation="vertical"
-              className="hidden h-4 border-border md:block"
+              className="hidden h-5 border-border lg:block"
               aria-hidden="true"
             />
             <WebSocketIndicator />
           </Group>
 
-          <Group gap="xs" wrap="wrap" role="toolbar" aria-label="Board actions" className="min-w-0">
+          <Group
+            gap={6}
+            wrap="nowrap"
+            role="toolbar"
+            aria-label="Board actions"
+            className="min-w-0 shrink-0"
+          >
             <Button
               variant="filled"
               size="sm"
@@ -240,40 +351,30 @@ export function Header() {
               onClick={openCreateDialog}
               disabled={!canCreateTask}
               title={canCreateTask ? 'New Task' : 'Task write permission required'}
+              className="shrink-0"
             >
               New Task
             </Button>
-            {NAVIGATION_VIEWS.map((item) => {
-              const Icon = VIEW_ICONS[item.icon];
-              const isBacklog = item.view === 'backlog';
-
-              return (
+            <Group gap={4} wrap="nowrap" className="hidden xl:flex">
+              {PRIMARY_NAVIGATION_VIEWS.map(renderNavigationAction)}
+            </Group>
+            <Menu position="bottom-end" shadow="md" withinPortal>
+              <Menu.Target>
                 <ActionIcon
-                  key={item.view}
-                  variant={view === item.view ? 'light' : 'subtle'}
-                  color={view === item.view ? 'veritas' : 'gray'}
+                  variant="subtle"
+                  color="gray"
                   size={32}
-                  onClick={() => setView(view === item.view ? 'board' : item.view)}
-                  aria-label={item.label}
-                  aria-pressed={view === item.view}
-                  title={item.title ?? item.label}
-                  className={isBacklog ? 'relative' : undefined}
+                  aria-label="More views"
+                  title="More views"
                 >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  {isBacklog && backlogCount > 0 && (
-                    <Badge
-                      variant="light"
-                      color="gray"
-                      size="xs"
-                      px={0}
-                      className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full text-[10px]"
-                    >
-                      {backlogCount > 99 ? '99+' : backlogCount}
-                    </Badge>
-                  )}
+                  <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                 </ActionIcon>
-              );
-            })}
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Label>Views</Menu.Label>
+                {NAVIGATION_VIEWS.map(renderNavigationMenuItem)}
+              </Menu.Dropdown>
+            </Menu>
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -333,7 +434,7 @@ export function Header() {
               }
               aria-label="Command palette"
               title="Command palette (⌘K)"
-              className="gap-1.5 text-muted-foreground"
+              className="hidden gap-1.5 text-muted-foreground lg:inline-flex"
             >
               <Kbd className="hidden h-5 items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] sm:inline-flex">
                 ⌘K

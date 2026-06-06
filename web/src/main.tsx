@@ -8,6 +8,14 @@ import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import './globals.css';
 
+const isDesktopClient =
+  typeof window !== 'undefined' &&
+  Boolean((window as Window & { veritasDesktop?: unknown }).veritasDesktop);
+
+if (typeof document !== 'undefined' && isDesktopClient) {
+  document.documentElement.dataset.client = 'desktop';
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -27,6 +35,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
-void registerPwaServiceWorker().catch((error) => {
+void registerPwaServiceWorker({
+  enabled: !isDesktopClient && (import.meta.env.PROD || import.meta.env.VITE_ENABLE_PWA === 'true'),
+  unregisterWhenDisabled: isDesktopClient,
+}).catch((error) => {
   console.warn('[PWA] Service worker registration failed:', error);
 });

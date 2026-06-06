@@ -224,8 +224,10 @@ describe('KanbanBoard', () => {
   it('shows error message when fetching fails', () => {
     mockUseTasks = () => ({ data: undefined, isLoading: false, error: new Error('Network error') });
     renderBoard();
-    expect(screen.getByText('Error loading tasks')).toBeDefined();
+    expect(screen.getByText('Task sync unavailable')).toBeDefined();
     expect(screen.getByText('Network error')).toBeDefined();
+    expect(screen.getByRole('button', { name: /Retry/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Diagnostics/i })).toBeDefined();
   });
 
   it('renders four columns when data is available', () => {

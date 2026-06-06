@@ -466,6 +466,37 @@ describe('Auth Middleware', () => {
       expect(req.auth?.workspaceId).toBe('local');
     });
 
+    it('should authenticate production loopback JWT cookie for packaged desktop local owner', () => {
+      process.env.NODE_ENV = 'production';
+      const secret = 'test-secret-key';
+      const token = jwt.sign({ type: 'session' }, secret, { expiresIn: '1h' });
+
+      vi.mocked(getSecurityConfig).mockReturnValue({
+        authEnabled: true,
+        passwordHash: 'hashed-password',
+      });
+      vi.mocked(getValidJwtSecrets).mockReturnValue([secret]);
+
+      const req = mockRequest({
+        cookies: { veritas_session: token },
+        headers: {
+          host: '127.0.0.1:3001',
+          origin: 'http://127.0.0.1:3001',
+          referer: 'http://127.0.0.1:3001/',
+        },
+        socket: { remoteAddress: '127.0.0.1' } as Request['socket'],
+        ip: '127.0.0.1',
+      }) as AuthenticatedRequest;
+      const res = mockResponse();
+      const next = mockNext();
+
+      authenticate(req, res, next);
+      expect(next).toHaveBeenCalled();
+      expect(req.auth?.role).toBe('admin');
+      expect(req.auth?.authMethod).toBe('session');
+      expect(req.auth?.isLocalhost).toBe(false);
+    });
+
     it('should reject JWT cookie from remote hosts because password sessions are local-owner only', () => {
       const secret = 'test-secret-key';
       const token = jwt.sign({ type: 'session' }, secret, { expiresIn: '1h' });
@@ -1074,6 +1105,34 @@ describe('Auth Middleware', () => {
       expect(result.role).toBe('admin');
       expect(result.authMethod).toBe('session');
       expect(result.actorType).toBe('user');
+    });
+
+    it('should authenticate production loopback WebSocket JWT cookie for packaged desktop local owner', () => {
+      process.env.NODE_ENV = 'production';
+      const secret = 'test-secret-key';
+      const token = jwt.sign({ type: 'session' }, secret, { expiresIn: '1h' });
+
+      vi.mocked(getSecurityConfig).mockReturnValue({
+        authEnabled: true,
+        passwordHash: 'hashed',
+      });
+      vi.mocked(getValidJwtSecrets).mockReturnValue([secret]);
+
+      const req = {
+        headers: {
+          cookie: `veritas_session=${token}; other=val`,
+          host: '127.0.0.1:3001',
+          origin: 'http://127.0.0.1:3001',
+        },
+        url: '/ws',
+        socket: { remoteAddress: '127.0.0.1' },
+      } as unknown as IncomingMessage;
+
+      const result = authenticateWebSocket(req);
+      expect(result.authenticated).toBe(true);
+      expect(result.role).toBe('admin');
+      expect(result.authMethod).toBe('session');
+      expect(result.isLocalhost).toBe(false);
     });
 
     it('should reject WebSocket JWT cookie from remote hosts', () => {
