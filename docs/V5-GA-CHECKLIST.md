@@ -1,13 +1,14 @@
 # Veritas Kanban v5 GA Checklist
 
-This checklist tracks the release evidence that must be true before v5.0 GA.
-The GitHub epic remains the source of scheduling truth; this document is the
-operator checklist for final release verification.
+v5.0.0 stable is published. This checklist remains the operator reference for
+release-gate review, follow-up evidence debt, and future v5 patch candidates.
+The GitHub release and release issues remain the source of scheduling truth.
 
-Use [v5 Release Candidate Evidence Packet](V5-RC-EVIDENCE-PACKET.md) as the
-single evidence target for each release candidate. The packet is the place to
-link command output, workflow runs, signed artifact URLs, checksums,
-notarization proof, load results, mobile/PWA smoke proof, and accepted limits.
+For future candidates, use
+[v5 Release Candidate Evidence Packet](V5-RC-EVIDENCE-PACKET.md) as the single
+evidence target. The packet is the place to link command output, workflow runs,
+signed artifact URLs, checksums, notarization proof, load results, mobile/PWA
+smoke proof, and accepted limits.
 
 ## Required Release Gates
 
@@ -60,8 +61,8 @@ notarization proof, load results, mobile/PWA smoke proof, and accepted limits.
       backup/restore, diagnostics, visual walkthroughs, and known platform
       limits, with ADR 0002 as the remote/server-mode security baseline. The
       dummy-data documentation media set lives in
-      [v5 Visual Tour](V5-VISUAL-TOUR.md); real RC proof still belongs in the
-      evidence packet.
+      [v5 Visual Tour](V5-VISUAL-TOUR.md); candidate proof belongs in the
+      reusable evidence packet or the linked GitHub release issue.
 - [ ] Compatibility and release policy covers desktop/server/API/SQLite/CLI/MCP,
       PWA/mobile, workflow, WebSocket, migration, updater channel, staged
       rollout, stale-client, and rollback behavior. Track the contract in
@@ -71,7 +72,7 @@ notarization proof, load results, mobile/PWA smoke proof, and accepted limits.
       [v5 Upgrade, Install, Remote, And Admin Guide](V5-UPGRADE-INSTALL-ADMIN-GUIDE.md).
 - [ ] Release notes include breaking changes, migration warnings, artifact
       requirements, documentation links, and deferred post-GA backlog. Track the
-      draft in [Draft v5.0 Release Notes](V5-RELEASE-NOTES.md).
+      stable notes in [v5.0 Release Notes](V5-RELEASE-NOTES.md).
 - [ ] `pnpm validate:release` passes after `pnpm build`, including root/shared,
       server, web, CLI, MCP, and desktop package version alignment plus required
       release documentation checks.
@@ -112,7 +113,7 @@ Run this gate before closing #418, #417, or the v5 release checklist issue.
 
 ## Final Release Validation Commands
 
-Run these before publishing stable:
+Run these before any future stable publication or v5 patch promotion:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -132,15 +133,15 @@ After the tag and GitHub release exist:
 pnpm validate:release -- --github --repo BradGroux/veritas-kanban
 ```
 
-Signed stable publishing requires the `Desktop Release` workflow with the Apple
+Signed publishing requires the `Desktop Release` workflow with the Apple
 signing/notarization secrets from [Desktop Release](DESKTOP-RELEASE.md). Record
 the workflow run URL, artifact URLs, and updater metadata URLs in the release
 notes and the [v5 Release Candidate Evidence Packet](V5-RC-EVIDENCE-PACKET.md)
-before marking GA complete.
+for each candidate that needs retained evidence.
 
 ## Final Sign-Off Notes
 
-Each GA release candidate should link the PRs or workflow runs that satisfy the
-gates above from [v5 Release Candidate Evidence Packet](V5-RC-EVIDENCE-PACKET.md).
-If a gate is intentionally deferred, link the follow-up issue and state the
-user-visible risk in release notes.
+Each release candidate should link the PRs or workflow runs that satisfy the
+gates above from [v5 Release Candidate Evidence Packet](V5-RC-EVIDENCE-PACKET.md)
+or the linked GitHub issue. If a gate is intentionally deferred, link the
+follow-up issue and state the user-visible risk in release notes.

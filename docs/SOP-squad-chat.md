@@ -195,5 +195,5 @@ curl -s -X POST http://localhost:3001/api/chat/squad \
 
 - [docs/features/squad-chat.md](features/squad-chat.md) — Feature deep-dive
 - [docs/SQUAD-CHAT-PROTOCOL.md](SQUAD-CHAT-PROTOCOL.md) — Detailed narration rules and examples
-- [AGENTS.md — Squad Chat section](../AGENTS.md#squad-chat-narrate-your-own-work-mandatory) — Workspace-level narration rules
+- [CLAUDE.md — Agent Guidelines](../CLAUDE.md) — Repository-level agent guidelines
 - [SOP-agent-task-workflow.md](SOP-agent-task-workflow.md) — How squad chat fits into the full task workflow

@@ -3,8 +3,9 @@
 Review date: 2026-06-03
 
 This note records the v5.0 performance/load evidence for SQLite-backed local
-mode and trusted-host remote/mobile access. Release-candidate evidence belongs
-in [v5 Release Candidate Evidence Packet](../V5-RC-EVIDENCE-PACKET.md).
+mode and trusted-host remote/mobile access. Future candidate or retained
+follow-up evidence belongs in
+[v5 Release Candidate Evidence Packet](../V5-RC-EVIDENCE-PACKET.md).
 
 ## Target Dataset
 
@@ -114,8 +115,9 @@ HTTP errors below 1 percent plus WebSocket connection errors below 5 percent.
 - `v5-remote-mix` validates API, dashboard, search, workflow, chat, and
   WebSocket server behavior. It does not measure native mobile browser rendering
   performance.
-- Scheduled k6 runs use generated seed data. Before GA, attach the workflow
-  artifacts from a `load_profile=full` run against the release candidate to
+- Scheduled k6 runs use generated seed data. For future candidates or retained
+  release evidence, attach the workflow artifacts from a `load_profile=full`
+  run against the candidate to
   [v5 Release Candidate Evidence Packet](../V5-RC-EVIDENCE-PACKET.md).
 - Large-team or SaaS-style deployments need follow-up load profiles with higher
   seed counts and longer soak windows.

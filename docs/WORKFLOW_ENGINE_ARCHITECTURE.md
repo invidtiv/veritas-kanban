@@ -1355,7 +1355,7 @@ steps:
       - Angle 1: ...
 
       ## Sources
-      1. [Source Title](URL)
+      1. [Source Title](https://example.com/source)
       2. ...
       ```
 

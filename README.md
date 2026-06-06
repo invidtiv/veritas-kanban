@@ -91,11 +91,11 @@ When the board is working, use [Setup Paths](docs/SETUP-PATHS.md) to choose the 
 - [API Reference](docs/API-REFERENCE.md) — Auth, endpoints, request/response examples, WebSocket, common workflows.
 - [v5 Identity and RBAC Model](docs/IDENTITY-RBAC.md) — users, workspaces, memberships, roles, agent tokens, permission matrix, migration, and UX flows.
 - [v5 Mantine Migration Plan](docs/UI-MANTINE-MIGRATION.md) — component inventory, migration order, retained custom surfaces, rollback strategy, and cleanup gates.
-- [v5 GA Checklist](docs/V5-GA-CHECKLIST.md) — final release gates, Mantine visual/accessibility cleanup evidence, bundle checks, and holdout tracking.
-- [v5 Visual Tour](docs/V5-VISUAL-TOUR.md) — current dummy-data screenshots and GIFs for the v5 board, task work view, Maintenance Center, and mobile/PWA shell.
+- [v5 GA Checklist](docs/V5-GA-CHECKLIST.md) — release-gate reference, follow-up evidence tracking, Mantine visual/accessibility cleanup evidence, and bundle checks.
+- [v5 Visual Tour](docs/V5-VISUAL-TOUR.md) — release-safe dummy screenshots and GIFs for the v5 board, task work view, Maintenance Center, and mobile/PWA shell.
 - [v5 Upgrade, Install, Remote, And Admin Guide](docs/V5-UPGRADE-INSTALL-ADMIN-GUIDE.md) — fresh install, v4-to-v5 upgrade, desktop setup, remote/server, mobile/PWA, admin, backup, and diagnostics paths.
 - [v5 Compatibility And Release Policy](docs/V5-COMPATIBILITY-AND-RELEASE-POLICY.md) — supported version combinations, update channels, stale-client behavior, rollback limits, and release validation.
-- [v5 Release Notes Draft](docs/V5-RELEASE-NOTES.md) — breaking changes, migration warnings, release artifact checklist, and deferred post-GA backlog.
+- [v5 Release Notes](docs/V5-RELEASE-NOTES.md) — breaking changes, migration warnings, published v5.0.0 artifacts, and deferred post-GA backlog.
 - [v5 Desktop Architecture ADR](docs/architecture/ADR-0001-v5-desktop-architecture.md) — shell decision, native/server boundaries, connection modes, lifecycle, packaging, and security model.
 - [Post-GA Desktop Agent Workbench Spec](docs/DESKTOP-AGENT-WORKBENCH.md) — desktop workbench UX, run controls, approvals, evidence, native affordances, and safety coverage.
 - [Post-GA Native Mobile Offline ADR](docs/architecture/ADR-0003-post-ga-native-mobile-offline.md) — native mobile authority model, offline queue semantics, conflict handling, and security review.
@@ -767,7 +767,7 @@ pnpm validate:release # Release readiness checks
 | Document                                       | Description                                  |
 | ---------------------------------------------- | -------------------------------------------- |
 | [Features](docs/FEATURES.md)                   | Complete feature reference                   |
-| [v5 Visual Tour](docs/V5-VISUAL-TOUR.md)       | Current dummy-data screenshots and GIFs      |
+| [v5 Visual Tour](docs/V5-VISUAL-TOUR.md)       | Release-safe dummy screenshots and GIFs      |
 | [API Reference](docs/API-REFERENCE.md)         | Auth, endpoints, WebSocket docs              |
 | [CLI Guide](docs/CLI-GUIDE.md)                 | Comprehensive CLI usage guide                |
 | [Self-Hosting Guide](docs/guides/SELF_HOST.md) | Production deployment, reverse proxy, Docker |
@@ -786,7 +786,7 @@ pnpm validate:release # Release readiness checks
 <details>
 <summary><strong>Click to expand v5 screenshots and GIFs</strong></summary>
 
-These captures use dummy release-candidate content against the current v5 app surfaces. See the [v5 Visual Tour](docs/V5-VISUAL-TOUR.md) for the full set and capture notes.
+These captures use release-safe dummy content against the current v5 app surfaces. See the [v5 Visual Tour](docs/V5-VISUAL-TOUR.md) for the full set and capture notes.
 
 ### Desktop
 
