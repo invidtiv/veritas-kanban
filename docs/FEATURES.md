@@ -476,6 +476,10 @@ Automated staleness detection for project documentation with real-time tracking 
 
 Real-time agent-to-agent communication channel for multi-agent collaboration. Shipped in v2.0. Optional for first-run setup.
 
+| Threaded Squad Chat coordination                                                 | Human reply adapter settings                                                          |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| ![v5 Squad Chat coordination](assets/v5/v5-squad-chat-threaded-coordination.png) | ![v5 Squad Chat human reply adapter](assets/v5/v5-squad-chat-human-reply-adapter.png) |
+
 - **WebSocket-powered chat** — Messages broadcast in real time to all connected clients
 - **Resizable Workbench panel** — Board Chat and Squad Chat share the bottom Workbench surface, which can be collapsed or resized vertically instead of floating off-screen
 - **Local shared log** — Squad Chat stores and streams messages; it does not wake or reply through an external agent unless a webhook, OpenClaw Direct path, or orchestrator is configured
