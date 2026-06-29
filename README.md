@@ -93,7 +93,7 @@ When the board is working, use [Setup Paths](docs/SETUP-PATHS.md) to choose the 
 - [v5 Identity and RBAC Model](docs/IDENTITY-RBAC.md) — users, workspaces, memberships, roles, agent tokens, permission matrix, migration, and UX flows.
 - [v5 Mantine Migration Plan](docs/UI-MANTINE-MIGRATION.md) — component inventory, migration order, retained custom surfaces, rollback strategy, and cleanup gates.
 - [v5 GA Checklist](docs/V5-GA-CHECKLIST.md) — release-gate reference, follow-up evidence tracking, Mantine visual/accessibility cleanup evidence, and bundle checks.
-- [v5 Visual Tour](docs/V5-VISUAL-TOUR.md) — release-safe dummy screenshots and GIFs for the v5 desktop shell, resizable workbench, agent providers, task work view, Maintenance Center, and mobile/PWA shell.
+- [v5 Visual Tour](docs/V5-VISUAL-TOUR.md) — release-safe dummy screenshots and GIFs for the v5 desktop shell, resizable workbench, Squad Chat coordination, agent providers, task work view, Maintenance Center, and mobile/PWA shell.
 - [v5 Upgrade, Install, Remote, And Admin Guide](docs/V5-UPGRADE-INSTALL-ADMIN-GUIDE.md) — fresh install, v4-to-v5 upgrade, desktop setup, remote/server, mobile/PWA, admin, backup, and diagnostics paths.
 - [v5 Compatibility And Release Policy](docs/V5-COMPATIBILITY-AND-RELEASE-POLICY.md) — supported version combinations, update channels, stale-client behavior, rollback limits, and release validation.
 - [v5 Release Notes](docs/V5-RELEASE-NOTES.md) — current source release notes, breaking changes, migration warnings, published v5 artifacts, and deferred post-GA backlog.
@@ -153,6 +153,8 @@ Spawn autonomous coding agents on tasks when you choose to connect an agent runn
 ![Agent orchestration board](docs/assets/v5/v5-board-overview.png)
 
 ![Resizable Workbench panel](docs/assets/v5/v5-workbench-panel.png)
+
+![Squad Chat threaded coordination](docs/assets/v5/v5-squad-chat-threaded-coordination.png)
 
 ### 🧭 Veritas Cutover + Hermes Support
 
@@ -816,6 +818,10 @@ These captures use release-safe dummy content against the current v5 app surface
 | Workbench panel                                              | Agent provider settings                                      |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | ![v5 Workbench panel](docs/assets/v5/v5-workbench-panel.png) | ![v5 agent providers](docs/assets/v5/v5-agent-providers.png) |
+
+| Squad Chat coordination                                                               | Human reply adapter settings                                                               |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| ![v5 Squad Chat coordination](docs/assets/v5/v5-squad-chat-threaded-coordination.png) | ![v5 Squad Chat human reply adapter](docs/assets/v5/v5-squad-chat-human-reply-adapter.png) |
 
 | Task work view                                             | Maintenance Center                                                 |
 | ---------------------------------------------------------- | ------------------------------------------------------------------ |

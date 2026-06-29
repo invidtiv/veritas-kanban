@@ -7,17 +7,19 @@ tokens, or customer data.
 
 ## Capture Set
 
-| Asset                  | Path                                       | Notes                                                                           |
-| ---------------------- | ------------------------------------------ | ------------------------------------------------------------------------------- |
-| Board to workflow tour | `docs/assets/v5/v5-board-to-workflow.gif`  | Desktop board, task detail, Workflows, and More Views flow.                     |
-| Board overview         | `docs/assets/v5/v5-board-overview.png`     | Current dark-mode board with v5 dummy tasks and live agent registry data.       |
-| Desktop shell          | `docs/assets/v5/v5-desktop-shell.png`      | Native-app-style shell with toolbar, workspace selector, and health rail.       |
-| Workbench panel        | `docs/assets/v5/v5-workbench-panel.png`    | Resizable bottom Workbench with Board Chat and Squad Chat tabs.                 |
-| Agent providers        | `docs/assets/v5/v5-agent-providers.png`    | Settings -> Agents with Codex default, Ollama Local/Cloud, and LM Studio Local. |
-| Task work view         | `docs/assets/v5/v5-task-work-view.png`     | Task detail drawer with dummy v5 release smoke content.                         |
-| Maintenance Center     | `docs/assets/v5/v5-maintenance-center.png` | Operator diagnostics, storage, cleanup preview, and redacted evidence surfaces. |
-| Mobile/PWA board       | `docs/assets/v5/v5-mobile-pwa-board.png`   | Phone-width board shell with mobile navigation.                                 |
-| Mobile/PWA flow        | `docs/assets/v5/v5-mobile-pwa-flow.gif`    | Mobile board, Runs, and Settings navigation flow.                               |
+| Asset                   | Path                                                     | Notes                                                                                         |
+| ----------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Board to workflow tour  | `docs/assets/v5/v5-board-to-workflow.gif`                | Desktop board, task detail, Workflows, and More Views flow.                                   |
+| Board overview          | `docs/assets/v5/v5-board-overview.png`                   | Current dark-mode board with v5 dummy tasks and live agent registry data.                     |
+| Desktop shell           | `docs/assets/v5/v5-desktop-shell.png`                    | Native-app-style shell with toolbar, workspace selector, and health rail.                     |
+| Workbench panel         | `docs/assets/v5/v5-workbench-panel.png`                  | Resizable bottom Workbench with Board Chat and Squad Chat tabs.                               |
+| Squad Chat coordination | `docs/assets/v5/v5-squad-chat-threaded-coordination.png` | Workbench Squad Chat with search, unread count, pinned decisions, acks, and threaded replies. |
+| Squad Chat adapters     | `docs/assets/v5/v5-squad-chat-human-reply-adapter.png`   | Notifications settings with communication health and human reply adapter posture.             |
+| Agent providers         | `docs/assets/v5/v5-agent-providers.png`                  | Settings -> Agents with Codex default, Ollama Local/Cloud, and LM Studio Local.               |
+| Task work view          | `docs/assets/v5/v5-task-work-view.png`                   | Task detail drawer with dummy v5 release smoke content.                                       |
+| Maintenance Center      | `docs/assets/v5/v5-maintenance-center.png`               | Operator diagnostics, storage, cleanup preview, and redacted evidence surfaces.               |
+| Mobile/PWA board        | `docs/assets/v5/v5-mobile-pwa-board.png`                 | Phone-width board shell with mobile navigation.                                               |
+| Mobile/PWA flow         | `docs/assets/v5/v5-mobile-pwa-flow.gif`                  | Mobile board, Runs, and Settings navigation flow.                                             |
 
 ## Desktop Board And Workflow
 
@@ -38,6 +40,20 @@ data, but it uses the real web app and a throwaway local server.
 The Workbench capture shows the bottom panel as a first-class app surface
 instead of a floating off-screen chat control. Board Chat and Squad Chat share
 the panel, and the panel can be collapsed or resized vertically.
+
+![v5 Squad Chat threaded coordination](assets/v5/v5-squad-chat-threaded-coordination.png)
+
+The Squad Chat capture uses dummy agent and human messages to show the current
+coordination controls: threaded replies, unread count, search, pinned decisions,
+acknowledgements, task/run chips, model attribution, and system lifecycle
+messages.
+
+![v5 Squad Chat human reply adapter](assets/v5/v5-squad-chat-human-reply-adapter.png)
+
+The human reply adapter capture shows the Notifications settings posture for
+local Squad Chat, external webhook delivery, inbound wake/replies, payload
+redaction, and the Microsoft Teams adapter fields. All identifiers are dummy
+values.
 
 ## Agent Provider Settings
 

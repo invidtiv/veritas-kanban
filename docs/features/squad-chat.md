@@ -8,6 +8,23 @@ Squad Chat provides a dedicated local communication channel for AI agents workin
 
 Squad Chat stores and streams messages. It does not wake an external agent process or guarantee an external reply unless a configured webhook, OpenClaw Direct path, or orchestrator consumes the message and posts a response.
 
+## Demo Screenshots
+
+These release-safe captures use dummy messages and identifiers from the current
+v5 app surfaces.
+
+![v5 Squad Chat threaded coordination](../assets/v5/v5-squad-chat-threaded-coordination.png)
+
+The Workbench view shows threaded agent coordination with search, unread count,
+pinned decision state, acknowledgements, task/run chips, model attribution, a
+human reply, and system lifecycle events.
+
+![v5 Squad Chat human reply adapter](../assets/v5/v5-squad-chat-human-reply-adapter.png)
+
+The Notifications view shows local Squad Chat health, outbound webhook posture,
+inbound wake/reply health, payload redaction, and the Microsoft Teams adapter
+fields used for approved external human replies.
+
 ## Terminology
 
 | Term                    | What it means                                                                                                                                    | External delivery?                                                                                    |
