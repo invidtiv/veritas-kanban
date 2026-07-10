@@ -9,7 +9,15 @@
  */
 
 import path from 'path';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from '../storage/fs-helpers.js';
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  mkdir,
+  writeFile,
+  rename,
+} from '../storage/fs-helpers.js';
 import { createLogger } from '../lib/logger.js';
 import { getRuntimeDir } from '../utils/paths.js';
 
@@ -160,6 +168,18 @@ class AgentRegistryService {
   private staleCheckInterval: ReturnType<typeof setInterval> | null = null;
   private lastBusyAtByAgent: Map<string, number> = new Map();
   private taskSyncFlapGuardMs: number;
+
+  // ── Debounced-persist state (issue #783) ──────────────────────────────────
+  /** Timer handle for the coalesced write; cleared on flush/dispose. */
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Promise chain that all async writes are serialized through.
+   * New writes are appended to this chain so overlapping writes never
+   * race over the same *.tmp path (fixes cross-write race noted in code review).
+   */
+  private persistChain: Promise<void> = Promise.resolve();
+  /** Debounce window: heartbeats within this window share a single write. */
+  private static readonly PERSIST_DEBOUNCE_MS = 2_000;
 
   constructor() {
     this.dataDir = getRuntimeDir();
@@ -570,34 +590,76 @@ class AgentRegistryService {
   }
 
   /**
-   * Persist registry to disk.
+   * Schedule a coalesced async persist within PERSIST_DEBOUNCE_MS.
+   * Multiple calls within the window share a single write (issue #783).
    */
   private persist(): void {
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+    }
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      this.enqueueWrite();
+    }, AgentRegistryService.PERSIST_DEBOUNCE_MS);
+  }
+
+  /**
+   * Append one write to the serialized promise chain.
+   * All writes go through this chain, so concurrent writes never race
+   * over the same *.tmp path.
+   */
+  private enqueueWrite(): void {
+    this.persistChain = this.persistChain
+      .then(() => this.writeToDisk())
+      .catch((err) => {
+        log.warn({ err }, 'Failed to persist agent registry (chain)');
+      });
+  }
+
+  /**
+   * Flush any pending write immediately (call during shutdown).
+   * Awaitable so callers can ensure durability before process exit.
+   */
+  async flushPersist(): Promise<void> {
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+      this.enqueueWrite();
+    }
+    await this.persistChain;
+  }
+
+  /**
+   * Atomically write the registry to disk (write tmp → rename).
+   * Does not block the event loop.
+   */
+  private async writeToDisk(): Promise<void> {
     try {
       const dir = path.dirname(this.filePath);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
+      await mkdir(dir, { recursive: true });
 
       const data: AgentRegistryData = {
         agents: Object.fromEntries(this.agents),
         lastUpdated: new Date().toISOString(),
       };
 
-      writeFileSync(this.filePath, JSON.stringify(data, null, 2), 'utf-8');
+      const tmp = `${this.filePath}.tmp`;
+      await writeFile(tmp, JSON.stringify(data, null, 2), 'utf-8');
+      await rename(tmp, this.filePath);
     } catch (err) {
       log.warn({ err }, 'Failed to persist agent registry');
     }
   }
 
   /**
-   * Clean up resources.
+   * Clean up resources. Awaits the full write chain before returning.
    */
-  dispose(): void {
+  async dispose(): Promise<void> {
     if (this.staleCheckInterval) {
       clearInterval(this.staleCheckInterval);
       this.staleCheckInterval = null;
     }
+    await this.flushPersist();
   }
 }
 
@@ -611,9 +673,9 @@ export function getAgentRegistryService(): AgentRegistryService {
   return instance;
 }
 
-export function disposeAgentRegistryService(): void {
+export async function disposeAgentRegistryService(): Promise<void> {
   if (instance) {
-    instance.dispose();
+    await instance.dispose();
     instance = null;
   }
 }
