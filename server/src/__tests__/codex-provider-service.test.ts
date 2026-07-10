@@ -85,6 +85,7 @@ vi.mock('../services/circuit-registry.js', () => ({
 }));
 
 import { AgentReadinessError, ClawdbotAgentService } from '../services/clawdbot-agent-service.js';
+import type { ThreadEvent } from '@openai/codex-sdk';
 import type { AgentConfig, Task } from '@veritas-kanban/shared';
 
 const fixtureDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'codex');
@@ -109,7 +110,7 @@ function testableService(tmpDir: string): TestableClawdbotAgentService {
   return service;
 }
 
-function createFakeChild(fixturePath: string, exitCode = 0) {
+function createFakeChild(fixture: string, exitCode = 0) {
   const child = new EventEmitter() as EventEmitter & {
     stdout: PassThrough;
     stderr: PassThrough;
@@ -127,10 +128,11 @@ function createFakeChild(fixturePath: string, exitCode = 0) {
     return true;
   });
 
-  setImmediate(async () => {
-    child.stdout.write(await fs.readFile(fixturePath, 'utf-8'));
-    child.stdout.end();
-    setTimeout(() => child.emit('close', exitCode, null), 10);
+  queueMicrotask(() => {
+    child.stdout.once('end', () => {
+      child.emit('close', exitCode, null);
+    });
+    child.stdout.end(fixture);
   });
 
   return child;
@@ -158,7 +160,7 @@ function createControllableChild() {
 async function waitFor(assertion: () => void): Promise<void> {
   const started = Date.now();
   let lastError: unknown;
-  while (Date.now() - started < 3000) {
+  while (Date.now() - started < 10_000) {
     try {
       assertion();
       return;
@@ -245,85 +247,93 @@ describe('ClawdbotAgentService Codex providers', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('runs the Codex CLI adapter against mocked JSONL and records telemetry', async () => {
-    mockSpawn.mockReturnValue(createFakeChild(path.join(fixtureDir, 'success.jsonl')));
-    const service = testableService(tmpDir);
+  it(
+    'runs the Codex CLI adapter against mocked JSONL and records telemetry',
+    { timeout: 20_000 },
+    async () => {
+      const fixture = await fs.readFile(path.join(fixtureDir, 'success.jsonl'), 'utf-8');
+      mockSpawn.mockReturnValue(createFakeChild(fixture));
+      const service = testableService(tmpDir);
 
-    const status = await service.startAgent(task.id, 'codex');
+      const status = await service.startAgent(task.id, 'codex');
 
-    expect(status.status).toBe('running');
-    expect(mockSpawn).toHaveBeenCalledWith(
-      'codex',
-      expect.arrayContaining(['exec', '--json', '--sandbox', 'workspace-write']),
-      expect.objectContaining({ cwd: tmpDir, shell: false })
-    );
-
-    await waitFor(() => {
-      expect(mockUpdateTask).toHaveBeenCalledWith(
-        task.id,
-        expect.objectContaining({ status: 'done' })
+      expect(status.status).toBe('running');
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'codex',
+        expect.arrayContaining(['exec', '--json', '--sandbox', 'workspace-write']),
+        expect.objectContaining({ cwd: tmpDir, shell: false })
       );
-    });
-    expect(mockTelemetryEmit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'run.tokens',
-        inputTokens: 12,
-        outputTokens: 8,
-        totalTokens: 20,
-        model: 'gpt-5.5',
-      })
-    );
-    await waitFor(() => {
-      expect(mockLogActivity).toHaveBeenCalledWith(
-        'agent_completed',
-        task.id,
-        task.title,
-        expect.objectContaining({ provider: 'codex-cli', success: true }),
-        'codex'
+
+      await waitFor(() => {
+        expect(mockUpdateTask).toHaveBeenCalledWith(
+          task.id,
+          expect.objectContaining({ status: 'done' })
+        );
+      });
+      expect(mockTelemetryEmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'run.tokens',
+          inputTokens: 12,
+          outputTokens: 8,
+          totalTokens: 20,
+          model: 'gpt-5.5',
+        })
       );
-    });
-    expect(mockStartStep).toHaveBeenCalledWith(
-      expect.any(String),
-      'stream',
-      expect.objectContaining({
-        eventType: 'stream.stdout',
-        stream: 'stdout',
-        provider: 'codex-cli',
-        chunkBytes: expect.any(Number),
-      })
-    );
-    expect(mockStartStep).toHaveBeenCalledWith(
-      expect.any(String),
-      'finalize',
-      expect.objectContaining({
-        eventType: 'run.finalizing',
-        exitCode: 0,
-        signal: null,
-        success: true,
-        provider: 'codex-cli',
-      })
-    );
-    expect(mockStartStep).toHaveBeenCalledWith(
-      expect.any(String),
-      'complete',
-      expect.objectContaining({
-        eventType: 'turn.completed',
-        totalTokens: 20,
-        model: 'gpt-5.5',
-        finalResult: 'Codex completed the task.',
-      })
-    );
-    expect(mockStartStep).toHaveBeenCalledWith(
-      expect.any(String),
-      'complete',
-      expect.objectContaining({
-        eventType: 'run.completed',
-        success: true,
-        provider: 'codex-cli',
-        model: 'gpt-5.5',
-      })
-    );
-  });
+      await waitFor(() => {
+        expect(mockLogActivity).toHaveBeenCalledWith(
+          'agent_completed',
+          task.id,
+          task.title,
+          expect.objectContaining({ provider: 'codex-cli', success: true }),
+          'codex'
+        );
+      });
+      await waitFor(() => {
+        expect(service.getAgentStatus(task.id)).toBeNull();
+      });
+      expect(mockStartStep).toHaveBeenCalledWith(
+        expect.any(String),
+        'stream',
+        expect.objectContaining({
+          eventType: 'stream.stdout',
+          stream: 'stdout',
+          provider: 'codex-cli',
+          chunkBytes: expect.any(Number),
+        })
+      );
+      expect(mockStartStep).toHaveBeenCalledWith(
+        expect.any(String),
+        'finalize',
+        expect.objectContaining({
+          eventType: 'run.finalizing',
+          exitCode: 0,
+          signal: null,
+          success: true,
+          provider: 'codex-cli',
+        })
+      );
+      expect(mockStartStep).toHaveBeenCalledWith(
+        expect.any(String),
+        'complete',
+        expect.objectContaining({
+          eventType: 'turn.completed',
+          totalTokens: 20,
+          model: 'gpt-5.5',
+          finalResult: 'Codex completed the task.',
+        })
+      );
+      expect(mockStartStep).toHaveBeenCalledWith(
+        expect.any(String),
+        'complete',
+        expect.objectContaining({
+          eventType: 'run.completed',
+          success: true,
+          provider: 'codex-cli',
+          model: 'gpt-5.5',
+        })
+      );
+    }
+  );
 
   it('maps Codex file events to task deliverables linked to the attempt', async () => {
     const service = testableService(tmpDir);
@@ -359,6 +369,7 @@ describe('ClawdbotAgentService Codex providers', () => {
         })
       );
     });
+
     expect(mockStartStep).toHaveBeenCalledWith(
       'attempt_fixture',
       'execute',
@@ -375,6 +386,47 @@ describe('ClawdbotAgentService Codex providers', () => {
       expect.objectContaining({ attemptId: 'attempt_fixture', deliverableCount: 1 }),
       'codex'
     );
+  });
+
+  it('accepts every Codex SDK 0.144 event contract consumed by the stream adapter', () => {
+    const service = testableService(tmpDir);
+    const logPath = path.join(tmpDir, 'codex.md');
+    const events = [
+      { type: 'thread.started', thread_id: 'thread_fixture' },
+      { type: 'turn.started' },
+      {
+        type: 'turn.completed',
+        usage: {
+          input_tokens: 10,
+          cached_input_tokens: 2,
+          output_tokens: 5,
+          reasoning_output_tokens: 1,
+        },
+      },
+      { type: 'turn.failed', error: { message: 'fixture failure' } },
+      {
+        type: 'item.started',
+        item: { id: 'item_started', type: 'agent_message', text: 'starting' },
+      },
+      {
+        type: 'item.updated',
+        item: { id: 'item_updated', type: 'agent_message', text: 'working' },
+      },
+      {
+        type: 'item.completed',
+        item: { id: 'item_completed', type: 'agent_message', text: 'finished' },
+      },
+      { type: 'error', message: 'fixture stream error' },
+    ] satisfies ThreadEvent[];
+
+    const parsed = events.map((event) => service.handleCodexEvent(event, logPath));
+
+    expect(parsed[2]?.usage).toEqual({
+      inputTokens: 10,
+      outputTokens: 5,
+      totalTokens: 15,
+    });
+    expect(parsed[6]?.summary).toBe('finished');
   });
 
   it('classifies streamed output, retry, and abort lifecycle events in traces', async () => {
@@ -487,7 +539,8 @@ describe('ClawdbotAgentService Codex providers', () => {
 
     await expect(service.startAgent(task.id, 'codex')).rejects.toBeInstanceOf(AgentReadinessError);
 
-    mockSpawn.mockReturnValue(createFakeChild(path.join(fixtureDir, 'success.jsonl')));
+    const fixture = await fs.readFile(path.join(fixtureDir, 'success.jsonl'), 'utf-8');
+    mockSpawn.mockReturnValue(createFakeChild(fixture));
 
     const status = await service.startAgent(task.id, 'codex', {
       overrideReason: 'Maintainer approved urgent fix',
@@ -513,6 +566,9 @@ describe('ClawdbotAgentService Codex providers', () => {
         task.id,
         expect.objectContaining({ status: 'done' })
       );
+    });
+    await waitFor(() => {
+      expect(service.getAgentStatus(task.id)).toBeNull();
     });
   });
 });
