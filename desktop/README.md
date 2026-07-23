@@ -42,6 +42,11 @@ can be tested without reusing the default development home.
 - Fresh packaged installs store desktop data below the OS app data directory
   returned by Electron `app.getPath('userData')`, then under
   `profiles/<profile>/workspaces/<workspace>/`.
+- Packaged desktop installs do not automatically import an existing web/source
+  checkout. Use
+  [`docs/WEB-TO-MAC-DESKTOP-MIGRATION.md`](../docs/WEB-TO-MAC-DESKTOP-MIGRATION.md)
+  when moving file-backed `tasks/` and `.veritas-kanban/` data from a repo
+  server into the Mac app's SQLite workspace.
 - Desktop runtime secrets are created through Electron `safeStorage`, which uses
   the OS credential backend on macOS. The encrypted metadata file lives at
   `<appHome>/config/desktop-secrets.json`; plaintext admin/JWT secrets are only
@@ -51,7 +56,9 @@ can be tested without reusing the default development home.
   place for manual rollback.
 - Local development mode disables app auth only for the supervised loopback
   runtime. Packaged mode keeps auth enabled and uses the keychain-backed
-  bootstrap secrets for admin and JWT signing.
+  bootstrap secrets for admin and JWT signing. Local automation that talks to
+  the packaged app must send `X-API-Key` or `Authorization: Bearer` rather than
+  assuming unauthenticated localhost writes.
 
 ## Recovery Notes
 
