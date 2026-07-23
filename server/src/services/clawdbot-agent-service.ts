@@ -64,6 +64,8 @@ import type {
   ProviderRuntimeManifest,
   TaskCommitPolicy,
   TaskEnvelope,
+  HarnessSupportStatus,
+  HarnessSupportTelemetry,
 } from '@veritas-kanban/shared';
 import { createLogger } from '../lib/logger.js';
 import { ConflictError } from '../middleware/error-handler.js';
@@ -86,6 +88,8 @@ import {
   providerRuntimeControls,
 } from './provider-runtime-control-service.js';
 import { resolveTaskCommitPolicy, TaskEnvelopeService } from './task-envelope-service.js';
+import { evaluateHarnessSupportStatus } from './harness-support-service.js';
+import { normalizeHarnessSupportProfile } from './harness-support-profile-registry.js';
 const log = createLogger('clawdbot-agent-service');
 
 const TRACE_SECRET_PATTERNS: Array<[RegExp, string]> = [
@@ -140,6 +144,7 @@ export interface AgentStatus {
   provider?: ExecutableAgentProvider;
   model?: string;
   providerRuntimeManifest: ProviderRuntimeManifest;
+  harnessSupport: HarnessSupportStatus;
   taskEnvelope: TaskEnvelope;
   controls: ProviderRuntimeControlSet;
 }
@@ -198,6 +203,7 @@ interface PendingAgent {
   budgetStopped?: boolean;
   agentProfile?: AgentProfileLaunchMetadata;
   providerRuntimeManifest: ProviderRuntimeManifest;
+  harnessSupport: HarnessSupportStatus;
   taskEnvelope: TaskEnvelope;
   threadId?: string;
   abortController?: AbortController;
@@ -408,8 +414,8 @@ export class ClawdbotAgentService {
             model: profileLaunch.model ?? agentConfig.model,
           }
         : agentConfig;
-    const agentHealth = await this.assertAgentAvailable(agent, profileAgentConfig);
     const provider = this.resolveAgentProvider(profileAgentConfig, agent);
+    const agentHealth = await this.assertAgentAvailable(agent, profileAgentConfig);
     const adapter = this.resolveProviderAdapter(provider);
     const budgetService = getAgentBudgetService();
     const budgetPolicy = budgetService.resolve({
@@ -449,6 +455,11 @@ export class ClawdbotAgentService {
       agentConfig: launchAgentConfig,
       health: agentHealth,
     });
+    const harnessSupport = evaluateHarnessSupportStatus(
+      launchAgentConfig as AgentConfig,
+      agentHealth,
+      providerRuntimeManifest
+    );
     const launchRuntimeCapabilities = new Set<ProviderRuntimeCapabilityId>([
       ...BASELINE_LAUNCH_CAPABILITIES,
       ...(options.requiredRuntimeCapabilities ?? []),
@@ -566,6 +577,7 @@ export class ClawdbotAgentService {
       model: launchAgentConfig?.model,
       agentProfile: profileLaunch?.metadata,
       providerRuntimeManifest,
+      harnessSupport,
       taskEnvelope,
       budget: budgetPolicy
         ? {
@@ -608,6 +620,7 @@ export class ClawdbotAgentService {
       budget: pendingAgents.get(taskId)?.budget,
       agentProfile: profileLaunch?.metadata,
       providerRuntimeManifest,
+      harnessSupport,
       taskEnvelope,
     };
 
@@ -644,6 +657,7 @@ export class ClawdbotAgentService {
       agent,
       model: launchAgentConfig?.model,
       project: task.project,
+      harnessSupport: this.harnessTelemetry(harnessSupport),
     });
 
     try {
@@ -689,6 +703,7 @@ export class ClawdbotAgentService {
         project: task.project,
         error: error.message || `Failed to start ${adapter.label}`,
         stackTrace: error.stack,
+        harnessSupport: this.harnessTelemetry(harnessSupport, 'launch-failed'),
       });
       throw new Error(`Failed to start agent via ${adapter.label}: ${error.message}`, {
         cause: error,
@@ -704,6 +719,7 @@ export class ClawdbotAgentService {
       provider,
       model: launchAgentConfig?.model,
       providerRuntimeManifest,
+      harnessSupport,
       taskEnvelope,
       controls: providerRuntimeControls(providerRuntimeManifest),
     };
@@ -858,6 +874,7 @@ export class ClawdbotAgentService {
           budget: pending.budget,
           agentProfile: pending.agentProfile,
           providerRuntimeManifest: pending.providerRuntimeManifest,
+          harnessSupport: pending.harnessSupport,
           taskEnvelope: pending.taskEnvelope,
         };
         return (pending.preparedCompletion = {
@@ -917,6 +934,10 @@ export class ClawdbotAgentService {
             durationMs,
             success: result.success,
             error: result.error,
+            harnessSupport: this.harnessTelemetry(
+              pending.harnessSupport,
+              result.success ? 'none' : 'run-failed'
+            ),
           }),
       ],
       [
@@ -1173,8 +1194,8 @@ export class ClawdbotAgentService {
     agent: AgentType = agentConfig.type,
     surface: ProviderRuntimeSurface = 'task'
   ): Promise<ProviderRuntimeManifest> {
-    const health = await this.assertAgentAvailable(agent, agentConfig);
     const provider = this.resolveAgentProvider(agentConfig, agent);
+    const health = await this.assertAgentAvailable(agent, agentConfig);
     return this.resolveProviderAdapter(provider, surface).probe({ agentConfig, health });
   }
 
@@ -1215,6 +1236,7 @@ export class ClawdbotAgentService {
     agentConfig: AgentConfig | undefined,
     agent: AgentType
   ): ExecutableAgentProvider {
+    let provider: ExecutableAgentProvider | undefined;
     if (agentConfig?.provider) {
       if (
         agentConfig.provider === 'openclaw' ||
@@ -1222,21 +1244,73 @@ export class ClawdbotAgentService {
         agentConfig.provider === 'codex-cli' ||
         agentConfig.provider === 'hermes-cli'
       ) {
-        return agentConfig.provider;
+        provider = agentConfig.provider;
+      } else {
+        throw new ConflictError(
+          `Provider "${agentConfig.provider}" is configured but has no execution adapter`,
+          {
+            agent,
+            provider: agentConfig.provider,
+            reason: 'No executable provider adapter is registered',
+          }
+        );
       }
+    } else if (
+      agent === 'codex' &&
+      path.basename(agentConfig?.command.trim().split(/\s+/)[0] ?? '') === 'codex'
+    ) {
+      provider = 'codex-cli';
+    } else if (
+      agent === 'hermes' &&
+      path.basename(agentConfig?.command.trim().split(/\s+/)[0] ?? '') === 'hermes'
+    ) {
+      provider = 'hermes-cli';
+    }
+
+    if (!provider) {
+      throw new ConflictError(`Agent "${agent}" has no executable provider adapter`, {
+        agent,
+        command: agentConfig?.command,
+        reason: 'No executable provider adapter is configured',
+        remediation:
+          'Select an agent profile with an explicit executable provider or configure a supported adapter.',
+      });
+    }
+
+    // Adapter identity is derived from system-owned profile definitions at the
+    // dispatch boundary. A caller-provided supportProfile may carry future
+    // certification evidence, but it cannot authorize a different adapter.
+    const profile = agentConfig ? normalizeHarnessSupportProfile(agentConfig) : undefined;
+    if (profile?.supportTier === 'degraded') {
       throw new ConflictError(
-        `Provider "${agentConfig.provider}" is configured but has no execution adapter`,
+        `Harness support profile "${profile.id}" has an unsafe launch configuration`,
         {
           agent,
-          provider: agentConfig.provider,
-          reason: 'No executable provider adapter is registered',
+          profileId: profile.id,
+          adapterId: profile.adapterId,
+          provider,
+          reason: 'Credential material is not allowed in harness launch commands or arguments',
+          remediation: profile.remediation,
         }
       );
     }
-    if (agent === 'codex') return 'codex-cli';
-    if (agentConfig?.command === 'codex') return 'codex-cli';
-    if (agentConfig?.command === 'hermes') return 'hermes-cli';
-    return 'openclaw';
+    if (profile && profile.adapterId !== provider) {
+      throw new ConflictError(
+        `Harness support profile "${profile.id}" cannot dispatch through "${provider}"`,
+        {
+          agent,
+          profileId: profile.id,
+          adapterId: profile.adapterId,
+          provider,
+          reason: profile.adapterId
+            ? 'Harness support profile adapter does not match the configured provider'
+            : 'Harness support profile has no executable adapter',
+          remediation: profile.remediation,
+        }
+      );
+    }
+
+    return provider;
   }
 
   private resolveProviderAdapter(
@@ -2063,6 +2137,21 @@ export class ClawdbotAgentService {
     );
   }
 
+  private harnessTelemetry(
+    status: HarnessSupportStatus,
+    failureClass: HarnessSupportTelemetry['failureClass'] = status.failureClass
+  ): HarnessSupportTelemetry {
+    return {
+      profileId: status.profileId,
+      ...(status.adapterId ? { adapterId: status.adapterId } : {}),
+      ...(status.providerVersion ? { providerVersion: status.providerVersion } : {}),
+      ...(status.providerBuild ? { providerBuild: status.providerBuild } : {}),
+      ...(status.manifestDigest ? { manifestDigest: status.manifestDigest } : {}),
+      supportTier: status.supportTier,
+      failureClass,
+    };
+  }
+
   private recordTraceStep(
     attemptId: string,
     stepType: AgentRunTraceStepType,
@@ -2610,6 +2699,7 @@ export class ClawdbotAgentService {
       provider: pending.provider,
       model: pending.model,
       providerRuntimeManifest: pending.providerRuntimeManifest,
+      harnessSupport: pending.harnessSupport,
       taskEnvelope: pending.taskEnvelope,
       controls: providerRuntimeControls(pending.providerRuntimeManifest),
     };

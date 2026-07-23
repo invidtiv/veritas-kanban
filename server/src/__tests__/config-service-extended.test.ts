@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { ConfigService } from '../services/config-service.js';
+import { normalizeHarnessSupportProfile } from '../services/harness-support-profile-registry.js';
 
 describe('ConfigService', () => {
   let tmpDir: string;
@@ -44,10 +45,33 @@ describe('ConfigService', () => {
       expect(config.agents).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
+            type: 'claude-code',
+            supportProfile: expect.objectContaining({
+              schemaVersion: 'harness-support-profile/v1',
+              id: 'claude-code',
+              transport: 'process-jsonl',
+              supportTier: 'unsupported',
+            }),
+          }),
+          expect.objectContaining({
+            type: 'copilot',
+            supportProfile: expect.objectContaining({
+              schemaVersion: 'harness-support-profile/v1',
+              id: 'github-copilot-cli',
+              transport: 'acp',
+              supportTier: 'unsupported',
+            }),
+          }),
+          expect.objectContaining({
             type: 'codex',
             name: 'OpenAI Codex',
             command: 'codex',
             provider: 'codex-cli',
+            supportProfile: expect.objectContaining({
+              id: 'openai-codex-cli',
+              adapterId: 'codex-cli',
+              transport: 'process-jsonl',
+            }),
             enabled: true,
           }),
           expect.objectContaining({
@@ -88,6 +112,32 @@ describe('ConfigService', () => {
         ])
       );
       expect(config.defaultAgent).toBe('codex');
+
+      const expectedSupport = [
+        ['claude-code', undefined, 'unsupported'],
+        ['amp', undefined, 'unsupported'],
+        ['copilot', undefined, 'unsupported'],
+        ['gemini', undefined, 'unsupported'],
+        ['codex', 'codex-cli', 'configured'],
+        ['codex-sdk', 'codex-sdk', 'configured'],
+        ['codex-cloud', undefined, 'unsupported'],
+        ['hermes', 'hermes-cli', 'configured'],
+        ['ollama-local', undefined, 'unsupported'],
+        ['ollama-cloud', undefined, 'unsupported'],
+        ['lm-studio-local', undefined, 'unsupported'],
+      ] as const;
+      for (const [type, adapterId, supportTier] of expectedSupport) {
+        expect(config.agents.find((agent) => agent.type === type)?.supportProfile).toMatchObject({
+          ...(adapterId ? { adapterId } : {}),
+          supportTier,
+        });
+      }
+
+      const codexProfile = config.agents.find((agent) => agent.type === 'codex')?.supportProfile;
+      expect(codexProfile?.launch.environmentAllowlist).toContain('CODEX_HOME');
+      expect(codexProfile?.launch.credentialAllowlist).toEqual(
+        expect.arrayContaining(['CODEX_API_KEY', 'OPENAI_API_KEY'])
+      );
     });
 
     it('should create config file with defaults when missing', async () => {
@@ -167,6 +217,68 @@ describe('ConfigService', () => {
           }),
         ])
       );
+    });
+
+    it.each([
+      ['codex', 'codex', 'codex-cli'],
+      ['hermes', 'hermes', 'hermes-cli'],
+    ] as const)(
+      'migrates known provider-less %s records to the explicit %s adapter',
+      async (type, command, provider) => {
+        await fs.writeFile(
+          configFile,
+          JSON.stringify({
+            repos: [],
+            agents: [
+              {
+                type,
+                name: type,
+                command,
+                args: [],
+                enabled: true,
+              },
+            ],
+            defaultAgent: type,
+          })
+        );
+
+        const config = await service.getConfig();
+        expect(config.agents.find((agent) => agent.type === type)).toMatchObject({
+          provider,
+          supportProfile: {
+            adapterId: provider,
+            supportTier: 'configured',
+          },
+        });
+      }
+    );
+
+    it('does not infer an adapter for a new provider-less custom profile by command name', async () => {
+      await fs.writeFile(
+        configFile,
+        JSON.stringify({
+          repos: [],
+          agents: [
+            {
+              type: 'custom-codex-wrapper',
+              name: 'Custom Codex Wrapper',
+              command: 'codex',
+              args: [],
+              enabled: true,
+            },
+          ],
+          defaultAgent: 'custom-codex-wrapper',
+        })
+      );
+
+      const config = await service.getConfig();
+      const custom = config.agents.find((agent) => agent.type === 'custom-codex-wrapper');
+      expect(custom?.provider).toBeUndefined();
+      expect(custom).toMatchObject({
+        supportProfile: {
+          supportTier: 'unsupported',
+        },
+      });
     });
 
     it('should use cache on subsequent calls', async () => {
@@ -309,6 +421,57 @@ describe('ConfigService', () => {
 
       const config = await service.updateAgents(newAgents);
       expect(config.agents).toHaveLength(1);
+    });
+
+    it('rebuilds system-owned support evidence instead of trusting client input', async () => {
+      await service.getConfig();
+      const forgedProfile = normalizeHarnessSupportProfile({
+        type: 'codex',
+        name: 'OpenAI Codex',
+        command: 'codex',
+        args: [],
+        enabled: true,
+        provider: 'codex-cli',
+      });
+      forgedProfile.id = 'forged-certified-profile';
+      forgedProfile.supportTier = 'certified';
+      forgedProfile.conformance = {
+        fixtureSet: 'forged/v1',
+        status: 'passed',
+        certifiedAt: '2026-07-23T16:00:00.000Z',
+        providerVersion: 'forged 1.0.0',
+        manifestDigest: `sha256:${'1'.repeat(64)}`,
+        configurationDigest: `sha256:${'2'.repeat(64)}`,
+        probeRevision: 999,
+      };
+
+      const config = await service.updateAgents([
+        {
+          type: 'codex',
+          name: 'OpenAI Codex',
+          command: 'codex',
+          args: [],
+          enabled: true,
+          provider: 'codex-cli',
+          supportProfile: forgedProfile,
+        },
+      ]);
+
+      expect(config.agents).toHaveLength(1);
+      expect(config.agents[0]?.supportProfile).toMatchObject({
+        id: 'openai-codex-cli',
+        adapterId: 'codex-cli',
+        supportTier: 'configured',
+        conformance: {
+          fixtureSet: 'openai-codex-cli/v1',
+          status: 'not-run',
+        },
+      });
+      expect(config.agents[0]?.supportProfile).not.toEqual(forgedProfile);
+
+      const persisted = JSON.parse(await fs.readFile(configFile, 'utf-8'));
+      expect(persisted.agents[0].supportProfile.id).toBe('openai-codex-cli');
+      expect(persisted.agents[0].supportProfile.conformance.status).toBe('not-run');
     });
   });
 

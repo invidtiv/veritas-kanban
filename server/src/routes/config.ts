@@ -21,9 +21,11 @@ import {
   TeamRosterRoutePreviewBodySchema,
   TeamRosterValidateBodySchema,
 } from '../schemas/team-roster-schemas.js';
+import { HarnessSupportService } from '../services/harness-support-service.js';
 
 const router: RouterType = Router();
 const configService = new ConfigService();
+const harnessSupportService = new HarnessSupportService({ configService });
 const agentProfilePackageService = new AgentProfilePackageService(configService);
 const teamRosterService = new TeamRosterService(configService);
 
@@ -351,6 +353,14 @@ router.get(
     } catch (error: any) {
       throw new BadRequestError(error.message || 'Failed to get branches');
     }
+  })
+);
+
+// GET /api/config/agent-support - Canonical redacted harness readiness projection
+router.get(
+  '/agent-support',
+  asyncHandler(async (_req, res) => {
+    res.json(await harnessSupportService.list());
   })
 );
 

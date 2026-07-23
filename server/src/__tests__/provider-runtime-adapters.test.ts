@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AgentConfig } from '@veritas-kanban/shared';
 import { ClawdbotAgentService } from '../services/clawdbot-agent-service.js';
 import type { AgentHealthChecker } from '../services/agent-health-service.js';
+import { normalizeHarnessSupportProfile } from '../services/harness-support-profile-registry.js';
 
 const originalOpenClawVersion = process.env.OPENCLAW_GATEWAY_VERSION;
 
@@ -45,6 +46,129 @@ function config(provider: AgentConfig['provider']): AgentConfig {
 }
 
 describe('ClawdbotAgentService provider runtime adapters', () => {
+  it.each([
+    ['claude-code', 'claude'],
+    ['copilot', 'copilot'],
+  ] as const)(
+    'fails closed when the provider-less %s display profile is probed',
+    async (type, command) => {
+      await expect(
+        new ClawdbotAgentService(health).probeProviderRuntime({
+          type,
+          name: type,
+          command,
+          args: [],
+          enabled: true,
+        })
+      ).rejects.toMatchObject({
+        statusCode: 409,
+        code: 'CONFLICT',
+        details: expect.objectContaining({
+          agent: type,
+          reason: 'No executable provider adapter is configured',
+        }),
+      });
+    }
+  );
+
+  it('rejects a configured provider that does not match the normalized support profile', async () => {
+    const displayOnly: AgentConfig = {
+      type: 'claude-code',
+      name: 'Claude Code',
+      command: 'claude',
+      args: [],
+      enabled: true,
+    };
+
+    await expect(
+      new ClawdbotAgentService(health).probeProviderRuntime({
+        ...displayOnly,
+        provider: 'codex-cli',
+        supportProfile: normalizeHarnessSupportProfile(displayOnly),
+      })
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'CONFLICT',
+      details: expect.objectContaining({
+        profileId: 'claude-code',
+        provider: 'codex-cli',
+      }),
+    });
+  });
+
+  it('does not trust a caller-supplied profile to authorize an unsupported built-in adapter', async () => {
+    const openClawProfile = normalizeHarnessSupportProfile({
+      type: 'custom-openclaw',
+      name: 'Custom OpenClaw',
+      command: 'openclaw',
+      args: [],
+      enabled: true,
+      provider: 'openclaw',
+    });
+
+    await expect(
+      new ClawdbotAgentService(health).probeProviderRuntime({
+        type: 'claude-code',
+        name: 'Claude Code',
+        command: 'claude',
+        args: [],
+        enabled: true,
+        provider: 'openclaw',
+        supportProfile: openClawProfile,
+      })
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'CONFLICT',
+      details: expect.objectContaining({
+        profileId: 'claude-code',
+        provider: 'openclaw',
+        reason: 'Harness support profile has no executable adapter',
+      }),
+    });
+  });
+
+  it('fails closed when launch arguments contain credential material', async () => {
+    const checkAgent = vi.fn(health.checkAgent);
+
+    await expect(
+      new ClawdbotAgentService({ checkAgent }).probeProviderRuntime({
+        type: 'custom-secure-runner',
+        name: 'Secure Runner',
+        command: 'codex',
+        args: ['--api-key', 'sensitive-launch-value'],
+        enabled: true,
+        provider: 'codex-cli',
+      })
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'CONFLICT',
+      details: expect.objectContaining({
+        profileId: 'openai-codex-cli',
+        reason: 'Credential material is not allowed in harness launch commands or arguments',
+      }),
+    });
+    expect(checkAgent).not.toHaveBeenCalled();
+  });
+
+  it('rejects a new custom provider-less profile even when its command is codex', async () => {
+    await expect(
+      new ClawdbotAgentService(health).probeProviderRuntime({
+        type: 'custom-codex-wrapper',
+        name: 'Custom Codex Wrapper',
+        command: 'codex',
+        args: [],
+        enabled: true,
+      })
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'CONFLICT',
+      details: expect.objectContaining({
+        agent: 'custom-codex-wrapper',
+        reason: 'No executable provider adapter is configured',
+      }),
+    });
+  });
+
   it.each([
     ['codex-cli', 'codex-exec-json/v1', 'supported', 'ready'],
     ['codex-sdk', 'openai-codex-sdk/v1', 'supported', 'ready'],
