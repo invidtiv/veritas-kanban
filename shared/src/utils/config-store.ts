@@ -63,7 +63,16 @@ export function writeConfig(updates: Partial<VkConfig>): VkConfig {
     }
   }
 
-  fs.writeFileSync(getConfigPath(), JSON.stringify(merged, null, 2) + '\n', 'utf8');
+  const configPath = getConfigPath();
+  fs.writeFileSync(configPath, JSON.stringify(merged, null, 2) + '\n', {
+    encoding: 'utf8',
+    mode: 0o600,
+  });
+  // Tighten permissions for files created by older CLI versions. Windows
+  // applies the user's profile ACL; chmod is effective on POSIX platforms.
+  if (process.platform !== 'win32') {
+    fs.chmodSync(configPath, 0o600);
+  }
   return merged;
 }
 

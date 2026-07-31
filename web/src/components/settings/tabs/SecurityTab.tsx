@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Eye, EyeOff, Check, AlertTriangle, Key } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { RemoteAgentCredentials } from '../RemoteAgentCredentials';
 
 // Password strength calculation (same as SetupScreen)
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -172,6 +173,8 @@ export function SecurityTab() {
           </Button>
         </div>
       </section>
+
+      <RemoteAgentCredentials />
 
       {/* Danger Zone */}
       <section className="space-y-4 pt-4 border-t border-destructive/20">

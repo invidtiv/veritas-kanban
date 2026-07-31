@@ -24,8 +24,19 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const { version } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
+declare const __VERITAS_CLI_VERSION__: string | undefined;
+
+function getVersion(): string {
+  if (typeof __VERITAS_CLI_VERSION__ === 'string') {
+    return __VERITAS_CLI_VERSION__;
+  }
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const { version } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
+  return version;
+}
+
+const version = getVersion();
 
 const program = new Command();
 

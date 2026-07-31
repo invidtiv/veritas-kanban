@@ -1,237 +1,153 @@
-# Remote Agent Bootstrap for Veritas Kanban
+# Remote Coding-Agent Bootstrap
 
-This runbook bootstraps a remote agent or remote workstation onto the live Veritas Kanban board running on `bsdev`.
+This runbook connects Linux and Windows coding stations to the live Veritas Kanban board through Tailscale. The board serves the VK CLI binaries, agent skill, platform installers, and an agent-readable setup document itself.
 
-## Current board endpoint
+## Live Tailscale endpoints
 
-- UI: `http://vmi2916953.tail652dda.ts.net:3001`
-- API base: `http://vmi2916953.tail652dda.ts.net:3001/api/v1`
-- Fallback IP: `http://100.115.155.120:3001`
+- Board: `http://100.115.155.120:3001`
+- Tailnet DNS: `http://vmi2916953.tail652dda.ts.net:3001`
+- Installer page: `http://100.115.155.120:3001/remote-agent/`
+- Agent instructions: `http://100.115.155.120:3001/llms.txt`
+- Canonical API: `http://100.115.155.120:3001/api/v1`
 
-Important:
+Port `3001` is HTTP. Do not change it to HTTPS: Tailscale encrypts and authenticates the network path. Do not publish the installer or board through a public proxy.
 
-- Port `3001` is HTTP only. Do not use `https://...:3001`.
-- Do not use `https://babysharkstech.site/kanban` for remote bootstrap. That route is not the live board path right now.
+## Operator: create a station identity
 
-## What the remote needs
+1. Sign in to the board.
+2. Open **Settings → Security → Remote agent credentials**.
+3. Create a stable ID such as `linux-coder-01` or `windows-build-02`.
+4. Copy the one-time key and transfer it to the target station through a private channel.
+5. Dismiss the key after the remote installation succeeds.
 
-The remote machine or remote agent environment needs:
+Each station must use a distinct identity. Remote stations use the `agent` role, never `VERITAS_ADMIN_KEY`. The server stores only a SHA-256 hash of each random 256-bit key in `.veritas-kanban/agent-credentials.json`; plaintext is returned only when a key is created or rotated.
 
-1. Tailscale connectivity to the `bsdev` tailnet
-2. A Veritas API key
-3. The `vk` CLI on `PATH`
-4. Shell startup files that export the right Veritas environment variables
+The Security page can rotate, re-enable, or revoke an identity. Rotation invalidates the old key immediately. Creation, rotation, and revocation are written to the tamper-evident audit log.
 
-## Fast bootstrap
+## Remote: verify Tailscale
 
-Run this on the remote machine as the user that will launch the agent:
+Linux:
 
 ```bash
-# Install the CLI if needed
-npm install -g veritas-kanban-cli
-
-# Add this to ~/.profile
-cat >> ~/.profile <<'EOF'
-# Veritas Kanban remote bootstrap
-export VK_API_URL="http://vmi2916953.tail652dda.ts.net:3001"
-export VERITAS_ADMIN_KEY="REPLACE_WITH_REAL_KEY"
-export VK_API_KEY="$VERITAS_ADMIN_KEY"
-
-# If vk was installed via pnpm, keep PNPM_HOME on PATH.
-export PNPM_HOME="$HOME/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-EOF
-
-# Optional: also add the same block to ~/.bashrc for interactive shells
-cat >> ~/.bashrc <<'EOF'
-# Veritas Kanban remote bootstrap
-export VK_API_URL="http://vmi2916953.tail652dda.ts.net:3001"
-export VERITAS_ADMIN_KEY="REPLACE_WITH_REAL_KEY"
-export VK_API_KEY="$VERITAS_ADMIN_KEY"
-EOF
-
-# Reload shell config
-source ~/.profile
+tailscale status
+curl -fsS http://100.115.155.120:3001/health
 ```
 
-Replace `REPLACE_WITH_REAL_KEY` with the real Veritas API key before use.
+Windows PowerShell:
 
-## Why `.profile` matters
-
-Many agent runners start shells with `bash -lc '...'`.
-
-That means:
-
-- `.bashrc` alone is not enough on many remotes
-- `VK_API_URL` should be in `.profile`
-- `VK_API_KEY` should be in `.profile`
-- `PNPM_HOME` should be in `.profile` if the CLI is installed with pnpm
-
-If you skip this, the common failure is:
-
-```bash
-Error: fetch failed
+```powershell
+tailscale status
+Invoke-RestMethod http://100.115.155.120:3001/health
 ```
 
-or:
+If MagicDNS is unavailable, keep using the IP address. A failure at both addresses means the station is not connected or is not authorized by the tailnet ACL.
+
+## Install Linux x86-64
+
+Run as the same OS user that launches the coding agent:
 
 ```bash
-vk: command not found
+curl -fsSLo /tmp/install-vk.sh http://100.115.155.120:3001/remote-agent/install.sh
+chmod +x /tmp/install-vk.sh
+/tmp/install-vk.sh --agent-id 'linux-coder-01'
 ```
 
-## Smoke tests
+Paste the one-time key into the silent prompt.
 
-After bootstrap, run all of these on the remote:
+The installer:
+
+- downloads the standalone `vk` binary to `~/.local/bin/vk`;
+- adds `~/.local/bin` to the login-shell PATH when needed;
+- installs the skill in both `~/.codex/skills/veritas-kanban` and `~/.agents/skills/veritas-kanban`;
+- verifies the standalone binary against the board's `SHA256SUMS` file;
+- saves the scoped connection in `~/.config/veritas-kanban/config.json` with mode `0600`;
+- runs an authenticated summary smoke test against the requested URL.
+
+## Install Windows x86-64
+
+Run in PowerShell as the same Windows user that launches the coding agent:
+
+```powershell
+$installer = "$env:TEMP\install-vk.ps1"
+Invoke-RestMethod http://100.115.155.120:3001/remote-agent/install.ps1 -OutFile $installer
+& $installer -AgentId 'windows-build-02'
+```
+
+Paste the one-time key into the PowerShell secure prompt.
+
+The installer:
+
+- downloads `vk.exe` to `%USERPROFILE%\.local\bin`;
+- persists that directory in the user PATH;
+- installs the skill in `%USERPROFILE%\.codex\skills` and `%USERPROFILE%\.agents\skills`;
+- verifies the standalone binary against the board's `SHA256SUMS` file;
+- stores the scoped VK connection under `%APPDATA%\veritas-kanban` and restricts its ACL;
+- runs an authenticated summary smoke test.
+
+Open a new terminal if the newly persisted PATH is not visible in the current shell.
+
+## Agent-led setup
+
+Give the remote coding agent this URL:
+
+```text
+http://100.115.155.120:3001/llms.txt
+```
+
+It tells the agent how to verify Tailscale, format a new-access request, install on either OS, configure an existing CLI, validate the connection, protect its key, and track all non-trivial work. The agent requests the key from an operator; it cannot mint its own credentials.
+
+## Required smoke test
+
+Run in a fresh shell without injecting an admin key:
 
 ```bash
-printf 'VK_API_URL=%s\n' "$VK_API_URL"
-command -v vk
-curl -s "$VK_API_URL/health"
+vk status
 vk summary
 vk project list
 ```
 
 Expected:
 
-- `VK_API_URL` prints the `http://vmi2916953.tail652dda.ts.net:3001` URL
-- `vk` resolves to a binary path
-- `/health` returns JSON
-- `vk summary` returns board counts
-- `vk project list` returns project labels
+- server is `http://100.115.155.120:3001` or the documented tailnet DNS name;
+- health is reachable;
+- API key is configured;
+- summary and project data return without `401` or `403`.
 
-## Minimal agent workflow
-
-Once bootstrapped, the remote agent can use the CLI directly:
+## Minimal tracked workflow
 
 ```bash
-# Create task
-vk create "Task title" -t code -p veritas-kanban -d "What the agent will do"
-
-# Start work
-vk begin <task-id>
-
-# Add progress note
-vk comment <task-id> "Progress update"
-
-# Finish work
-vk done <task-id> "Summary of what changed"
+vk create "Task title" --type code --priority medium --project PROJECT_NAME --description "Objective and acceptance criteria"
+vk begin TASK_ID
+vk comment TASK_ID "Progress: meaningful milestone"
+vk done TASK_ID "Verified completion summary"
 ```
 
-Useful read commands:
+Do not complete a task before required tests, commits, pushes, deployments, and runtime checks.
 
-```bash
-vk list
-vk list -p veritas-kanban
-vk show <task-id>
-vk summary
-vk project list
-```
-
-## Non-interactive validation
-
-If the remote uses wrappers, cron, systemd, SSH commands, or any launcher that does not inherit your current shell, validate with a clean login shell:
-
-```bash
-env -i HOME="$HOME" USER="$USER" SHELL=/bin/bash PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-  bash -lc 'printf "VK_API_URL=%s\n" "$VK_API_URL"; command -v vk; vk summary'
-```
-
-If this works, the remote bootstrap is correct for agent runners too.
-
-## Common failures
-
-### `fetch failed`
-
-Usually caused by one of these:
-
-- `VK_API_URL` still points to `https://localhost:3001`
-- `VK_API_URL` uses `https://...:3001` instead of `http://...:3001`
-- the remote is not on Tailscale
-
-Check:
-
-```bash
-printf 'VK_API_URL=%s\n' "$VK_API_URL"
-curl -v "$VK_API_URL/health"
-```
-
-### `wrong version number` or TLS errors
-
-You are using HTTPS against a plain-HTTP port.
-
-Fix:
-
-```bash
-export VK_API_URL="http://vmi2916953.tail652dda.ts.net:3001"
-```
-
-### `vk: command not found`
-
-Either:
-
-- the CLI is not installed
-- it was installed with pnpm and `PNPM_HOME` is missing from `PATH`
-
-Fix:
-
-```bash
-npm install -g veritas-kanban-cli
-```
-
-or ensure:
-
-```bash
-export PNPM_HOME="$HOME/.local/share/pnpm"
-export PATH="$PNPM_HOME:$PATH"
-```
+## Troubleshooting
 
 ### `401 Authentication required`
 
-The remote shell does not have the right API key.
+The key is missing, copied incorrectly, revoked, or belongs to another board. Confirm `vk status`, then ask an operator to rotate the station identity. Never fall back to the admin key.
 
-Check:
+### TLS or `wrong version number`
 
-```bash
-printf 'VK_API_KEY=%s\n' "${VK_API_KEY:+SET}"
-```
+Use `http://...:3001`, not HTTPS.
 
-Then re-export the correct key in `.profile`.
+### `fetch failed`
 
-### Tailscale hostname does not resolve
+Confirm `tailscale status`, then test `/health` by IP. Verify no inherited `VK_API_URL` overrides the saved connection.
 
-Use the current Tailscale IP directly:
+### `vk: command not found`
 
-```bash
-export VK_API_URL="http://100.115.155.120:3001"
-```
+Open a new login shell or add `~/.local/bin` / `%USERPROFILE%\.local\bin` to PATH.
 
-Then fix the remote's Tailscale/DNS state later.
+### Reinstall without a key
 
-## Recommended handoff package for another agent
+Both installers can install the CLI and skill before a credential is ready. Omit `VK_API_KEY`, then follow `llms.txt` to configure the existing installation later.
 
-When handing this to another remote agent or operator, provide exactly:
+## Deployment and backup notes
 
-1. This document
-2. The board URL
-3. The API key through a secure channel
-4. The target project name to use with `vk create -p ...`
-5. One smoke-test command they must paste back after setup
+The production Docker build creates portable glibc Linux and Windows x86-64 standalone binaries and copies them into `/app/remote-agent/bin`. Express serves `/remote-agent/` and `/llms.txt` before API authentication; these assets contain no credentials. Credential management remains admin-only under `/api/v1/agent-credentials`.
 
-Suggested smoke-test reply:
-
-```bash
-vk summary && vk project list
-```
-
-## bsdev reference
-
-The current `bsdev` host itself was fixed to use the same pattern:
-
-- `VK_API_URL=http://localhost:3001`
-- exports live in both `~/.bashrc` and `~/.profile`
-- `PNPM_HOME` is present for login shells
-
-Mirror that model on remotes unless you have a better machine-specific bootstrap system.
+Back up `.veritas-kanban/agent-credentials.json` with the rest of the runtime state. Losing it revokes all managed remote keys; restoring an older copy can revive old keys, so rotate credentials after a rollback or uncertain restore.

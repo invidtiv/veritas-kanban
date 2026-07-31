@@ -62,6 +62,7 @@ Open [http://localhost:3000](http://localhost:3000) — that's it. The board aut
 - [MCP Server Guide](docs/mcp/README.md) — 33+ tools, architecture, quickstart, tool catalog, security model, troubleshooting.
 - [API Reference](docs/API-REFERENCE.md) — Auth, endpoints, request/response examples, WebSocket, common workflows.
 - [Self-Hosting Guide](docs/guides/SELF_HOST.md) — production deployment, reverse proxy, auth hardening, Docker, and backups.
+- [Remote Coding-Agent Bootstrap](REMOTE-AGENT-BOOTSTRAP.md) — Tailscale-only Linux/Windows VK installation, scoped identities, and the distributable agent skill.
 - [Getting Started Guide](docs/GETTING-STARTED.md) — zero ➝ agent-ready in 5 minutes, plus sanity checks and prompt registry tips.
 - [Agent Task Workflow SOP](docs/SOP-agent-task-workflow.md) — lifecycle, API/CLI snippets, prompts.
 - [Squad Chat Protocol](docs/SQUAD-CHAT-PROTOCOL.md) — agent messaging, system events (spawned/completed/failed), model attribution, and helper scripts.
@@ -673,19 +674,20 @@ pnpm test:e2e   # E2E tests (Playwright)
 
 ## 📚 Documentation
 
-| Document                                       | Description                                  |
-| ---------------------------------------------- | -------------------------------------------- |
-| [Features](docs/FEATURES.md)                   | Complete feature reference                   |
-| [API Reference](docs/API-REFERENCE.md)         | Auth, endpoints, WebSocket docs              |
-| [CLI Guide](docs/CLI-GUIDE.md)                 | Comprehensive CLI usage guide                |
-| [Self-Hosting Guide](docs/guides/SELF_HOST.md) | Production deployment, reverse proxy, Docker |
-| [Deployment](docs/DEPLOYMENT.md)               | Docker, bare metal, env config               |
-| [Troubleshooting](docs/TROUBLESHOOTING.md)     | Common issues & solutions                    |
-| [Contributing](CONTRIBUTING.md)                | How to contribute, PR guidelines             |
-| [Security Policy](SECURITY.md)                 | Vulnerability reporting                      |
-| [Code of Conduct](CODE_OF_CONDUCT.md)          | Community guidelines                         |
-| [Changelog](CHANGELOG.md)                      | Release history                              |
-| [Sprint Docs](docs/)                           | Sprint planning & audit reports              |
+| Document                                            | Description                                  |
+| --------------------------------------------------- | -------------------------------------------- |
+| [Features](docs/FEATURES.md)                        | Complete feature reference                   |
+| [API Reference](docs/API-REFERENCE.md)              | Auth, endpoints, WebSocket docs              |
+| [CLI Guide](docs/CLI-GUIDE.md)                      | Comprehensive CLI usage guide                |
+| [Remote Agent Bootstrap](REMOTE-AGENT-BOOTSTRAP.md) | Tailscale Linux/Windows agent setup          |
+| [Self-Hosting Guide](docs/guides/SELF_HOST.md)      | Production deployment, reverse proxy, Docker |
+| [Deployment](docs/DEPLOYMENT.md)                    | Docker, bare metal, env config               |
+| [Troubleshooting](docs/TROUBLESHOOTING.md)          | Common issues & solutions                    |
+| [Contributing](CONTRIBUTING.md)                     | How to contribute, PR guidelines             |
+| [Security Policy](SECURITY.md)                      | Vulnerability reporting                      |
+| [Code of Conduct](CODE_OF_CONDUCT.md)               | Community guidelines                         |
+| [Changelog](CHANGELOG.md)                           | Release history                              |
+| [Sprint Docs](docs/)                                | Sprint planning & audit reports              |
 
 ---
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Veritas Kanban'
+  short_description: 'Track agent work on the shared VK board'
+  default_prompt: 'Use $veritas-kanban to create, track, and complete this task on the shared board.'

@@ -57,6 +57,7 @@ import { settingsRoutes } from '../settings.js';
 import { agentStatusRoutes } from '../agent-status.js';
 import { agentRegistryRoutes } from '../agent-registry.js';
 import { agentPermissionRoutes } from '../agent-permissions.js';
+import { agentCredentialRoutes } from '../agent-credentials.js';
 import { costPredictionRoutes } from '../cost-prediction.js';
 import { errorLearningRoutes } from '../error-learning.js';
 import { docsRoutes } from '../docs.js';
@@ -131,6 +132,7 @@ v1Router.use('/changes', changesRoutes); // Efficient agent polling endpoint
 v1Router.use('/chat', chatRoutes); // Chat interface - must be before agent routes
 v1Router.use('/agents/register', agentRegistryRoutes); // Before agentRoutes (/:taskId catches "register")
 v1Router.use('/agents/permissions', agentPermissionRoutes);
+v1Router.use('/agent-credentials', agentCredentialRoutes);
 v1Router.use('/agents', agentRoutingRoutes); // Must be before agentRoutes (/:taskId would match "route"/"routing")
 v1Router.use('/agents', agentRoutes);
 v1Router.use('/diff', diffRoutes);

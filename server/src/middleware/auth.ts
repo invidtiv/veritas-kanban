@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { getSecurityConfig, getJwtSecret, getValidJwtSecrets } from '../config/security.js';
 import { createLogger } from '../lib/logger.js';
+import { getAgentCredentialService } from '../services/agent-credential-service.js';
 
 const log = createLogger('auth');
 
@@ -222,6 +223,13 @@ function validateApiKey(
   const keyConfig = config.apiKeys.find((k) => k.key === apiKey);
   if (keyConfig) {
     return { valid: true, role: keyConfig.role, name: keyConfig.name };
+  }
+
+  // Check credentials provisioned from the authenticated web UI. Only hashes
+  // are persisted; revoked keys stop authenticating immediately.
+  const managedCredential = getAgentCredentialService().validate(apiKey);
+  if (managedCredential) {
+    return { valid: true, role: managedCredential.role, name: managedCredential.name };
   }
 
   return { valid: false };
@@ -570,7 +578,7 @@ export function getAuthStatus(): {
     enabled: config.enabled,
     localhostBypass: config.allowLocalhostBypass,
     localhostRole: config.localhostRole,
-    configuredKeys: config.apiKeys.length,
+    configuredKeys: config.apiKeys.length + getAgentCredentialService().activeCount(),
     hasAdminKey: !!config.adminKey,
   };
 }

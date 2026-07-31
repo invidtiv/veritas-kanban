@@ -66,6 +66,7 @@ import { cspNonceMiddleware, cspNonceDirective } from './middleware/csp-nonce.js
 import { healthRouter, apiHealthRouter, setHealthWss } from './routes/health.js';
 import { getPrometheusCollector } from './services/metrics/prometheus.js';
 import { metricsCollector } from './middleware/metrics-collector.js';
+import { getProjectRoot } from './utils/paths.js';
 
 const log = createLogger('server');
 
@@ -376,6 +377,34 @@ app.use('/health', healthRouter);
 
 // Canonical VK API health signal (unauthenticated; used by dev tooling/watchdogs)
 app.use('/api/health', apiHealthRouter);
+
+// ============================================
+// Remote Agent Bootstrap (unauthenticated, Tailnet-served static assets)
+// ============================================
+// These files contain no credentials. The board's authenticated Security UI
+// provisions scoped keys, while this route distributes the CLI, installers,
+// skill, and agent-readable setup guide over the existing Tailscale endpoint.
+const remoteAgentDir = path.join(getProjectRoot(), 'remote-agent');
+app.get('/llms.txt', (_req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.type('text/plain').sendFile(path.join(remoteAgentDir, 'llms.txt'));
+});
+app.use(
+  '/remote-agent',
+  express.static(remoteAgentDir, {
+    fallthrough: false,
+    index: 'index.html',
+    maxAge: 0,
+    etag: true,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('vk-linux-x64') || filePath.endsWith('.exe')) {
+        res.set('Cache-Control', 'private, max-age=300');
+      } else {
+        res.set('Cache-Control', 'no-cache');
+      }
+    },
+  })
+);
 
 // ============================================
 // Prometheus Metrics (unauthenticated, for scraping)

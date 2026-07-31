@@ -51,3 +51,16 @@ scripts/
 tasks/
 eslint.config.js
 .prettierrc
+
+# Remote-agent distribution build inputs (keep generated cli/dist excluded)
+!cli/
+cli/*
+!cli/package.json
+!cli/esbuild.config.mjs
+!cli/build-standalone.mjs
+!cli/strip-pe-signature.mjs
+!cli/tsconfig.json
+!cli/src/
+!cli/src/**
+!remote-agent/
+!remote-agent/**

@@ -510,6 +510,24 @@ All variables are set in `server/.env` (or passed as environment variables in Do
 | `VERITAS_AUTH_LOCALHOST_BYPASS` | `false`        | Allow unauthenticated requests from localhost                                                                                                          |
 | `VERITAS_AUTH_LOCALHOST_ROLE`   | `read-only`    | Role for unauthenticated localhost connections: `read-only`, `agent`, or `admin`                                                                       |
 
+### Managed remote-agent credentials
+
+Administrators can provision distinct remote coding-station identities from **Settings → Security → Remote agent credentials**. Managed credentials use the `agent` or `read-only` role, are stored only as hashes in `<DATA_DIR>/.veritas-kanban/agent-credentials.json`, and can be rotated or revoked without restarting the server. Do not install `VERITAS_ADMIN_KEY` on remote stations.
+
+The production image also serves a Tailscale-oriented bootstrap package:
+
+| Path                                  | Purpose                                               |
+| ------------------------------------- | ----------------------------------------------------- |
+| `/remote-agent/`                      | Human-readable Linux and Windows install page         |
+| `/remote-agent/install.sh`            | Linux x86-64 installer                                |
+| `/remote-agent/install.ps1`           | Windows x86-64 PowerShell installer                   |
+| `/remote-agent/bin/*`                 | Standalone VK binaries built into the image           |
+| `/remote-agent/bin/SHA256SUMS`        | Build-generated integrity hashes for both binaries    |
+| `/remote-agent/skill/veritas-kanban/` | Installable coding-agent skill                        |
+| `/llms.txt`                           | Complete agent-readable access request and setup flow |
+
+These static assets contain no keys and are intentionally outside API authentication. Restrict the server listener/firewall/proxy to the tailnet when using them. See [Remote Coding-Agent Bootstrap](../REMOTE-AGENT-BOOTSTRAP.md).
+
 ### Networking & Security
 
 | Variable          | Default                                           | Description                                                                                                                                                                                  |

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Veritas Kanban Remote Agent Setup</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #09090b;
+        color: #fafafa;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+      h1 {
+        font-size: clamp(2rem, 6vw, 3.6rem);
+        line-height: 1;
+        margin: 0 0 16px;
+      }
+      h2 {
+        margin-top: 36px;
+      }
+      p,
+      li {
+        color: #a1a1aa;
+        line-height: 1.65;
+      }
+      .notice {
+        border: 1px solid #3f3f46;
+        border-radius: 12px;
+        padding: 16px;
+        background: #18181b;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
+      }
+      .card {
+        border: 1px solid #27272a;
+        border-radius: 16px;
+        padding: 20px;
+        background: #111113;
+      }
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #030305;
+        border: 1px solid #27272a;
+        border-radius: 10px;
+        padding: 14px;
+        color: #d4d4d8;
+      }
+      a {
+        color: #a78bfa;
+      }
+      .pill {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #2e1065;
+        color: #ddd6fe;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="pill">Tailscale only</span>
+      <h1>Connect a coding agent to VK</h1>
+      <p>
+        This page serves the VK CLI, the Veritas Kanban agent skill, and platform installers
+        directly from the board host. Port 3001 is HTTP because Tailscale provides the encrypted
+        transport.
+      </p>
+
+      <div class="notice">
+        <strong>First create a scoped agent identity.</strong>
+        <p>
+          Sign in to <a href="/">Veritas Kanban</a>, open <em>Settings → Security</em>, and use
+          <em>Remote agent credentials</em>. The key is shown once. Transfer it to the station
+          through a private channel; never put it in a task or repository.
+        </p>
+      </div>
+
+      <h2>Install</h2>
+      <div class="grid">
+        <section class="card">
+          <h3>Linux x86-64</h3>
+          <pre>
+curl -fsSLo /tmp/install-vk.sh http://100.115.155.120:3001/remote-agent/install.sh
+chmod +x /tmp/install-vk.sh
+/tmp/install-vk.sh --agent-id 'station-agent-id'</pre
+          >
+          <p>
+            The installer places <code>vk</code> in <code>~/.local/bin</code> and installs the skill
+            for Codex and shared agent runners.
+          </p>
+        </section>
+        <section class="card">
+          <h3>Windows x86-64</h3>
+          <pre>
+$installer = "$env:TEMP\install-vk.ps1"
+irm http://100.115.155.120:3001/remote-agent/install.ps1 -OutFile $installer
+&amp; $installer -AgentId 'station-agent-id'
+</pre
+          >
+          <p>
+            The installer places <code>vk.exe</code> in <code>%USERPROFILE%\.local\bin</code> and
+            updates the user PATH.
+          </p>
+        </section>
+      </div>
+
+      <h2>Agent-readable setup</h2>
+      <p>
+        Give an agent <a href="/llms.txt"><code>http://100.115.155.120:3001/llms.txt</code></a
+        >. It contains the complete identity request, install, configuration, smoke-test, and
+        work-tracking flow.
+      </p>
+
+      <h2>Downloads</h2>
+      <ul>
+        <li><a href="/remote-agent/bin/vk-linux-x64">VK CLI for Linux x86-64</a></li>
+        <li><a href="/remote-agent/bin/vk-windows-x64.exe">VK CLI for Windows x86-64</a></li>
+        <li><a href="/remote-agent/bin/SHA256SUMS">SHA-256 checksums</a></li>
+        <li><a href="/remote-agent/skill/veritas-kanban/SKILL.md">Veritas Kanban skill</a></li>
+        <li>
+          <a href="/remote-agent/skill/veritas-kanban/agents/openai.yaml">Skill UI metadata</a>
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>

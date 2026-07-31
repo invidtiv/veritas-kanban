@@ -1,8 +1,8 @@
 # Veritas Kanban — API Reference
 
-**Version**: 3.4.0  
-**Last Updated**: 2026-03-08  
-**Base URL**: `http://localhost:3001/api`  
+**Version**: 3.4.0
+**Last Updated**: 2026-07-31
+**Base URL**: `http://localhost:3001/api`
 **Canonical prefix**: `/api/v1` (alias: `/api`)
 
 > This is the source-of-truth companion to the Swagger/OpenAPI spec. For workflow-engine-specific endpoints, see [API-WORKFLOWS.md](API-WORKFLOWS.md).
@@ -34,18 +34,19 @@
 21. [Task Archive](#task-archive)
 22. [Attachments](#attachments)
 23. [Agent Permissions](#agent-permissions)
-24. [Agent Routing](#agent-routing)
-25. [Shared Resources](#shared-resources)
-26. [Doc Freshness](#doc-freshness)
-27. [Cost Prediction](#cost-prediction)
-28. [Error Learning](#error-learning)
-29. [Tool Policies](#tool-policies)
-30. [Traces](#traces)
-31. [Audit](#audit)
-32. [Common Workflows](#common-workflows)
-33. [Versioning & Deprecation](#versioning--deprecation)
-34. [Rate Limits](#rate-limits)
-35. [Additional Endpoint Groups](#additional-endpoint-groups)
+24. [Agent Credentials](#agent-credentials)
+25. [Agent Routing](#agent-routing)
+26. [Shared Resources](#shared-resources)
+27. [Doc Freshness](#doc-freshness)
+28. [Cost Prediction](#cost-prediction)
+29. [Error Learning](#error-learning)
+30. [Tool Policies](#tool-policies)
+31. [Traces](#traces)
+32. [Audit](#audit)
+33. [Common Workflows](#common-workflows)
+34. [Versioning & Deprecation](#versioning--deprecation)
+35. [Rate Limits](#rate-limits)
+36. [Additional Endpoint Groups](#additional-endpoint-groups)
 
 ---
 
@@ -1139,6 +1140,55 @@ Approve or reject a pending approval request.
 
 ---
 
+## Agent Credentials
+
+Admin-only endpoints for creating distinct, revocable API identities for remote coding stations. Plaintext keys are returned only by create and rotate responses; list responses expose only a non-secret prefix. The server persists SHA-256 hashes, not recoverable keys.
+
+Mounted at `/api/agent-credentials` and `/api/v1/agent-credentials`.
+
+| Method   | Path                                   | Description                                      |
+| -------- | -------------------------------------- | ------------------------------------------------ |
+| `GET`    | `/api/v1/agent-credentials`            | List identities without plaintext keys           |
+| `POST`   | `/api/v1/agent-credentials`            | Create an identity and return its key once       |
+| `POST`   | `/api/v1/agent-credentials/:id/rotate` | Invalidate the old key and return a new key once |
+| `DELETE` | `/api/v1/agent-credentials/:id`        | Revoke the identity immediately                  |
+
+### Create an identity
+
+```http
+POST /api/v1/agent-credentials
+X-API-Key: <admin-key>
+Content-Type: application/json
+```
+
+```json
+{
+  "agentId": "linux-coder-01",
+  "label": "Linux coding station 01",
+  "role": "agent"
+}
+```
+
+The `agentId` is 3-50 lowercase letters, numbers, hyphens, or underscores. Valid roles are `agent` and `read-only`.
+
+**Response** `201`:
+
+```json
+{
+  "agentId": "linux-coder-01",
+  "label": "Linux coding station 01",
+  "role": "agent",
+  "keyPrefix": "vk_agent_example",
+  "createdAt": "2026-07-31T00:00:00.000Z",
+  "createdBy": "session",
+  "apiKey": "<shown-once>"
+}
+```
+
+Creation, rotation, and revocation are recorded in the audit log. See [Remote Coding-Agent Bootstrap](../REMOTE-AGENT-BOOTSTRAP.md) for the Tailscale distribution and installation flow.
+
+---
+
 ## Agent Routing
 
 Automatic agent resolution — determines the best agent for a task based on configurable routing rules.
@@ -1765,15 +1815,15 @@ These endpoints follow the same auth/error patterns documented above:
 | `/api/integrations`              | External integrations                         |
 | `/api/settings/transition-hooks` | Status transition hooks                       |
 
-| `/api/feedback`                  | User feedback & sentiment analytics           |
-| `/api/decisions`                 | Decision audit trail                          |
-| `/api/drift`                     | Behavioral drift detection                    |
-| `/api/policies`                  | Agent policy & guard engine                   |
-| `/api/scoring/profiles`          | Output evaluation profiles                    |
-| `/api/scoring/evaluate`          | Run an output evaluation                      |
-| `/api/scoring/history`           | Evaluation history                            |
-| `/api/prompt-registry`           | Prompt template registry                      |
-| `/api/v1/system/health`          | Global system health                          |
+| `/api/feedback` | User feedback & sentiment analytics |
+| `/api/decisions` | Decision audit trail |
+| `/api/drift` | Behavioral drift detection |
+| `/api/policies` | Agent policy & guard engine |
+| `/api/scoring/profiles` | Output evaluation profiles |
+| `/api/scoring/evaluate` | Run an output evaluation |
+| `/api/scoring/history` | Evaluation history |
+| `/api/prompt-registry` | Prompt template registry |
+| `/api/v1/system/health` | Global system health |
 
 ---
 
@@ -1863,9 +1913,7 @@ Query params: `agent`, `since`, `until`.
     { "category": "output-quality", "count": 18 },
     { "category": "accuracy", "count": 12 }
   ],
-  "trend": [
-    { "date": "2026-03-21", "positive": 5, "neutral": 1, "negative": 0 }
-  ]
+  "trend": [{ "date": "2026-03-21", "positive": 5, "neutral": 1, "negative": 0 }]
 }
 ```
 

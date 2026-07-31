@@ -1,0 +1,95 @@
+# Veritas Kanban remote agent bootstrap
+
+Use this document when a coding agent or remote station must connect to the BabySharks Veritas Kanban board.
+
+## Network boundary
+
+- The station MUST be connected to the authorized Tailscale network.
+- Board and installer base URL: http://100.115.155.120:3001
+- Tailnet hostname: http://vmi2916953.tail652dda.ts.net:3001
+- Port 3001 is HTTP. Do not change it to HTTPS; Tailscale encrypts the network path.
+- Do not use a public hostname or expose this service through a public proxy.
+
+Verify reachability:
+
+Linux:
+  tailscale status
+  curl -fsS http://100.115.155.120:3001/health
+
+Windows PowerShell:
+  tailscale status
+  irm http://100.115.155.120:3001/health
+
+## Request a new scoped key
+
+Never request or use VERITAS_ADMIN_KEY. Every station gets a distinct agent ID and a scoped agent key.
+
+Send the operator this exact request through a private channel:
+
+  VK ACCESS REQUEST
+  agent_id: <stable-lowercase-station-and-agent-name>
+  station: <machine hostname>
+  role: agent
+  purpose: <repository or work scope>
+
+Agent IDs must be 3-50 lowercase letters, numbers, hyphens, or underscores. Do not reuse another station's ID.
+
+The operator signs in at http://100.115.155.120:3001, opens Settings -> Security -> Remote agent credentials, creates the ID, and returns the one-time key privately. The server stores only its hash. If the key is lost, exposed, or copied into logs/source control, ask the operator to rotate it.
+
+## Install on Linux x86-64
+
+  curl -fsSLo /tmp/install-vk.sh http://100.115.155.120:3001/remote-agent/install.sh
+  chmod +x /tmp/install-vk.sh
+  /tmp/install-vk.sh --agent-id '<agent-id>'
+
+Paste the one-time key into the installer's silent prompt. The installer verifies the downloaded binary against the SHA256SUMS file served by the board.
+
+Open a new login shell after installation if vk is not immediately on PATH.
+
+## Install on Windows x86-64
+
+Run in PowerShell as the same Windows user that runs the coding agent:
+
+  $installer = "$env:TEMP\install-vk.ps1"
+  Invoke-RestMethod http://100.115.155.120:3001/remote-agent/install.ps1 -OutFile $installer
+  & $installer -AgentId '<agent-id>'
+
+Paste the one-time key into the PowerShell secure prompt. The installer verifies the downloaded binary against the SHA256SUMS file served by the board.
+
+Open a new PowerShell session after installation so the persisted user PATH is loaded.
+
+## Configure an existing installation
+
+If vk is already installed, avoid typing the literal key into shell history. Put it in VK_API_KEY temporarily, then run:
+
+Linux:
+  printf 'VK key: '
+  stty -echo; IFS= read -r VK_API_KEY; stty echo; printf '\n'
+  export VK_API_KEY
+  vk connect http://100.115.155.120:3001 --key "$VK_API_KEY" --name '<agent-id>'
+  chmod 600 "$HOME/.config/veritas-kanban/config.json"
+  unset VK_API_KEY
+
+Windows PowerShell:
+  $env:VK_API_KEY = '<one-time-key>'
+  vk connect http://100.115.155.120:3001 --key $env:VK_API_KEY --name '<agent-id>'
+  Remove-Item Env:VK_API_KEY
+
+## Required smoke test
+
+  vk status
+  vk summary
+  vk project list
+
+Expected: server http://100.115.155.120:3001, API key configured, health reachable, and board/project data returned without 401 or 403.
+
+## Required work lifecycle
+
+For each non-trivial task:
+
+  vk create "Task title" --type code --priority medium --project PROJECT_NAME --description "Objective and acceptance criteria"
+  vk begin TASK_ID
+  vk comment TASK_ID "Progress: meaningful milestone"
+  vk done TASK_ID "Verified completion summary"
+
+Do not mark the task done until required tests, commits, pushes, deployments, and runtime checks are complete. Never print or place the API key in task text, chat, logs, commits, or documentation.
